@@ -14,7 +14,6 @@ interface AuthContextType {
   user: User | null
   session: Session | null
   loading: boolean
-  isAuthenticated: boolean
   signUp: (
     email: string,
     password: string,
@@ -46,22 +45,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
 
-  // Calculate isAuthenticated based on user and session
-  const isAuthenticated = !!(user && session)
-
   useEffect(() => {
     // Get initial session
     const getInitialSession = async () => {
-      console.log('🔍 Getting initial session...');
-      const { data: { session }, error } = await supabase.auth.getSession()
-      if (error) {
-        console.error('❌ Error getting session:', error)
-      } else {
-        console.log('✅ Initial session:', session ? 'Found' : 'None');
-        setSession(session)
-        setUser(session?.user ?? null)
+      try {
+        console.log('🔍 Getting initial session...');
+        const { data: { session }, error } = await supabase.auth.getSession()
+        
+        if (error) {
+          console.error('❌ Error getting initial session:', error)
+        } else {
+          console.log('✅ Initial session:', session ? 'Found' : 'None');
+          setSession(session)
+          setUser(session?.user ?? null)
+        }
+      } catch (error) {
+        console.error('❌ Exception getting initial session:', error);
+      } finally {
+        setLoading(false)
       }
-      setLoading(false)
     }
 
     getInitialSession()
@@ -78,16 +80,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     return () => subscription.unsubscribe()
   }, [])
-
-  // Log authentication state changes for debugging
-  useEffect(() => {
-    console.log('🔐 Auth state update:', {
-      user: user?.id || 'None',
-      session: session ? 'Present' : 'None',
-      isAuthenticated,
-      loading
-    });
-  }, [user, session, isAuthenticated, loading]);
 
   const signUp = async (
     email: string,
@@ -123,6 +115,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         console.log('📝 Signup response:', {
           user: data.user?.id,
           userEmail: data.user?.email,
+          emailConfirmed: data.user?.email_confirmed_at ? 'Yes' : 'No',
           session: data.session?.access_token ? 'present' : 'missing',
           error: error ? {
             message: error.message,
@@ -142,14 +135,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             error.status === 429) {
           if (retryCount < maxRetries) {
             retryCount++;
-            // Exponential backoff: wait 2^retryCount seconds
             const waitTime = Math.pow(2, retryCount) * 1000;
             console.log(`⏳ Rate limited. Retrying in ${waitTime/1000} seconds... (attempt ${retryCount}/${maxRetries})`);
 
             await new Promise(resolve => setTimeout(resolve, waitTime));
             return attemptSignUp();
           } else {
-            // Create a custom error message for rate limiting
             const rateLimitError = {
               message: 'Too many signup attempts. Please wait a few minutes before trying again.',
               status: 429
@@ -182,6 +173,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log('📝 Sign in response:', {
         user: data.user?.id,
         userEmail: data.user?.email,
+        emailConfirmed: data.user?.email_confirmed_at ? 'Yes' : 'No',
+        lastSignIn: data.user?.last_sign_in_at,
         session: data.session?.access_token ? 'present' : 'missing',
         error: error ? {
           message: error.message,
@@ -192,12 +185,36 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       if (error) {
         console.error('❌ Sign in error:', error);
-      } else if (data.user && data.session) {
-        console.log('✅ Sign in successful - auth state will update automatically');
+        
+        // Provide more specific error messages
+        if (error.message.includes('Invalid login credentials')) {
+          return { error: { ...error, message: 'Invalid email or password. Please check your credentials and try again.' } as AuthError };
+        } else if (error.message.includes('Email not confirmed')) {
+          return { error: { ...error, message: 'Please check your email and click the confirmation link before signing in.' } as AuthError };
+        } else if (error.message.includes('Too many requests')) {
+          return { error: { ...error, message: 'Too many sign-in attempts. Please wait a few minutes before trying again.' } as AuthError };
+        } else if (error.message.includes('signup_disabled')) {
+          return { error: { ...error, message: 'Account signup is currently disabled. Please contact support.' } as AuthError };
+        }
+      } else if (data.user) {
+        console.log('✅ Sign in successful for user:', data.user.id);
+        
+        // Check if email is confirmed
+        if (!data.user.email_confirmed_at) {
+          console.warn('⚠️ User email not confirmed yet');
+          return { error: { message: 'Please check your email and click the confirmation link to complete your account setup.' } as AuthError };
+        }
+        
+        // Additional session verification
+        if (data.session) {
+          console.log('✅ Session established successfully');
+        } else {
+          console.warn('⚠️ No session created despite successful authentication');
+        }
       }
 
       return { error }
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Sign in exception:', error);
       return { error: error as AuthError }
     } finally {
@@ -216,6 +233,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         console.error('❌ Sign out error:', error);
       } else {
         console.log('✅ Sign out successful');
+        // Clear local state
+        setUser(null);
+        setSession(null);
+        localStorage.removeItem("authToken");
       }
       
       return { error }
@@ -227,9 +248,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }
 
-  // Add logout function for UI usage
   const logout = () => {
-    console.log('🚪 Logging out...');
+    console.log('🚪 Logging out (local)...');
     signOut();
     localStorage.removeItem("authToken");
     setUser(null);
@@ -261,7 +281,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     user,
     session,
     loading,
-    isAuthenticated,
     signUp,
     signIn,
     signOut,

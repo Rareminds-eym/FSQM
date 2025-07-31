@@ -9,6 +9,7 @@ import AuthForm from "./AuthForm";
 import AuthHeader from "./AuthHeader";
 import AuthToggle from "./AuthToggle";
 import { testSupabaseConnection, testTeamInsertion, checkDatabaseSetup, testAuthSettings, debugFormSubmission } from "../../utils/debugSupabase";
+import { runDatabaseTests, quickTeamCreationTest } from "../../utils/testDatabaseFix";
 import { signupRateLimiter } from "../../utils/rateLimiter";
 import RateLimitMessage from "../ui/RateLimitMessage";
 
@@ -209,105 +210,92 @@ const Auth: React.FC = () => {
         signupRateLimiter.reset(formData.email);
         setRateLimitInfo(null);
 
-        // Get user information - try multiple methods
-        let user = signUpUser; // Start with user from signup response
+        // Get user information with improved error handling
+        let user = signUpUser;
         let retries = 0;
-        const maxRetries = 8;
+        const maxRetries = 5;
 
         console.log('Attempting to get user after signup...');
         console.log('User from signup response:', signUpUser?.id);
 
-        // If we have user from signup, use it
-        if (signUpUser) {
-          user = signUpUser;
-          console.log('Using user from signup response:', user.id);
-        } else {
-          // Fallback: try to get user from auth context
-          const { data: { user: contextUser } } = await supabase.auth.getUser();
-          if (contextUser) {
-            user = contextUser;
-            console.log('Got user from context immediately:', user.id);
-          }
-        }
+        // Enhanced user retrieval with better session handling
+        if (!user) {
+          while (!user && retries < maxRetries) {
+            const waitTime = Math.min(1000 * Math.pow(1.5, retries), 3000);
+            console.log(`Waiting ${waitTime}ms before retry ${retries + 1}...`);
+            
+            await new Promise(resolve => setTimeout(resolve, waitTime));
 
-        // If no user yet, wait and retry with exponential backoff
-        while (!user && retries < maxRetries) {
-          const waitTime = Math.min(1000 * Math.pow(1.5, retries), 5000); // Cap at 5 seconds
-          console.log(`Waiting ${waitTime}ms before retry ${retries + 1}...`);
-
-          await new Promise(resolve => setTimeout(resolve, waitTime));
-
-          // Try multiple methods to get user
-          const methods = [
-            () => supabase.auth.getUser(),
-            () => supabase.auth.getSession().then(result => ({ data: { user: result.data.session?.user || null }, error: result.error }))
-          ];
-
-          for (const method of methods) {
             try {
-              const { data: { user: currentUser }, error: userError } = await method();
-
-              console.log(`Attempt ${retries + 1} (method ${methods.indexOf(method) + 1}): User:`, currentUser?.id, 'Error:', userError);
-
-              if (currentUser && !userError) {
-                user = currentUser;
+              // Try to get user from current session
+              const { data: { user: sessionUser }, error: sessionError } = await supabase.auth.getUser();
+              
+              if (sessionUser && !sessionError) {
+                user = sessionUser;
+                console.log('Got user from session:', user.id);
                 break;
               }
-            } catch (error) {
-              console.error('Error in user retrieval method:', error);
-            }
-          }
 
-          retries++;
+              // If session method fails, try getting session directly
+              const { data: { session }, error: getSessionError } = await supabase.auth.getSession();
+              if (session?.user && !getSessionError) {
+                user = session.user;
+                console.log('Got user from direct session:', user.id);
+                break;
+              }
+
+              console.log(`Retry ${retries + 1} failed:`, { sessionError, getSessionError });
+            } catch (error) {
+              console.error('Error in user retrieval:', error);
+            }
+
+            retries++;
+          }
         }
 
         if (!user) {
           console.error('Failed to get user after', maxRetries, 'attempts');
-
-          // Show a more helpful message and suggest manual login
           toast.error(
-            "Account created successfully! However, there was a delay in getting your user information. Please try logging in with your email and password to complete the team setup.",
-            {
-              autoClose: 10000
-            }
+            "Account created successfully! Please log in with your credentials to complete the team setup.",
+            { autoClose: 8000 }
           );
-
-          // Clear the form to encourage login
-          setFormData({
-            username: "",
-            email: "",
+          
+          // Switch to login mode and pre-fill email
+          setIsLogin(true);
+          setFormData(prev => ({
+            ...prev,
             password: "",
-            fullName: "",
             confirmPassword: "",
+            fullName: "",
             phone: "",
             teamName: "",
             collegeCode: "",
             isTeamLeader: null,
             joinCode: "",
-          });
-
+          }));
           return;
         }
 
         console.log('Successfully got user:', user.id);
 
-        // Quick database check before proceeding
+        // Verify database connectivity and user permissions
         try {
-          const { error: testError } = await supabase
+          // Test if we can read from teams table
+          const { data: testRead, error: readError } = await supabase
             .from('teams')
-            .select('count(*)')
+            .select('id')
             .limit(1);
 
-          if (testError) {
-            console.error('Database access test failed:', testError);
-            toast.error("Database access issue detected. Please make sure the database is properly set up.");
-            return;
+          if (readError) {
+            console.error('Database read test failed:', readError);
+            throw new Error(`Database access issue: ${readError.message}`);
           }
 
-          console.log('Database access test passed');
-        } catch (dbError) {
+          // Test if we can perform an insert operation (dry run)
+          console.log('Database connectivity verified');
+        } catch (dbError: any) {
           console.error('Database test error:', dbError);
-          toast.error("Database connection issue. Please try again later.");
+          toast.error(`Database issue: ${dbError.message}. Please contact support.`);
           return;
         }
 
