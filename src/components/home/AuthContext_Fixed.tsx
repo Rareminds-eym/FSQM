@@ -79,7 +79,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return () => subscription.unsubscribe()
   }, [])
 
-  // Log authentication state changes for debugging
+  // Log authentication state changes
   useEffect(() => {
     console.log('🔐 Auth state update:', {
       user: user?.id || 'None',
@@ -193,7 +193,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (error) {
         console.error('❌ Sign in error:', error);
       } else if (data.user && data.session) {
-        console.log('✅ Sign in successful - auth state will update automatically');
+        console.log('✅ Sign in successful - setting user and session');
+        // The auth state change listener will handle setting user and session
       }
 
       return { error }
