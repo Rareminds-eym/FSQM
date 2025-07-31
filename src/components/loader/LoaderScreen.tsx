@@ -47,14 +47,14 @@ const LoaderScreen: React.FC<LoaderScreenProps> = ({ onComplete }) => {
           Food Safety and Quality Management
         </GlowingTitle>
 
-        <div className="text-blue-400 mt-20 font-medium  flex items-center justify-center">
-        <Lottie 
-              animationData={Loading}
-               loop
-               play
-               className='translate-x-0 w-40 h-40 md:translate-x-2.5 '
-                 />
-         <h1 className="font-semibold text-xl md:text-3xl">{progress}%</h1>
+        <div className="text-blue-400 mt-20 font-medium flex flex-col items-center justify-center">
+          <h1 className="font-semibold text-xl md:text-3xl lg:mb-2">{progress}%</h1>
+          <Lottie 
+            animationData={Loading}
+            loop
+            play
+            className='translate-x-0 w-40 h-40 md:translate-x-2.5 '
+          />
         </div>
       </div>
     </div>

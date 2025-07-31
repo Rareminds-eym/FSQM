@@ -15,6 +15,8 @@ import GlowingTitle from "../ui/GlowingTitle";
 import MenuItem from "./MenuItem";
 
 const HomePage: React.FC = () => {
+  // Toggle this to enable/disable navigation for menu items
+  const navigationEnabled = false;
   const navigate = useNavigate();
   const [hasProgress, setHasProgress] = useState(false);
   const [menuItems, setMenuItems] = useState<any>([]);
@@ -49,6 +51,7 @@ const HomePage: React.FC = () => {
         icon: Play,
         title: "Start Game",
         onClick: () => {
+          if (!navigationEnabled) return;
           if (hasProgress) {
             setShowConfirmation(true);
           } else {
@@ -60,23 +63,35 @@ const HomePage: React.FC = () => {
         ? {
             icon: FastForward,
             title: "Continue",
-            onClick: () => navigate("/levels"),
+            onClick: () => {
+              if (!navigationEnabled) return;
+              navigate("/levels");
+            },
           }
         : null,
       {
         icon: Trophy,
         title: "View Scores",
-        onClick: () => navigate("/scores"),
+        onClick: () => {
+          if (!navigationEnabled) return;
+          navigate("/scores");
+        },
       },
       {
         icon: BookOpen,
         title: "Instructions",
-        onClick: () => navigate("/instructions"),
+        onClick: () => {
+          if (!navigationEnabled) return;
+          navigate("/instructions");
+        },
       },
       {
         icon: Settings,
         title: "Settings",
-        onClick: () => navigate("/settings"),
+        onClick: () => {
+          if (!navigationEnabled) return;
+          navigate("/settings");
+        },
       },
     ]);
   }, [hasProgress, userId]);
@@ -99,13 +114,25 @@ const HomePage: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 p-8 relative overflow-hidden bg-yelloww flex items-center">
+    <div className="flex-1 p-8 relative overflow-hidden bg-yelloww flex items-center bg-cover bg-center bg-no-repeat" style={{backgroundImage: 'url("/images/background-4.png")'}}>
       <CircuitLines />
       <div className="max-w-md mx-auto relative z-10">
-        <div className="flex  items-center space-x-2">
-          <AnimatedLogo className="" />
+        
+        <div className="flex flex-col lg:flex-row  items-center space-x-2 -mt-20 md:mb-[30%]">
+          {/* Show AnimatedLogo only on desktop */}
+          <span className="hidden lg:block">
+            <AnimatedLogo className="" />
+          </span>
           <GlowingTitle>
-             Food Safety and Quality Management
+            <span
+              className="text-yellow-400 font-black text-3xl md:text-5xl text-center mt-4 md:mt-0 "
+              style={{
+                textShadow:
+                  '0 2px 4px #000, 0 6px 20px rgba(0,0,0,0.19), 2px 2px 0 #e11d48, 4px 4px 0 #fbbf24',
+              }}
+            >
+              Food Safety and <br /> Quality Management
+            </span>
           </GlowingTitle>
         </div>
 
