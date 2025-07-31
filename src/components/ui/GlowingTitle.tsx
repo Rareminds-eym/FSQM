@@ -8,9 +8,9 @@ interface GlowingTitleProps {
 const GlowingTitle: React.FC<GlowingTitleProps> = ({ children, className = '' }) => {
   return (
     <div className={`relative ${className}`}>
-      <h1 className="text-xl md:text-3xl  font-bold text-transparent bg-clip-text 
+      <h1 className="text-2xl md:text-3xl mb-[15%] md:mb-0 font-bold text-transparent bg-clip-text 
         bg-gradient-to-r from-black via-black to-black
-        animate-pulse relative z-10">
+        relative z-10">
         {children}
       </h1>
       

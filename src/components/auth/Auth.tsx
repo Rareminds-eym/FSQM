@@ -415,7 +415,7 @@ const Auth: React.FC = () => {
           <AuthToggle isLogin={isLogin} onToggle={() => setIsLogin(!isLogin)} />
 
           {/* Debug buttons - remove these in production */}
-          <div className="flex gap-1 justify-center flex-wrap">
+          {/* <div className="flex gap-1 justify-center flex-wrap">
             <button
               type="button"
               onClick={handleDebugTest}
@@ -451,7 +451,7 @@ const Auth: React.FC = () => {
             >
               Debug Form Submit
             </button>
-          </div>
+          </div> */}
         </div>
       </div>
     </div>
