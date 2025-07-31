@@ -18,7 +18,7 @@ const AuthHeader: React.FC<AuthHeaderProps> = ({ isLogin }) => (
       </h2>
       {!isLogin && (
         <p className="text-black/60">
-          Start your manufacturing excellence adventure
+        
         </p>
       )}
     </div>
