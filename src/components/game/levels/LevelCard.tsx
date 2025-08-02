@@ -59,11 +59,11 @@ const LevelCard: React.FC<LevelCardProps> = ({ level }) => {
             <div className="relative">
               {isUnlocked ? (
                 <>
-                   <Icon className={`w-24 h-24 transition-colors duration-300
+                   {/* <Icon className={`w-24 h-24 transition-colors duration-300
                     ${isCompleted 
                       ? 'text-white group-hover:text-gray-100' 
                       : 'text-gray-200 group-hover:text-white'
-                    }`} /> 
+                    }`} />  */}
                   <div
                     className="absolute inset-0 bg-white/20 blur-xl rounded-full
                     transition-colors duration-300"

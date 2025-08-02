@@ -113,19 +113,29 @@ const GamePage: React.FC = () => {
 
   useEffect(() => {
     try {
-      if (levelId) setScenario(getScenario);
-      if (scenario == null || scenario == undefined) return;
-      const relevantQuestions_ = scenario.questions.filter((q) => q.isRelevant);
-      setRelevantQuestions(relevantQuestions_);
-      const irrelevantQuestions_ = scenario.questions.filter(
-        (q) => q.isRelevant == false
-      );
-      setIrrelevantQuestions(irrelevantQuestions_);
+      if (levelId) {
+        // Get the updated scenario based on levelId
+        const updatedScenario = getScenario;
+        setScenario(updatedScenario);
+        
+        // Only proceed if we have a valid scenario
+        if (updatedScenario == null || updatedScenario == undefined) return;
+        
+        const relevantQuestions_ = updatedScenario.questions.filter((q) => q.isRelevant);
+        setRelevantQuestions(relevantQuestions_);
+        const irrelevantQuestions_ = updatedScenario.questions.filter(
+          (q) => q.isRelevant == false
+        );
+        setIrrelevantQuestions(irrelevantQuestions_);
+        
+        // Log to verify different scenarios are loaded
+        console.log("Loaded scenario for level:", levelId, updatedScenario.title);
+      }
     } catch (error) {
       console.error("Error fetching scenario:", error);
       navigate("/levels");
     }
-  }, [_gameLevelId, navigate, scenarios]);
+  }, [_gameLevelId, navigate, scenarios, levelId, getScenario]);
 
   const handleSelectQuestion = useCallback(
     (question: DiagnosticQuestion) => {
@@ -182,6 +192,7 @@ const GamePage: React.FC = () => {
     setTimeOut(false);
     const nextLevel = Number(levelId) + 1;
 
+    // Reset all game state
     setGameState({
       answeredQuestions: [],
       showResolution: true,
@@ -191,8 +202,14 @@ const GamePage: React.FC = () => {
       score: 100,
       accuracy: 100,
     });
+    
+    // Reset scenario-specific state
+    setScenario(null);
+    setRelevantQuestions(undefined);
+    setIrrelevantQuestions(undefined);
 
     if (scenarios?.some((s) => s.id === nextLevel)) {
+      // Navigate to next level with replace:true to ensure the URL is updated
       navigate(`/game/${nextLevel}`, { replace: true });
     } else {
       navigate("/levels", { replace: true });
@@ -424,12 +441,13 @@ const GamePage: React.FC = () => {
                   {scenario.title}
                 </GlowingTitle>
                 <TypewriterText
+                  key={`description-${scenario.id}`}
                   text={scenario.description}
                   className="text-lg text-yellow-900 font-medium mx-auto max-w-3xl"
                 />
               </div>
 
-              <GameIllustration img={scenario.img} />
+              {/* <GameIllustration img={scenario.img} /> */}
 
               <div className="bg-yellow-100/70 backdrop-blur-md rounded-xl p-6 border border-yellow-600/30 shadow-lg">
                 <DiagnosticPhase

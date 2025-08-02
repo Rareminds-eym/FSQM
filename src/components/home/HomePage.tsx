@@ -118,7 +118,7 @@ const HomePage: React.FC = () => {
       <CircuitLines />
       <div className="max-w-md mx-auto relative z-10">
         
-        <div className="flex flex-col lg:flex-row  items-center space-x-2 -mt-20 md:mb-[30%]">
+        <div className="flex flex-col lg:flex-row  items-center space-x-2 -mt-20 md:mb-[10%]">
           {/* Show AnimatedLogo only on desktop */}
           <span className="hidden lg:block">
             <AnimatedLogo className="" />
@@ -131,7 +131,9 @@ const HomePage: React.FC = () => {
                   '0 2px 4px #000, 0 6px 20px rgba(0,0,0,0.19), 2px 2px 0 #e11d48, 4px 4px 0 #fbbf24',
               }}
             >
-              Food Safety and <br /> Quality Management
+              <span className="hidden md:inline">Food Safety</span>
+              <span className="hidden md:block">and Quality Management</span>
+              <span className="md:hidden">Food Safety and Quality Management</span>
             </span>
           </GlowingTitle>
         </div>

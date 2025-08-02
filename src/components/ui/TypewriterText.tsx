@@ -13,6 +13,12 @@ const TypewriterText: React.FC<TypewriterTextProps> = ({
 }) => {
   const [displayText, setDisplayText] = useState('');
   const [currentIndex, setCurrentIndex] = useState(0);
+  
+  // Reset state when text prop changes
+  useEffect(() => {
+    setDisplayText('');
+    setCurrentIndex(0);
+  }, [text]);
 
   useEffect(() => {
     if (currentIndex < text.length) {
