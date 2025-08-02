@@ -16,7 +16,7 @@ const InputField: React.FC<InputFieldProps> = ({ label, ...props }) => (
       shadow-lg  rounded-xl border-2 border-yellow-200
          placeholder-black/50
         focus:border-blue-500 focus:ring-1 focus:ring-blue-500
-        text-white transition-all duration-300"
+        text-black transition-all duration-300"
     />
   </div>
 );

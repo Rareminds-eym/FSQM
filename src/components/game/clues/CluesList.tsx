@@ -25,16 +25,16 @@ const CluesList: React.FC<CluesListProps> = ({ levelId }) => {
     <div className="relative">
       <button
         onClick={() => setIsVisible(!isVisible)}
-        className={`p-3 rounded-full transition-all duration-300 ${
+        className={`p-3 rounded-lg transition-all duration-300 ${
           isVisible 
-            ? "bg-gradient-to-b from-yellow-300 via-yellow-400 to-yellow-500 z-0 shadow-xl "
-            : 'bg-yellow-400 shadow-md  text-red-600 hover:bg-slate-700/50 hover:border-yellow-500/50'
+            ? 'bg-yellow-700/60 border border-yellow-800/70 text-yellow-950'
+            : 'bg-yellow-600/60 border border-yellow-700/60 text-yellow-900 hover:bg-yellow-700/70 hover:border-yellow-800/80'
         }`}
       >
         <Lightbulb className={`w-5 h-5 ${isVisible ? 'animate-pulse' : ''}`} />
         {unlockedClues.length > 0 && (
-          <div className="absolute -top-2 -right-2 w-5 h-5 bg-yellow-500 
-            rounded-full text-xs text-black font-medium
+          <div className="absolute -top-2 -right-2 w-5 h-5 bg-yellow-800 
+            rounded-full text-xs text-yellow-100 font-bold
             flex items-center justify-center">
             {unlockedClues.length}
           </div>
@@ -49,10 +49,10 @@ const CluesList: React.FC<CluesListProps> = ({ levelId }) => {
             exit={{ opacity: 0, y: -20, scale: 0.95 }}
             transition={{ duration: 0.2 }}
             className="absolute top-full right-0 mt-2 w-72 p-4
-              bg-slate-800/90 backdrop-blur-sm border border-yellow-500/20
+              bg-gradient-to-b from-yellow-400 to-yellow-500 backdrop-blur-sm border border-yellow-600/60
               rounded-lg z-50 shadow-xl"
           >
-            <h3 className="text-yellow-400 font-medium mb-4 flex items-center gap-2">
+            <h3 className="text-yellow-900 font-bold mb-4 flex items-center gap-2">
               Click to Unlock Clues!
             </h3>
             <ul className="space-y-3">

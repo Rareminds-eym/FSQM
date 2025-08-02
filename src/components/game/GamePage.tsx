@@ -1,15 +1,19 @@
-import { supabase } from "../../lib/supabase";
 import { AnimatePresence } from "framer-motion";
 import React, { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useRecoilState, useRecoilValue } from "recoil";
+import CircuitLines from "../ui/animations/CircuitLines";
 import {
   fetchGameProgress,
   fetchUserDetails,
   fetchUserStats,
   saveGameProgress,
   uploadToLeaderboard,
+  convertProgressToGameState,
+  saveGameCompletion,
+  updateLeaderboardFromProgress,
 } from "../../composables/gameProgress";
+import { useAuth } from "../home/AuthContext";
 import { useGameProgress } from "../../context/GameProgressContext";
 import {
   gameLevelId,
@@ -17,7 +21,6 @@ import {
   gameScenarios,
   getScenarioById,
 } from "../../data/recoilState";
-
 import { DiagnosticQuestion, DiagnosticScenario } from "../../types/game";
 import TypewriterText from "../ui/TypewriterText";
 import GameIllustration from "./GameIllustration";
@@ -25,6 +28,7 @@ import GameNavbar from "./GameNavbar";
 import { DiagnosticPhase } from "./diagnostic";
 import { ConfirmationModal, ErrorAnimation, SuccessModal } from "./feedback";
 import TimeOutModal from "./feedback/TimeOutModal";
+import { GlowingTitle } from "../ui";
 
 const GamePage: React.FC = () => {
   const navigate = useNavigate();
@@ -50,7 +54,6 @@ const GamePage: React.FC = () => {
   const totalPoints = 100;
   const totalTime = 180;
   const [isLoading, setIsLoading] = useState(true);
-  const [currentUser, setCurrentUser] = useState<any>(null);
 
   const [gameState, setGameState] = useState({
     answeredQuestions: [] as string[],
@@ -62,26 +65,43 @@ const GamePage: React.FC = () => {
     accuracy: 0,
   });
 
+  // Get authenticated user from AuthContext
+  const { user, isAuthenticated } = useAuth();
+
   const uploadLB = async () => {
     try {
-      if (currentUser) {
-        const user = await fetchUserDetails(currentUser.id);
-        const data = await fetchUserStats(currentUser.id);
-        if (data) {
-          console.log(data?.totalAccuracy, data?.completedLevels);
-          uploadToLeaderboard(
-            currentUser.id,
-            user?.username,
-            data?.totalScore,
-            data?.totalAccuracy / data?.completedLevels,
-            data?.completedLevels
-          );
-        }
+      if (!user || !isAuthenticated) {
+        console.log("User not authenticated - skipping leaderboard upload");
+        return;
+      }
+      
+      // Update leaderboard with current user's progress
+      const result = await updateLeaderboardFromProgress(user.id);
+      if (result.success) {
+        console.log("Leaderboard updated successfully");
+      } else {
+        console.error("Error updating leaderboard:", result.error);
       }
     } catch (error) {
-      console.error(" Error uploading to leaderboard:", error);
+      console.error("Error uploading to leaderboard:", error);
     }
   };
+
+  // Hide profile menu when component mounts
+  useEffect(() => {
+    const profileElement = document.querySelector('.fixed.top-4.right-4.z-50') as HTMLElement;
+    if (profileElement) {
+      profileElement.style.display = 'none';
+    }
+    
+    // Show profile menu again when component unmounts
+    return () => {
+      const profileElement = document.querySelector('.fixed.top-4.right-4.z-50') as HTMLElement;
+      if (profileElement) {
+        profileElement.style.display = '';
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const validateLevel = async () => {
@@ -90,13 +110,9 @@ const GamePage: React.FC = () => {
         return;
       }
       try {
-        const { data: level, error } = await supabase
-          .from("scenarios")
-          .select("*")
-          .eq("id", levelId)
-          .single();
-
-        if (error || !level) {
+        // Validate level exists in scenarios
+        if (scenarios && !scenarios.some(s => s.id.toString() === levelId)) {
+          console.error("Level not found:", levelId);
           navigate("/404");
           return;
         }
@@ -107,7 +123,7 @@ const GamePage: React.FC = () => {
       }
     };
     validateLevel();
-  }, [levelId, navigate]);
+  }, [levelId, navigate, scenarios]);
 
   useEffect(() => {
     console.log(levelId);
@@ -118,19 +134,29 @@ const GamePage: React.FC = () => {
 
   useEffect(() => {
     try {
-      if (levelId) setScenario(getScenario);
-      if (scenario == null || scenario == undefined) return;
-      const relevantQuestions_ = scenario.questions.filter((q) => q.isRelevant);
-      setRelevantQuestions(relevantQuestions_);
-      const irrelevantQuestions_ = scenario.questions.filter(
-        (q) => q.isRelevant == false
-      );
-      setIrrelevantQuestions(irrelevantQuestions_);
+      if (levelId) {
+        // Get the updated scenario based on levelId
+        const updatedScenario = getScenario;
+        setScenario(updatedScenario);
+        
+        // Only proceed if we have a valid scenario
+        if (updatedScenario == null || updatedScenario == undefined) return;
+        
+        const relevantQuestions_ = updatedScenario.questions.filter((q) => q.isRelevant);
+        setRelevantQuestions(relevantQuestions_);
+        const irrelevantQuestions_ = updatedScenario.questions.filter(
+          (q) => q.isRelevant == false
+        );
+        setIrrelevantQuestions(irrelevantQuestions_);
+        
+        // Log to verify different scenarios are loaded
+        console.log("Loaded scenario for level:", levelId, updatedScenario.title);
+      }
     } catch (error) {
       console.error("Error fetching scenario:", error);
       navigate("/levels");
     }
-  }, [_gameLevelId, navigate, scenarios]);
+  }, [_gameLevelId, navigate, scenarios, levelId, getScenario]);
 
   const handleSelectQuestion = useCallback(
     (question: DiagnosticQuestion) => {
@@ -180,13 +206,14 @@ const GamePage: React.FC = () => {
       setShowError(true);
       setTimeout(() => setShowError(false), 2000);
     }
-  }, [pendingOption, scenario, completeLevel, auth]);
+  }, [pendingOption, scenario, completeLevel]);
 
   const handleNextLevel = useCallback(() => {
     setShowSuccess(false);
     setTimeOut(false);
     const nextLevel = Number(levelId) + 1;
 
+    // Reset all game state
     setGameState({
       answeredQuestions: [],
       showResolution: true,
@@ -196,22 +223,21 @@ const GamePage: React.FC = () => {
       score: 100,
       accuracy: 100,
     });
+    
+    // Reset scenario-specific state
+    setScenario(null);
+    setRelevantQuestions(undefined);
+    setIrrelevantQuestions(undefined);
 
     if (scenarios?.some((s) => s.id === nextLevel)) {
+      // Navigate to next level with replace:true to ensure the URL is updated
       navigate(`/game/${nextLevel}`, { replace: true });
     } else {
       navigate("/levels", { replace: true });
     }
   }, [levelId, navigate]);
 
-  // Get current user on component mount
-  useEffect(() => {
-    const getCurrentUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setCurrentUser(user);
-    };
-    getCurrentUser();
-  }, []);
+  // User authentication is now handled by the useAuth hook above
 
   useEffect(() => {
     if (
@@ -307,41 +333,62 @@ const GamePage: React.FC = () => {
     irrelevantQuestions?.length,
   ]);
 
+  // Load game progress when component mounts or user/level changes
   useEffect(() => {
-    if (currentUser && levelId) {
-      fetchGameProgress(currentUser.id, levelId)
-        .then((progress) => {
-          if (progress) {
-            // Handle the fetched progress
-            console.log("Player's progress:", progress);
-            setGameState({
-              answeredQuestions: progress.answeredQuestions,
-              showResolution: progress.showResolution,
-              selectedResolution: progress.selectedResolution,
-              completed: progress.completed,
-              timeLeft: progress.timeLeft,
-              score: progress.score,
-              accuracy: progress.accuracy,
-            });
-          } else {
-            // Handle case where no progress exists
-            console.log("No progress found.");
-            saveGameProgress(currentUser.id, gameState, levelId);
-          }
-        })
-        .catch((error) => {
-          console.error("Error:", error);
-        });
-    } else {
-      console.log("No user logged in.");
-      navigate("/");
-    }
-  }, [currentUser]);
+    const loadGameProgress = async () => {
+      if (!user || !isAuthenticated || !levelId) {
+        console.log("User not authenticated or no level ID - using local state only");
+        return;
+      }
 
+      try {
+        const progress = await fetchGameProgress(user.id, levelId);
+        if (progress) {
+          // Convert database progress to game state format
+          const gameStateFromProgress = convertProgressToGameState(progress);
+          if (gameStateFromProgress) {
+            console.log("Loaded player's progress:", progress);
+            setGameState(gameStateFromProgress);
+          }
+        } else {
+          console.log("No previous progress found for this level");
+        }
+      } catch (error) {
+        console.error("Error loading game progress:", error);
+      }
+    };
+
+    loadGameProgress();
+  }, [user, isAuthenticated, levelId]);
+
+  // Save game progress whenever game state changes
   useEffect(() => {
-    if (currentUser && levelId && scenario)
-      saveGameProgress(currentUser.id, gameState, levelId);
-  }, [gameState]);
+    const saveCurrentProgress = async () => {
+      if (!user || !isAuthenticated || !levelId || !scenario) {
+        return;
+      }
+
+      // Only save if there's meaningful progress (user has interacted with the game)
+      if (gameState.answeredQuestions.length === 0 && 
+          gameState.selectedResolution.length === 0 && 
+          gameState.timeLeft === totalTime) {
+        return;
+      }
+
+      try {
+        const result = await saveGameProgress(user.id, gameState, levelId);
+        if (!result.success) {
+          console.error("Failed to save game progress:", result.error);
+        }
+      } catch (error) {
+        console.error("Error saving game progress:", error);
+      }
+    };
+
+    // Debounce the save operation to avoid too frequent saves
+    const timeoutId = setTimeout(saveCurrentProgress, 1000);
+    return () => clearTimeout(timeoutId);
+  }, [user, isAuthenticated, levelId, scenario, gameState]);
 
   useEffect(() => {
     if (gameState.timeLeft <= 0) {
@@ -412,46 +459,45 @@ const GamePage: React.FC = () => {
   }
   
   return (
-    <div className="flex-1 bg-yelloww">
+    <div className="flex-1 bg-gradient-to-b from-yellow-400 via-yellow-400 to-yellow-500 p-8 relative overflow-hidden">
+      {/* Add circuit lines background for visual depth */}
+      <div className="absolute inset-0 w-full h-full opacity-30">
+        <CircuitLines />
+      </div>
+      
       {scenario != null && (
         <>
           <GameNavbar
             currentLevel={scenario.id}
-            questionsAnswered={gameState.answeredQuestions.length}
-            totalQuestions={scenario.questions.length}
             accuracy={gameState.accuracy}
             playerPoints={gameState.score}
-            currentHint={
-              scenario.questions.find(
-                (q) => !gameState.answeredQuestions.includes(q.text)
-              )?.hint
-            }
             timeLeft={gameState.timeLeft}
           />
-          <div className="max-w-7xl mx-auto px-4 py-8">
-            <div className="space-y-8">
-              <div className="text-center space-y-4">
-                <h1 className="text-xl md:text-3xl font-bold text-black/70">
+          <div className="max-w-7xl mx-auto relative z-10 space-y-8">
+              <div className="text-center space-y-4 pt-4 pb-6">
+                <GlowingTitle className="text-3xl font-bold">
                   {scenario.title}
-                </h1>
+                </GlowingTitle>
                 <TypewriterText
+                  key={`description-${scenario.id}`}
                   text={scenario.description}
-                  className="text-sm md:text-lg text-black"
+                  className="text-lg text-yellow-900 font-medium mx-auto max-w-3xl"
                 />
               </div>
 
-              <GameIllustration img={scenario.img} />
+              {/* <GameIllustration img={scenario.img} /> */}
 
-              <DiagnosticPhase
-                questions={scenario.questions}
-                answeredQuestions={gameState.answeredQuestions}
-                onSelectQuestion={handleSelectQuestion}
-                resolutionQuestion={scenario.resolutionQuestion}
-                selectedResolution={gameState.selectedResolution}
-                onSelectResolution={handleResolutionAttempt}
-                showResolution={gameState.completed}
-              />
-            </div>
+              <div className="bg-yellow-100/70 backdrop-blur-md rounded-xl p-6 border border-yellow-600/30 shadow-lg">
+                <DiagnosticPhase
+                  questions={scenario.questions}
+                  answeredQuestions={gameState.answeredQuestions}
+                  onSelectQuestion={handleSelectQuestion}
+                  resolutionQuestion={scenario.resolutionQuestion}
+                  selectedResolution={gameState.selectedResolution}
+                  onSelectResolution={handleResolutionAttempt}
+                  showResolution={gameState.completed}
+                />
+              </div>
           </div>
           <ConfirmationModal
             isOpen={showConfirmation}

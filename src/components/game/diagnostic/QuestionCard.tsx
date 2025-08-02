@@ -31,12 +31,12 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      className={`w-full text-left p-2 md:p-4 border-2 rounded-2xl transition-all duration-300  ${
+      className={`w-full text-left p-4 rounded-lg transition-all duration-300 ${
         isAnswered
           ? question.isRelevant
-            ? 'bg-green-50   border-emerald-300'
-            : 'bg-red-50  border-red-300'
-          : 'bg-yellow-400/40 hover:bg-yellow-400  border border-yellow-100'
+          ? 'bg-yellow-200/80 border border-yellow-600/30 shadow'
+          : 'bg-yellow-200/80 border border-orange-400/30 shadow'
+        : 'bg-yellow-100/80 hover:bg-yellow-200/80 border border-yellow-500/30 hover:border-yellow-600/40 shadow'
       }`}
     >
       <div className="flex items-start gap-3">
@@ -50,19 +50,18 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
                 exit={{ scale: 0 }}
               >
                 {question.isRelevant ? (
-                  <CheckCircle className="w-5 h-5 text-emerald-400" />
+                  <CheckCircle className="w-5 h-5 text-green-600" />
                 ) : (
-                  <XCircle className="w-5 h-5 text-red-400" />
+                  <XCircle className="w-5 h-5 text-red-600" />
                 )}
               </motion.div>
             ) : (
-              <HelpCircle className="w-5 h-5 text-black" />
+              <HelpCircle className="w-5 h-5 text-yellow-800" />
             )}
           </AnimatePresence>
         </div>
-
         <div>
-          <p className="text-black text-sm md:text-lg">{question.text}</p>
+          <p className="text-yellow-900 font-medium">{question.text}</p>
           {isAnswered && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
@@ -70,12 +69,12 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
               className="mt-2"
             >
               <p className={`text-sm font-medium ${
-                question.isRelevant ? 'text-emerald-400' : 'text-red-400'
+                question.isRelevant ? 'text-green-700' : 'text-red-700'
               }`}>
                 Answer: {question.answer}
               </p>
               {!question.isRelevant && question.explanation && (
-                <p className="text-sm text-red-300 mt-1">
+                <p className="text-sm text-orange-800/90 mt-1">
                   Note: {question.explanation}
                 </p>
               )}

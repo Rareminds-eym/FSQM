@@ -18,10 +18,13 @@ export interface ResolutionOption {
 
 export interface Level {
   difficulty: string;
-  id: number;
+  id: number | string;
   title: string;
   symptoms: string;
   img: string;
+  isEnabled?: boolean;
+  accessType?: "public" | "restricted" | "disabled";
+  requiresSpecialPermission?: boolean;
 }
 
 export interface DiagnosticScenario {
