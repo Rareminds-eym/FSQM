@@ -17,7 +17,7 @@ const QuestionArea: React.FC<QuestionAreaProps> = ({
   if (!question) return null;
 
   return (
-    <div className="bg-slate-800/50 backdrop-blur-sm rounded-lg p-6 border border-slate-700">
+    <div className="bg-blue-900/90 backdrop-blur-sm rounded-lg p-6 border border-blue-700/50">
       <div className="mb-6">
         <div className="text-slate-400 mb-2">
           Question {currentQuestion} of {totalQuestions}

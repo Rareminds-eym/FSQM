@@ -1,8 +1,8 @@
-import { supabase } from "../../lib/supabase";
 import { AnimatePresence } from "framer-motion";
 import React, { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useRecoilState, useRecoilValue } from "recoil";
+import CircuitLines from "../ui/animations/CircuitLines";
 import {
   fetchGameProgress,
   fetchUserDetails,
@@ -17,7 +17,6 @@ import {
   gameScenarios,
   getScenarioById,
 } from "../../data/recoilState";
-
 import { DiagnosticQuestion, DiagnosticScenario } from "../../types/game";
 import TypewriterText from "../ui/TypewriterText";
 import GameIllustration from "./GameIllustration";
@@ -25,6 +24,7 @@ import GameNavbar from "./GameNavbar";
 import { DiagnosticPhase } from "./diagnostic";
 import { ConfirmationModal, ErrorAnimation, SuccessModal } from "./feedback";
 import TimeOutModal from "./feedback/TimeOutModal";
+import { GlowingTitle } from "../ui";
 
 const GamePage: React.FC = () => {
   const navigate = useNavigate();
@@ -50,7 +50,6 @@ const GamePage: React.FC = () => {
   const totalPoints = 100;
   const totalTime = 180;
   const [isLoading, setIsLoading] = useState(true);
-  const [currentUser, setCurrentUser] = useState<any>(null);
 
   const [gameState, setGameState] = useState({
     answeredQuestions: [] as string[],
@@ -64,24 +63,28 @@ const GamePage: React.FC = () => {
 
   const uploadLB = async () => {
     try {
-      if (currentUser) {
-        const user = await fetchUserDetails(currentUser.id);
-        const data = await fetchUserStats(currentUser.id);
-        if (data) {
-          console.log(data?.totalAccuracy, data?.completedLevels);
-          uploadToLeaderboard(
-            currentUser.id,
-            user?.username,
-            data?.totalScore,
-            data?.totalAccuracy / data?.completedLevels,
-            data?.completedLevels
-          );
-        }
-      }
+      // TODO: Implement Supabase authentication and leaderboard upload
+      console.log("Leaderboard upload functionality needs to be implemented with Supabase");
     } catch (error) {
       console.error(" Error uploading to leaderboard:", error);
     }
   };
+
+  // Hide profile menu when component mounts
+  useEffect(() => {
+    const profileElement = document.querySelector('.fixed.top-4.right-4.z-50') as HTMLElement;
+    if (profileElement) {
+      profileElement.style.display = 'none';
+    }
+    
+    // Show profile menu again when component unmounts
+    return () => {
+      const profileElement = document.querySelector('.fixed.top-4.right-4.z-50') as HTMLElement;
+      if (profileElement) {
+        profileElement.style.display = '';
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const validateLevel = async () => {
@@ -90,16 +93,8 @@ const GamePage: React.FC = () => {
         return;
       }
       try {
-        const { data: level, error } = await supabase
-          .from("scenarios")
-          .select("*")
-          .eq("id", levelId)
-          .single();
-
-        if (error || !level) {
-          navigate("/404");
-          return;
-        }
+        // TODO: Implement Supabase level validation
+        // For now, just set loading to false
         setIsLoading(false);
       } catch (error) {
         console.error("Error validating level:", error);
@@ -180,7 +175,7 @@ const GamePage: React.FC = () => {
       setShowError(true);
       setTimeout(() => setShowError(false), 2000);
     }
-  }, [pendingOption, scenario, completeLevel, auth]);
+  }, [pendingOption, scenario, completeLevel]);
 
   const handleNextLevel = useCallback(() => {
     setShowSuccess(false);
@@ -204,14 +199,8 @@ const GamePage: React.FC = () => {
     }
   }, [levelId, navigate]);
 
-  // Get current user on component mount
-  useEffect(() => {
-    const getCurrentUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setCurrentUser(user);
-    };
-    getCurrentUser();
-  }, []);
+  // TODO: Replace with Supabase user authentication
+  const user = null; // Placeholder for Supabase user
 
   useEffect(() => {
     if (
@@ -308,8 +297,9 @@ const GamePage: React.FC = () => {
   ]);
 
   useEffect(() => {
-    if (currentUser && levelId) {
-      fetchGameProgress(currentUser.id, levelId)
+    // TODO: Implement Supabase user authentication and game progress fetching
+    if (user != null && levelId) {
+      fetchGameProgress(user.uid, levelId)
         .then((progress) => {
           if (progress) {
             // Handle the fetched progress
@@ -326,21 +316,23 @@ const GamePage: React.FC = () => {
           } else {
             // Handle case where no progress exists
             console.log("No progress found.");
-            saveGameProgress(currentUser.id, gameState, levelId);
+            saveGameProgress(user.uid, gameState, levelId);
           }
         })
         .catch((error) => {
           console.error("Error:", error);
         });
     } else {
-      console.log("No user logged in.");
-      navigate("/");
+      console.log("No user logged in - using local state only");
+      // For now, continue without authentication
     }
-  }, [currentUser]);
+  }, [levelId]);
 
   useEffect(() => {
-    if (currentUser && levelId && scenario)
-      saveGameProgress(currentUser.id, gameState, levelId);
+    // TODO: Implement Supabase game progress saving
+    if (user && levelId && scenario) {
+      saveGameProgress(user.uid, gameState, levelId);
+    }
   }, [gameState]);
 
   useEffect(() => {
@@ -412,46 +404,44 @@ const GamePage: React.FC = () => {
   }
   
   return (
-    <div className="flex-1 bg-yelloww">
+    <div className="flex-1 bg-gradient-to-b from-yellow-400 via-yellow-400 to-yellow-500 p-8 relative overflow-hidden">
+      {/* Add circuit lines background for visual depth */}
+      <div className="absolute inset-0 w-full h-full opacity-30">
+        <CircuitLines />
+      </div>
+      
       {scenario != null && (
         <>
           <GameNavbar
             currentLevel={scenario.id}
-            questionsAnswered={gameState.answeredQuestions.length}
-            totalQuestions={scenario.questions.length}
             accuracy={gameState.accuracy}
             playerPoints={gameState.score}
-            currentHint={
-              scenario.questions.find(
-                (q) => !gameState.answeredQuestions.includes(q.text)
-              )?.hint
-            }
             timeLeft={gameState.timeLeft}
           />
-          <div className="max-w-7xl mx-auto px-4 py-8">
-            <div className="space-y-8">
-              <div className="text-center space-y-4">
-                <h1 className="text-xl md:text-3xl font-bold text-black/70">
+          <div className="max-w-7xl mx-auto relative z-10 space-y-8">
+              <div className="text-center space-y-4 pt-4 pb-6">
+                <GlowingTitle className="text-3xl font-bold">
                   {scenario.title}
-                </h1>
+                </GlowingTitle>
                 <TypewriterText
                   text={scenario.description}
-                  className="text-sm md:text-lg text-black"
+                  className="text-lg text-yellow-900 font-medium mx-auto max-w-3xl"
                 />
               </div>
 
               <GameIllustration img={scenario.img} />
 
-              <DiagnosticPhase
-                questions={scenario.questions}
-                answeredQuestions={gameState.answeredQuestions}
-                onSelectQuestion={handleSelectQuestion}
-                resolutionQuestion={scenario.resolutionQuestion}
-                selectedResolution={gameState.selectedResolution}
-                onSelectResolution={handleResolutionAttempt}
-                showResolution={gameState.completed}
-              />
-            </div>
+              <div className="bg-yellow-100/70 backdrop-blur-md rounded-xl p-6 border border-yellow-600/30 shadow-lg">
+                <DiagnosticPhase
+                  questions={scenario.questions}
+                  answeredQuestions={gameState.answeredQuestions}
+                  onSelectQuestion={handleSelectQuestion}
+                  resolutionQuestion={scenario.resolutionQuestion}
+                  selectedResolution={gameState.selectedResolution}
+                  onSelectResolution={handleResolutionAttempt}
+                  showResolution={gameState.completed}
+                />
+              </div>
           </div>
           <ConfirmationModal
             isOpen={showConfirmation}

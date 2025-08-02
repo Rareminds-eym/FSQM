@@ -1,9 +1,7 @@
-import { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { CheckCircle, XCircle } from 'lucide-react';
 import React from 'react';
 import { ResolutionOption } from '../../../types/game';
-import { useSound } from '../../../hooks/useSound';  
 
 interface ResolutionPhaseProps {
   question: string;
@@ -11,7 +9,6 @@ interface ResolutionPhaseProps {
   selectedOption?: string[];
   onSelectOption: (optionId: string) => void;
   enabled: boolean;
-  showResult: boolean;
 }
 
 const ResolutionPhase: React.FC<ResolutionPhaseProps> = ({
@@ -19,63 +16,49 @@ const ResolutionPhase: React.FC<ResolutionPhaseProps> = ({
   options,
   selectedOption,
   onSelectOption,
-  enabled,
-  showResult
+  enabled
 }) => {
-  
-  const { playSuccess, playError } = useSound();
-
-  // Handle option selection
-  const handleOptionSelect = (optionId: string, isCorrect: boolean) => {
-    if (isCorrect) {
-      playSuccess(); 
-    } else {
-      playError();
-    }
-    onSelectOption(optionId);  
-  };
-
   return (
-    <div className="bg-gray-50 p-2 md:p-6 rounded-3xl border-4 border-gray-200 mt-10 shadow-xl">
-      <h3 className="text-lg font-medium text-black mb-3">Resolution</h3>
+    <>
+      <h3 className="text-xl font-semibold text-yellow-900 mb-6">
+        Resolution
+      </h3>
       
-      <p className="text-sm md:text-lg text-black/50 mb-3 md:mb-6">{question}</p>
+      <p className="text-lg text-yellow-900 mb-6">{question}</p>
       
       <div className="grid gap-4">
         {options.map((option) => {
           const isSelected = selectedOption?.includes(option.id);
-          const showResultForOption = selectedOption?.includes(option.id);
+          const showResult = selectedOption?.includes(option.id);
           
           return (
             <motion.button
               key={option.id}
-              onClick={() => !showResult && handleOptionSelect(option.id, option.isCorrect)}
+              onClick={() => !showResult && onSelectOption(option.id)}
               disabled={enabled}
               whileHover={!showResult ? { scale: 1.02 } : {}}
               whileTap={!showResult ? { scale: 0.98 } : {}}
-              className={`p-4 rounded-2xl border transition-all duration-300 text-sm md:text-lg ${
-                showResultForOption
+              className={`p-4 rounded-lg border transition-all duration-300 ${
+                showResult
                   ? option.isCorrect
-                    ? 'text-sm md:text-lg bg-emerald-900/20 border-emerald-500/30'
-                    : isSelected
-                      ? 'bg-red-50 border-red-300'
-                      : 'bg-yellow-400/40 hover:bg-yellow-400 border border-yellow-200'
-                  : 'bg-yellow-400/40 hover:bg-yellow-400 border border-yellow-100'
+                  ? 'bg-yellow-200/80 border-green-500/30 shadow'
+                  : isSelected
+                    ? 'bg-yellow-200/80 border-orange-500/30 shadow'
+                    : 'bg-yellow-100/80 border-yellow-500/30 shadow'
+                : 'bg-yellow-100/80 hover:bg-yellow-200/80 border-yellow-500/30 hover:border-yellow-600/40 shadow'
               }`}
             >
               <div className="flex items-center justify-between">
-                <span className="text-black">{option.text}</span>
-                
-                {showResultForOption && (option.isCorrect || isSelected) && (
-                  <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}>
-                    {option.isCorrect ? (
-                      <>
-                        {playSuccess()} &&
-                        <CheckCircle className="w-5 h-5 text-emerald-400" />
-                      </>
-                    ) : (
-                      <XCircle className="w-5 h-5 text-red-400" />
-                    )}
+                <span className="text-yellow-900 font-medium">{option.text}</span>
+                {showResult && (option.isCorrect || isSelected) && (
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                  >
+                    {option.isCorrect
+                      ? <CheckCircle className="w-5 h-5 text-green-600" />
+                      : <XCircle className="w-5 h-5 text-red-600" />
+                    }
                   </motion.div>
                 )}
               </div>
@@ -83,7 +66,7 @@ const ResolutionPhase: React.FC<ResolutionPhaseProps> = ({
           );
         })}
       </div>
-    </div>
+    </>
   );
 };
 

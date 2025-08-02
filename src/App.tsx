@@ -45,10 +45,14 @@ const AppContent: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        console.log("App.tsx: Fetching scenarios...");
         const scenarios = await fetchAllLevels();
+        console.log("App.tsx: Scenarios fetched:", scenarios);
+        console.log("App.tsx: Scenarios length:", scenarios?.length);
         _setGameScenarios(scenarios);
+        console.log("App.tsx: Scenarios set in global state");
       } catch (error) {
-        console.error("Error fetching levels:", error);
+        console.error("App.tsx: Error fetching levels:", error);
       }
     };
 

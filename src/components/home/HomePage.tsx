@@ -16,7 +16,7 @@ import MenuItem from "./MenuItem";
 
 const HomePage: React.FC = () => {
   // Toggle this to enable/disable navigation for menu items
-  const navigationEnabled = false;
+  const navigationEnabled = true;
   const navigate = useNavigate();
   const [hasProgress, setHasProgress] = useState(false);
   const [menuItems, setMenuItems] = useState<any>([]);

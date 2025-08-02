@@ -41,37 +41,37 @@ const InstructionsPage: React.FC = () => {
             <InstructionCard
               icon={Target}
               title="Objective"
-              description="Diagnose and resolve EV battery issues by analyzing symptoms, asking relevant questions, and selecting the correct resolution."
+              description="Diagnose and resolve food safety issues by analyzing incidents, asking relevant questions, and selecting the correct resolution."
             />
 
             <InstructionCard
               icon={Brain}
               title="Diagnostic Process"
-              description="Each level presents a unique battery issue. Examine the symptoms, gather clues, and systematically investigate the problem through targeted questions."
+              description="Each level presents a unique food safety scenario. Examine the situation, gather clues, and systematically investigate the problem through targeted questions."
             />
 
             <InstructionCard
               icon={Battery}
               title="Question Selection"
-              description="Choose questions carefully - some are relevant to the diagnosis while others may be misleading. Your accuracy affects your final score."
+              description="Choose questions carefully - some are relevant to the food safety investigation while others may be misleading. Your accuracy affects your final score."
             />
 
             <InstructionCard
               icon={Shield}
               title="Resolution"
-              description="After gathering sufficient information, select the most appropriate solution from the available options to resolve the battery issue."
+              description="After gathering sufficient information, select the most appropriate solution from the available options to resolve the food safety issue."
             />
 
             <InstructionCard
               icon={Award}
               title="Progress"
-              description="Complete levels to unlock new, more challenging scenarios. Each successful diagnosis improves your expertise and unlocks advanced cases."
+              description="Complete levels to unlock new, more challenging food safety scenarios. Each successful investigation improves your expertise and unlocks advanced cases."
             />
 
             <InstructionCard
               icon={Zap}
               title="Tips"
-              description="Pay attention to clues, use hints when stuck, and learn from incorrect diagnoses to improve your troubleshooting skills."
+              description="Pay attention to clues, use hints when stuck, and learn from incorrect investigations to improve your food safety management skills."
             />
           </div>
 
@@ -83,7 +83,7 @@ const InstructionsPage: React.FC = () => {
               border-2 border-yellow-100 backdrop-blur-sm  hover:border-yellow-500/50
               transform hover:-translate-y-1 transition-all duration-300"
             >
-              Start Diagnosing
+              Start Investigating
             </button>
           </div>
         </div>

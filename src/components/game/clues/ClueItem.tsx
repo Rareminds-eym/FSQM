@@ -33,7 +33,7 @@ const ClueItem: React.FC<ClueItemProps> = ({
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: index * 0.1 }}
       className={`relative group ${
-        isUnlocked ? 'text-yellow-300' : 'text-slate-400'
+        isUnlocked ? 'text-yellow-900' : 'text-yellow-700'
       }`}
     >
       <div className="flex items-start gap-3">
@@ -42,8 +42,8 @@ const ClueItem: React.FC<ClueItemProps> = ({
           disabled={isUnlocked}
           className={`p-1.5 rounded-lg transition-all duration-300 ${
             isUnlocked
-              ? 'bg-yellow-500/20 text-yellow-400'
-              : 'bg-slate-700/50 text-slate-400 hover:bg-yellow-500/20 hover:text-yellow-400'
+              ? 'bg-yellow-700/40 text-yellow-900'
+              : 'bg-yellow-600/30 text-yellow-800 hover:bg-yellow-700/40 hover:text-yellow-900'
           }`}
         >
           {isUnlocked ? (
@@ -62,7 +62,7 @@ const ClueItem: React.FC<ClueItemProps> = ({
               {clue}
             </motion.p>
           ) : (
-            <div className="h-4 bg-slate-700/50 rounded animate-pulse" />
+            <div className="h-4 bg-yellow-600/30 rounded animate-pulse" />
           )}
         </div>
       </div>

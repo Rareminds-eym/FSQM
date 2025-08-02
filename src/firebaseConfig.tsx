@@ -1,20 +1,17 @@
-// Import the functions you need from the SDKs you need
-// import { initializeApp } from 'firebase/app';
-// import { getAuth } from 'firebase/auth';
-// import { getFirestore } from 'firebase/firestore'; // Import getFirestore for Firestore
-// Your web app's Firebase configuration
-const firebaseConfig = {
-  apiKey: "AIzaSyB5O3d93y18-Ftqm806FRH39pxO31edHqw",
-  authDomain: "fapp-game.firebaseapp.com",
-  projectId: "fapp-game",
-  storageBucket: "fapp-game.firebasestorage.app",
-  messagingSenderId: "590920199423",
-  appId: "1:590920199423:web:4aa3e96a574e56ae85f0ca",
-  measurementId: "G-Z0Y15Z0J62"
-};
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+// TODO: Replace with Supabase configuration
+// This file contains placeholder exports to prevent import errors
+// while transitioning from Firebase to Supabase
 
-// Initialize Auth and Firestore with the modular SDK
-export const auth = getAuth(app); // Get Auth instance
-export const db = getFirestore(app); // Get Firestore instance
+// Placeholder auth object to prevent import errors
+export const auth = {
+  currentUser: null,
+  // Add other auth methods as needed for compatibility
+};
+
+// Placeholder db object to prevent import errors  
+export const db = {
+  // Add database methods as needed for compatibility
+};
+
+// Note: Remove this file once Supabase is fully implemented
+// and update all imports to use Supabase client instead

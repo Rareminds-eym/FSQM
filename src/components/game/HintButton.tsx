@@ -21,7 +21,7 @@ const HintButton: React.FC<HintButtonProps> = ({ hint, onUse }) => {
         disabled={showHint}
         className={`p-3 rounded-full ${
           showHint 
-            ? 'bg-slate-700 text-slate-400 cursor-not-allowed'
+            ? 'bg-cyan-600/50 text-slate-400 cursor-not-allowed'
             : 'bg-yellow-500 hover:bg-yellow-400 text-yellow-900'
         } transition-all duration-300`}
       >
@@ -30,7 +30,7 @@ const HintButton: React.FC<HintButtonProps> = ({ hint, onUse }) => {
 
       {showHint && (
         <div className="absolute top-full right-0 mt-2 w-64 p-4
-          bg-yellow-500/10 backdrop-blur-sm border border-yellow-500/20
+          bg-blue-900/10 backdrop-blur-sm border border-yellow-500/20
           rounded-lg text-yellow-300 text-sm">
           {hint}
         </div>

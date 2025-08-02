@@ -10,9 +10,9 @@ const GameIllustration: React.FC<GameIllustrationProps> = ({ img }) => {
 
     return (
       <div className="relative transform hover:scale-105 transition-all duration-500">
-        <img src={img} />
+        <img src={img} alt="Game Illustration" className="rounded-lg shadow-md" />
         <div
-          className="absolute inset-0 bg-gradient-to-r from-yellow-500/30 to-yellow-500/20
+          className="absolute inset-0 bg-gradient-to-r from-yellow-400/30 to-orange-400/20
           rounded-full blur-xl animate-pulse"
         />
       </div>
@@ -21,12 +21,11 @@ const GameIllustration: React.FC<GameIllustrationProps> = ({ img }) => {
 
   return (
     <div
-       className=" backdrop-blur-sm p-6 bg-gradient-to-b from-yellow-200 to-yellow-300 z-0 rounded-2xl flex items-center 
-       justify-center relative overflow-hidden border-2 border-yellow-100 "
+      className="bg-yellow-100/70 backdrop-blur-sm rounded-xl p-6 border border-yellow-600/30
+      flex items-center justify-center relative overflow-hidden shadow-lg"
     >
-      <CircuitLines />
-      <div className="relative z-10 w-32 h-32 md:w-64 md:h-64">{getIllustration()}</div>
-      
+      <CircuitLines className="opacity-30" />
+      <div className="relative z-10 w-64 h-64">{getIllustration()}</div>
     </div>
   );
 };

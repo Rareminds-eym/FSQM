@@ -27,14 +27,14 @@ const DiagnosticPhase: React.FC<DiagnosticPhaseProps> = ({
   showResolution
 }) => {
   return (
-    <div className="space-y-6 ">
+    <>
       {/* Diagnostic Questions */}
-      <motion.div
+      <motion.div 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-gray-50 p-2 md:p-6  rounded-3xl border-4 border-gray-200 shadow-2xl"
+        className="mb-6"
       >
-        <h3 className="text-lg font-medium text-black mb-4">
+        <h3 className="text-lg font-semibold text-yellow-900 mb-4">
           Diagnostic Questions
         </h3>
         <div className="grid gap-4">
@@ -50,7 +50,7 @@ const DiagnosticPhase: React.FC<DiagnosticPhaseProps> = ({
       </motion.div>
 
       {/* Resolution Question */}
-      <motion.div
+      <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
       >
@@ -60,12 +60,9 @@ const DiagnosticPhase: React.FC<DiagnosticPhaseProps> = ({
           selectedOption={selectedResolution}
           onSelectOption={onSelectResolution}
           enabled={showResolution}
-          
         />
       </motion.div>
-
-
-    </div>
+    </>
   );
 };
 
