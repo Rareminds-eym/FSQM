@@ -9,7 +9,11 @@ import {
   fetchUserStats,
   saveGameProgress,
   uploadToLeaderboard,
+  convertProgressToGameState,
+  saveGameCompletion,
+  updateLeaderboardFromProgress,
 } from "../../composables/gameProgress";
+import { useAuth } from "../home/AuthContext";
 import { useGameProgress } from "../../context/GameProgressContext";
 import {
   gameLevelId,
@@ -61,12 +65,25 @@ const GamePage: React.FC = () => {
     accuracy: 0,
   });
 
+  // Get authenticated user from AuthContext
+  const { user, isAuthenticated } = useAuth();
+
   const uploadLB = async () => {
     try {
-      // TODO: Implement Supabase authentication and leaderboard upload
-      console.log("Leaderboard upload functionality needs to be implemented with Supabase");
+      if (!user || !isAuthenticated) {
+        console.log("User not authenticated - skipping leaderboard upload");
+        return;
+      }
+      
+      // Update leaderboard with current user's progress
+      const result = await updateLeaderboardFromProgress(user.id);
+      if (result.success) {
+        console.log("Leaderboard updated successfully");
+      } else {
+        console.error("Error updating leaderboard:", result.error);
+      }
     } catch (error) {
-      console.error(" Error uploading to leaderboard:", error);
+      console.error("Error uploading to leaderboard:", error);
     }
   };
 
@@ -93,8 +110,12 @@ const GamePage: React.FC = () => {
         return;
       }
       try {
-        // TODO: Implement Supabase level validation
-        // For now, just set loading to false
+        // Validate level exists in scenarios
+        if (scenarios && !scenarios.some(s => s.id.toString() === levelId)) {
+          console.error("Level not found:", levelId);
+          navigate("/404");
+          return;
+        }
         setIsLoading(false);
       } catch (error) {
         console.error("Error validating level:", error);
@@ -102,7 +123,7 @@ const GamePage: React.FC = () => {
       }
     };
     validateLevel();
-  }, [levelId, navigate]);
+  }, [levelId, navigate, scenarios]);
 
   useEffect(() => {
     console.log(levelId);
@@ -216,8 +237,7 @@ const GamePage: React.FC = () => {
     }
   }, [levelId, navigate]);
 
-  // TODO: Replace with Supabase user authentication
-  const user = null; // Placeholder for Supabase user
+  // User authentication is now handled by the useAuth hook above
 
   useEffect(() => {
     if (
@@ -313,44 +333,62 @@ const GamePage: React.FC = () => {
     irrelevantQuestions?.length,
   ]);
 
+  // Load game progress when component mounts or user/level changes
   useEffect(() => {
-    // TODO: Implement Supabase user authentication and game progress fetching
-    if (user != null && levelId) {
-      fetchGameProgress(user.uid, levelId)
-        .then((progress) => {
-          if (progress) {
-            // Handle the fetched progress
-            console.log("Player's progress:", progress);
-            setGameState({
-              answeredQuestions: progress.answeredQuestions,
-              showResolution: progress.showResolution,
-              selectedResolution: progress.selectedResolution,
-              completed: progress.completed,
-              timeLeft: progress.timeLeft,
-              score: progress.score,
-              accuracy: progress.accuracy,
-            });
-          } else {
-            // Handle case where no progress exists
-            console.log("No progress found.");
-            saveGameProgress(user.uid, gameState, levelId);
-          }
-        })
-        .catch((error) => {
-          console.error("Error:", error);
-        });
-    } else {
-      console.log("No user logged in - using local state only");
-      // For now, continue without authentication
-    }
-  }, [levelId]);
+    const loadGameProgress = async () => {
+      if (!user || !isAuthenticated || !levelId) {
+        console.log("User not authenticated or no level ID - using local state only");
+        return;
+      }
 
+      try {
+        const progress = await fetchGameProgress(user.id, levelId);
+        if (progress) {
+          // Convert database progress to game state format
+          const gameStateFromProgress = convertProgressToGameState(progress);
+          if (gameStateFromProgress) {
+            console.log("Loaded player's progress:", progress);
+            setGameState(gameStateFromProgress);
+          }
+        } else {
+          console.log("No previous progress found for this level");
+        }
+      } catch (error) {
+        console.error("Error loading game progress:", error);
+      }
+    };
+
+    loadGameProgress();
+  }, [user, isAuthenticated, levelId]);
+
+  // Save game progress whenever game state changes
   useEffect(() => {
-    // TODO: Implement Supabase game progress saving
-    if (user && levelId && scenario) {
-      saveGameProgress(user.uid, gameState, levelId);
-    }
-  }, [gameState]);
+    const saveCurrentProgress = async () => {
+      if (!user || !isAuthenticated || !levelId || !scenario) {
+        return;
+      }
+
+      // Only save if there's meaningful progress (user has interacted with the game)
+      if (gameState.answeredQuestions.length === 0 && 
+          gameState.selectedResolution.length === 0 && 
+          gameState.timeLeft === totalTime) {
+        return;
+      }
+
+      try {
+        const result = await saveGameProgress(user.id, gameState, levelId);
+        if (!result.success) {
+          console.error("Failed to save game progress:", result.error);
+        }
+      } catch (error) {
+        console.error("Error saving game progress:", error);
+      }
+    };
+
+    // Debounce the save operation to avoid too frequent saves
+    const timeoutId = setTimeout(saveCurrentProgress, 1000);
+    return () => clearTimeout(timeoutId);
+  }, [user, isAuthenticated, levelId, scenario, gameState]);
 
   useEffect(() => {
     if (gameState.timeLeft <= 0) {
