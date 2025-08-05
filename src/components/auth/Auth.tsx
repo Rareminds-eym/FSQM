@@ -376,7 +376,7 @@ const Auth: React.FC = () => {
   return (
     <div
       className="flex-1 bg-yelloww
-      flex flex-col items-center justify-center p-4 relative overflow-hidden"
+      flex flex-col items-center justify-center p-4 relative overflow-visible"
     >
       <CircuitLines />
     

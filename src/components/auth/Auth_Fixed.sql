@@ -174,6 +174,26 @@ CREATE POLICY "progress_manage_policy" ON public.player_progress
   USING (auth.uid() = user_id)
   WITH CHECK (auth.uid() = user_id);
 
+-- Alternative solution: Modify RLS policy to allow leaderboard access
+-- Drop the existing restrictive policy
+DROP POLICY IF EXISTS "progress_manage_policy" ON public.player_progress;
+DROP POLICY IF EXISTS "Allow users to manage own progress" ON public.player_progress;
+
+-- Create separate policies for different operations
+-- Allow users to manage their own progress (INSERT, UPDATE, DELETE)
+CREATE POLICY "progress_own_data_policy" ON public.player_progress
+  FOR ALL TO authenticated
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
+-- Allow all authenticated users to READ all progress data (for leaderboard)
+CREATE POLICY "progress_leaderboard_read_policy" ON public.player_progress
+  FOR SELECT TO authenticated
+  USING (true);
+
+-- Comment: This allows everyone to read all player progress for leaderboard display
+-- while still restricting write operations to the data owner only
+
 -- =============================================
 -- GRANTS AND PERMISSIONS - ENHANCED
 -- =============================================
@@ -194,6 +214,7 @@ GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO authenticated;
 
 -- Grant permissions on functions
 GRANT EXECUTE ON FUNCTION enforce_team_size() TO authenticated;
+GRANT EXECUTE ON FUNCTION get_all_player_scores() TO authenticated;
 
 -- =============================================
 -- DEBUGGING FUNCTIONS
@@ -300,6 +321,30 @@ BEGIN
   
   RETURN result;
 END;
+$$;
+
+-- Add this function to allow fetching all player scores for leaderboard
+CREATE OR REPLACE FUNCTION get_all_player_scores()
+RETURNS TABLE (
+  user_id uuid,
+  score integer,
+  completed boolean,
+  level_id text,
+  accuracy numeric,
+  updated_at timestamptz
+)
+LANGUAGE sql
+SECURITY DEFINER
+AS $$
+  SELECT 
+    p.user_id,
+    p.score,
+    p.completed,
+    p.level_id,
+    p.accuracy,
+    p.updated_at
+  FROM player_progress p
+  ORDER BY p.updated_at DESC;
 $$;
 
 -- =============================================
