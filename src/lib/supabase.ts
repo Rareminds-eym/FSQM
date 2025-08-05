@@ -19,3 +19,31 @@ export interface Team {
   session_id?: string;
   join_code?: string;
 }
+
+export interface GameUnlock {
+  id: number;
+  created_at: string;
+  is_lock: boolean;
+}
+
+// Function to check if the game is locked
+export const checkGameLockStatus = async (): Promise<boolean> => {
+  try {
+    const { data, error } = await supabase
+      .from('game_unlock')
+      .select('is_lock')
+      .single();
+
+    if (error) {
+      console.error('Error checking game lock status:', error);
+      // Default to locked if there's an error
+      return true;
+    }
+
+    return data?.is_lock || false;
+  } catch (error) {
+    console.error('Error checking game lock status:', error);
+    // Default to locked if there's an error
+    return true;
+  }
+};

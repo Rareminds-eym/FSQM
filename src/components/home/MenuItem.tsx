@@ -33,21 +33,22 @@ const MenuItem: React.FC<MenuItemProps> = ({
 
   return (
     <button
-      onClick={onClick}
+      onClick={disabled ? undefined : onClick}
       disabled={disabled}
-      onMouseDown={() => setIsPressed(true)}
+      onMouseDown={() => !disabled && setIsPressed(true)}
       onMouseUp={() => setIsPressed(false)}
       onMouseLeave={() => {
         setIsPressed(false);
         setIsHovered(false);
       }}
-      onMouseEnter={() => setIsHovered(true)}
+      onMouseEnter={() => !disabled && setIsHovered(true)}
       className={`relative flex w-full py-4 px-6 rounded-3xl backdrop-blur-sm group
-        transform hover:-translate-y-1 hover:translate-x-2 transition-all duration-300    
+        transform transition-all duration-300    
         ${border || `border-yellow-300 shadow-xl shadow-yellow-600/30 border-2`}
         ${animate}  
-        ${isPressed ? 'scale-85' : ''}
-        ${isHovered ? 'animate-smokeRise' : ''}  
+        ${disabled ? 'opacity-60 cursor-not-allowed' : 'hover:-translate-y-1 hover:translate-x-2'}
+        ${isPressed && !disabled ? 'scale-85' : ''}
+        ${isHovered && !disabled ? 'animate-smokeRise' : ''}  
       `}
     >
       {/* Show Lottie animation only for the first item */}
@@ -57,7 +58,7 @@ const MenuItem: React.FC<MenuItemProps> = ({
           className={`transform group-hover:scale-110 transition-all duration-300 group-hover:text-black ${iconColor || 'text-fuchsia-500' } z-10`}
         >
         { 
-          index === 0 ?
+          index === 0 && !disabled ?
           (
             <div className="transform group-hover:scale-110 transition-all duration-300 z-10">
               <Lottie loop animationData={play} play className="w-8 h-8" />
