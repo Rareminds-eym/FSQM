@@ -9,41 +9,100 @@ import { motion } from "framer-motion";
 import {Winner,Cracker} from "./LottieAnimation";
 import AnimatedTitle from "../ui/AnimatedTitle";
 
+interface PlayerProgressScore {
+  user_id: string;
+  username: string;
+  totalScore: number;
+  completedLevels: number;
+  averageScore: number;
+}
+
 const ScoresPage: React.FC = () => {
   const navigate = useNavigate();
-  const [playerScores, setPlayerScores] = useState<PlayerScore[]>([]);
+  const [playerScores, setPlayerScores] = useState<PlayerProgressScore[]>([]);
   const [userStats, setUserStats] = useState<any>(null);
   const [userId, setUserId] = useState<string | null>(null);
 
   const fetchLeaderboard = async () => {
     try {
-      const { data: scores, error } = await supabase
-        .from("leaderboard")
-        .select("username, totalScore, accuracy, completedLevels")
-        .order("totalScore", { ascending: false })
-        .limit(10);
+      // Fetch scores from player_progress table and calculate totals per user
+      const { data: progressData, error } = await supabase
+        .from("player_progress")
+        .select("user_id, score, completed")
+        .eq("completed", true); // Only count completed levels
 
       if (error) {
-        console.error("Error fetching leaderboard:", error);
+        console.error("Error fetching player progress:", error);
         return;
       }
 
-      setPlayerScores(scores || []);
+      if (!progressData || progressData.length === 0) {
+        console.log("No player progress data found");
+        setPlayerScores([]);
+        return;
+      }
+
+      // Group scores by user_id and calculate totals
+      const userScores: { [key: string]: { totalScore: number; completedLevels: number } } = {};
+      
+      progressData.forEach((progress) => {
+        const userId = progress.user_id;
+        if (!userScores[userId]) {
+          userScores[userId] = { totalScore: 0, completedLevels: 0 };
+        }
+        userScores[userId].totalScore += progress.score || 0;
+        userScores[userId].completedLevels += 1;
+      });
+
+      // Get user details for usernames
+      const userIds = Object.keys(userScores);
+      const userPromises = userIds.map(async (userId) => {
+        // Try to get username from teams table first
+        const { data: teamData } = await supabase
+          .from("teams")
+          .select("full_name")
+          .eq("user_id", userId)
+          .single();
+
+        // If no team data, try to get email from auth.users (this might need RLS adjustment)
+        let username = teamData?.full_name;
+        
+        if (!username) {
+          // Fallback to a generic username
+          username = `Player_${userId.slice(0, 8)}`;
+        }
+
+        return {
+          user_id: userId,
+          username,
+          totalScore: userScores[userId].totalScore,
+          completedLevels: userScores[userId].completedLevels,
+          averageScore: userScores[userId].totalScore / userScores[userId].completedLevels
+        };
+      });
+
+      const usersWithScores = await Promise.all(userPromises);
+
+      // Sort by total score - show ALL users, not just top 10
+      const allScores = usersWithScores
+        .sort((a, b) => b.totalScore - a.totalScore);
+
+      setPlayerScores(allScores);
     } catch (error) {
       console.error("Error fetching leaderboard:", error);
     }
   };
 
   const listenToLeaderboard = () => {
-    // Set up real-time subscription for leaderboard
+    // Set up real-time subscription for player_progress
     const channel = supabase
-      .channel("leaderboard-changes")
+      .channel("player-progress-changes")
       .on(
         "postgres_changes",
         {
           event: "*",
           schema: "public",
-          table: "leaderboard",
+          table: "player_progress",
         },
         () => {
           // Refetch leaderboard when changes occur
@@ -322,14 +381,14 @@ const ScoresPage: React.FC = () => {
                 <Star className="w-5 h-5 text-yellow-400" />
               </div>
               <h2 className=" text-lg md:text-xl font-semibold text-black/60">
-                Global Leaderboard
+                Global Leaderboard (Top 10)
               </h2>
             </div>
 
             <div className="space-y-4">
               {playerScores.map((score, index) => (
                 <div
-                  key={index}
+                  key={score.user_id}
                   className="flex items-center justify-between p-4
                     bg-lime-400/20 hover:bg-lime-300/60  border-2 rounded-3xl border-lime-400/60"
                 >
@@ -349,22 +408,25 @@ const ScoresPage: React.FC = () => {
                     <div>
                       <p className="text-black/60 text-xs md:text-lg font-medium">{score.username}</p>
                       <p className="text-xs md:text-sm text-slate-500">
-                        Accuracy: {score.accuracy.toFixed(1)}%
+                        Average Score: {score.averageScore.toFixed(1)}
                       </p>
                     </div>
                   </div>
                   <div className="text-right">
                     <p className="text-blue-400 text-xs md:text-lg font-bold">
-                      {score.totalScore.toFixed(2)} (
-                      {(score.totalScore / score.completedLevels).toFixed(2)}{" "}
-                      Avg)
+                      {score.totalScore.toFixed(2)}
                     </p>
                     <p className="text-sm text-slate-500">
-                      {score.completedLevels} levels
+                      {score.completedLevels} levels completed
                     </p>
                   </div>
                 </div>
               ))}
+              {playerScores.length === 0 && (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">No scores available yet. Complete some levels to see the leaderboard!</p>
+                </div>
+              )}
             </div>
             
           </div>

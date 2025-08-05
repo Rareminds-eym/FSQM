@@ -3,6 +3,7 @@ import { FormData } from "../../types/auth";
 import { getTeamByJoinCode } from "../../services/teamsService";
 import { toast } from "react-toastify";
 import InputField from "../ui/InputField";
+import CollegeCodeDropdown from "../ui/CollegeCodeDropdown";
 import AuthButton from "./AuthButton";
 
 interface AuthFormProps {
@@ -95,15 +96,17 @@ const AuthForm: React.FC<AuthFormProps> = ({
 
         {/* College Code (only for team leader or prefilled for member) */}
         {(formData.isTeamLeader || (prefilledTeam && !formData.isTeamLeader)) && (
-          <InputField
-            label="College Code"
-            name="collegeCode"
-            type="text"
-            placeholder="Enter college code"
-            value={formData.isTeamLeader ? formData.collegeCode : (prefilledTeam ? prefilledTeam.collegeCode : '')}
-            onChange={formData.isTeamLeader ? handleInputChange : undefined}
-            disabled={!formData.isTeamLeader && prefilledTeam ? true : false}
-          />
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-black/60 mb-1">College Code</label>
+            <div className="relative">
+              <CollegeCodeDropdown
+                value={formData.isTeamLeader ? formData.collegeCode : (prefilledTeam ? prefilledTeam.collegeCode : '')}
+                onChange={(value) => setFormData({ ...formData, collegeCode: value })}
+                disabled={!formData.isTeamLeader && prefilledTeam ? true : false}
+                placeholder={formData.isTeamLeader ? "Select or type college code" : "College code from team"}
+              />
+            </div>
+          </div>
         )}
 
         {/* Phone Number */}
