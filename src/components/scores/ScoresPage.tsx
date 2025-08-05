@@ -15,6 +15,8 @@ interface PlayerProgressScore {
   totalScore: number;
   completedLevels: number;
   averageScore: number;
+  averageAccuracy: number;
+  totalAccuracy: number;
 }
 
 const ScoresPage: React.FC = () => {
@@ -25,10 +27,10 @@ const ScoresPage: React.FC = () => {
 
   const fetchLeaderboard = async () => {
     try {
-      // Fetch scores from player_progress table and calculate totals per user
+      // Fetch scores from player_progress table with all required columns
       const { data: progressData, error } = await supabase
         .from("player_progress")
-        .select("user_id, score, completed")
+        .select("user_id, score, accuracy, level_id, completed")
         .eq("completed", true); // Only count completed levels
 
       if (error) {
@@ -43,15 +45,27 @@ const ScoresPage: React.FC = () => {
       }
 
       // Group scores by user_id and calculate totals
-      const userScores: { [key: string]: { totalScore: number; completedLevels: number } } = {};
+      const userScores: { [key: string]: { 
+        totalScore: number; 
+        completedLevels: number; 
+        totalAccuracy: number;
+        levels: string[];
+      } } = {};
       
       progressData.forEach((progress) => {
         const userId = progress.user_id;
         if (!userScores[userId]) {
-          userScores[userId] = { totalScore: 0, completedLevels: 0 };
+          userScores[userId] = { 
+            totalScore: 0, 
+            completedLevels: 0, 
+            totalAccuracy: 0,
+            levels: []
+          };
         }
         userScores[userId].totalScore += progress.score || 0;
+        userScores[userId].totalAccuracy += progress.accuracy || 0;
         userScores[userId].completedLevels += 1;
+        userScores[userId].levels.push(progress.level_id);
       });
 
       // Get user details for usernames
@@ -72,12 +86,15 @@ const ScoresPage: React.FC = () => {
           username = `Player_${userId.slice(0, 8)}`;
         }
 
+        const userScore = userScores[userId];
         return {
           user_id: userId,
           username,
-          totalScore: userScores[userId].totalScore,
-          completedLevels: userScores[userId].completedLevels,
-          averageScore: userScores[userId].totalScore / userScores[userId].completedLevels
+          totalScore: userScore.totalScore,
+          completedLevels: userScore.completedLevels,
+          averageScore: userScore.totalScore / userScore.completedLevels,
+          totalAccuracy: userScore.totalAccuracy,
+          averageAccuracy: userScore.totalAccuracy / userScore.completedLevels
         };
       });
 

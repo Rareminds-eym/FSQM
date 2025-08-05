@@ -1,4 +1,4 @@
-import { BookOpen, FastForward, Play, Settings, Trophy } from "lucide-react";
+import { BookOpen, FastForward, Play, Settings, Trophy, Lock } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -8,11 +8,12 @@ import {
 } from "../../composables/gameProgress";
 import { useGameProgress } from "../../context/GameProgressContext";
 import { useAuth } from "./AuthContext";
-import { ConfirmationModal } from "../game/feedback";
+import { ConfirmationModal, GameLockedModal } from "../game/feedback";
 import AnimatedLogo from "../ui/AnimatedLogo";
 import CircuitLines from "../ui/animations/CircuitLines";
 import GlowingTitle from "../ui/GlowingTitle";
 import MenuItem from "./MenuItem";
+import { checkGameLockStatus } from "../../lib/supabase";
 
 const HomePage: React.FC = () => {
   // Toggle this to enable/disable navigation for menu items
@@ -21,6 +22,8 @@ const HomePage: React.FC = () => {
   const [hasProgress, setHasProgress] = useState(false);
   const [menuItems, setMenuItems] = useState<any>([]);
   const [userId, setUserId] = useState<string | null>(null);
+  const [isGameLocked, setIsGameLocked] = useState(false);
+  const [showGameLockedModal, setShowGameLockedModal] = useState(false);
   const { resetCompleteLevel } = useGameProgress();
   const [showConfirmation, setShowConfirmation] = useState(false);
   const { user } = useAuth();
@@ -48,16 +51,21 @@ const HomePage: React.FC = () => {
   useEffect(() => {
     setMenuItems([
       {
-        icon: Play,
+        icon: isGameLocked ? Lock : Play,
         title: "Start Game",
         onClick: () => {
           if (!navigationEnabled) return;
+          if (isGameLocked) {
+            setShowGameLockedModal(true);
+            return;
+          }
           if (hasProgress) {
             setShowConfirmation(true);
           } else {
             navigate("/levels");
           }
         },
+        disabled: false, // Remove disabled state so users can click to see the modal
       },
       hasProgress
         ? {
@@ -94,7 +102,16 @@ const HomePage: React.FC = () => {
         },
       },
     ]);
-  }, [hasProgress, userId]);
+  }, [hasProgress, userId, isGameLocked]);
+
+  useEffect(() => {
+    const fetchGameLockStatus = async () => {
+      const isLocked = await checkGameLockStatus();
+      setIsGameLocked(isLocked);
+    };
+
+    fetchGameLockStatus();
+  }, []);
 
   const handleConfirmResolution = () => {
     deleteLeaderboardRecord(userId || "")
@@ -148,6 +165,7 @@ const HomePage: React.FC = () => {
                 icon={item.icon}
                 title={item.title}
                 onClick={item.onClick}
+                disabled={item.disabled}
                 bg={index === 0 && 'bg-gradient-to-b  from-red-300 via-red-400 to-red-500 z-0  shadow-lg shadow-red-300 rounded-[1.3rem] border-2 border-red-600' }
                 text = {index === 0 && 'text-white text-xl font-semibold mt-1 animate-pulse '}
                 iconColor = {index === 0 && ' bg-red-100 rounded-full  animate-pulse'}
@@ -164,6 +182,10 @@ const HomePage: React.FC = () => {
           setShowConfirmation(false);
         }}
         text={"This will delete all your progress."}
+      />
+      <GameLockedModal
+        isOpen={showGameLockedModal}
+        onClose={() => setShowGameLockedModal(false)}
       />
     </div>
   );
