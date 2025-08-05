@@ -89,7 +89,7 @@ const LevelCard: React.FC<LevelCardProps> = ({ level }) => {
                 className={`inline-flex px-3 py-1 rounded-full 
                 ${isUnlocked ? "bg-yellow-400/10 border border-yellow-200/30" : "bg-gray-400/10 border border-gray-200/30"}`}
               >
-                <span className={`text-sm font-medium ${isUnlocked ? "text-yellow-100" : "text-gray-400"}`}>
+                <span className={`text-sm font-medium ${isUnlocked ? "text-yellow-100" : "text-black"}`}>
                   {level.difficulty}
                 </span>
               </div>
@@ -98,7 +98,7 @@ const LevelCard: React.FC<LevelCardProps> = ({ level }) => {
             {isUnlocked ? (
               <div
                 className="absolute bottom-4 left-1/2 -translate-x-1/2 
-                text-yellow-100 text-sm opacity-60"
+                text-black font-bold text-xs"
               >
                 {isCompleted
                   ? "Completed - Click to replay"
@@ -107,7 +107,7 @@ const LevelCard: React.FC<LevelCardProps> = ({ level }) => {
             ) : (
               <div
                 className="absolute bottom-4 left-1/2 -translate-x-1/2 
-                text-gray-400 text-sm"
+                text-black text-xs font-bold"
               >
                 Complete previous level to unlock
               </div>
@@ -138,7 +138,7 @@ const LevelCard: React.FC<LevelCardProps> = ({ level }) => {
                 ${
                   isUnlocked
                   ? 'bg-gradient-to-r from-yellow-600 to-yellow-700 hover:from-yellow-500 hover:to-yellow-600 text-white' 
-                  : 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                  : 'bg-gray-400 text-gray-700 cursor-not-allowed'
                 }`}
             >
               {isCompleted
