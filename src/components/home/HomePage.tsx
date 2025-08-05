@@ -69,10 +69,14 @@ const HomePage: React.FC = () => {
       },
       hasProgress
         ? {
-            icon: FastForward,
+            icon: isGameLocked ? Lock : FastForward,
             title: "Continue",
             onClick: () => {
               if (!navigationEnabled) return;
+              if (isGameLocked) {
+                setShowGameLockedModal(true);
+                return;
+              }
               navigate("/levels");
             },
           }
@@ -86,10 +90,14 @@ const HomePage: React.FC = () => {
         },
       },
       {
-        icon: BookOpen,
+        icon: isGameLocked ? Lock : BookOpen,
         title: "Instructions",
         onClick: () => {
           if (!navigationEnabled) return;
+          if (isGameLocked) {
+            setShowGameLockedModal(true);
+            return;
+          }
           navigate("/instructions");
         },
       },
