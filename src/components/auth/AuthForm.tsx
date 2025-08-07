@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { FormData } from "../../types/auth";
 import { getTeamByJoinCode } from "../../services/teamsService";
 import { toast } from "react-toastify";
@@ -8,18 +8,24 @@ import AuthButton from "./AuthButton";
 
 interface AuthFormProps {
   isLogin: boolean;
+  isResetPassword?: boolean;
   formData: FormData;
   setFormData: (data: FormData) => void;
   onSubmit: (e: React.FormEvent) => void;
   loading?: boolean;
+  onShowResetPassword?: () => void;
+  onBackToLogin?: () => void;
 }
 
 const AuthForm: React.FC<AuthFormProps> = ({
   isLogin,
+  isResetPassword = false,
   formData,
   setFormData,
   onSubmit,
   loading = false,
+  onShowResetPassword,
+  onBackToLogin,
 }) => {
   const [prefilledTeam, setPrefilledTeam] = useState<{ teamName: string; collegeCode: string } | null>(null);
   const [isLoadingTeam, setIsLoadingTeam] = useState(false);
@@ -54,6 +60,36 @@ const AuthForm: React.FC<AuthFormProps> = ({
     }
   };
 
+  // Password Reset Form
+  if (isResetPassword) {
+    return (
+      <form onSubmit={onSubmit} className="space-y-6">
+        <InputField
+          label="Email Address"
+          name="email"
+          type="email"
+          placeholder="Enter your email to reset password"
+          value={formData.email}
+          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+        />
+
+        <AuthButton type="submit" isLogin={false} disabled={loading}>
+          {loading ? "Sending..." : "Send Reset Email"}
+        </AuthButton>
+
+        <div className="text-center">
+          <button
+            type="button"
+            onClick={onBackToLogin}
+            className="text-sm text-blue-600 hover:text-blue-800 underline"
+          >
+            Back to Login
+          </button>
+        </div>
+      </form>
+    );
+  }
+
   if (isLogin) {
     return (
       <form onSubmit={onSubmit} className="space-y-6">
@@ -74,6 +110,16 @@ const AuthForm: React.FC<AuthFormProps> = ({
           value={formData.password}
           onChange={(e) => setFormData({ ...formData, password: e.target.value })}
         />
+
+        <div className="text-right">
+          <button
+            type="button"
+            onClick={onShowResetPassword}
+            className="text-sm text-blue-600 hover:text-blue-800 underline"
+          >
+            Forgot Password?
+          </button>
+        </div>
 
         <AuthButton type="submit" isLogin={isLogin} disabled={loading} />
       </form>

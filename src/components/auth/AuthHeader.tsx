@@ -3,9 +3,10 @@ import AnimatedLogo from '../ui/AnimatedLogo';
 
 interface AuthHeaderProps {
   isLogin: boolean;
+  isResetPassword?: boolean;
 }
 
-const AuthHeader: React.FC<AuthHeaderProps> = ({ isLogin }) => (
+const AuthHeader: React.FC<AuthHeaderProps> = ({ isLogin, isResetPassword = false }) => (
   <>
     <div className="flex justify-center mb-8">
       <AnimatedLogo className="w-40 md:w-60" />
@@ -14,11 +15,16 @@ const AuthHeader: React.FC<AuthHeaderProps> = ({ isLogin }) => (
       <h2 className="text-3xl font-bold mb-1
         bg-gradient-to-r from-black via-black/60 to-black
         bg-clip-text text-transparent animate-pulse">
-        {isLogin ? 'Welcome Back' : 'Join FSQM'}
+        {isResetPassword ? 'Reset Password' : isLogin ? 'Welcome Back' : 'Join FSQM'}
       </h2>
-      {!isLogin && (
+      {!isLogin && !isResetPassword && (
         <p className="text-black/60">
         
+        </p>
+      )}
+      {isResetPassword && (
+        <p className="text-black/60">
+          Enter your email to receive a password reset link
         </p>
       )}
     </div>
