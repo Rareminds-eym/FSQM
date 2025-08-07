@@ -5,6 +5,7 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useRecoilState } from "recoil";
 import { Auth } from "./components/auth";
+import ResetPasswordPage from "./components/auth/ResetPasswordPage";
 import NotFoundPage from "./components/error/NotFoundPage";
 import GamePage from "./components/game/GamePage";
 import LevelsPage from "./components/game/levels/LevelsPage";
@@ -28,6 +29,9 @@ const AppContent: React.FC = () => {
 
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
 
+  // Check if we're on the password reset page
+  const isPasswordResetPage = window.location.pathname === '/reset-password';
+  
   // Effect to handle online/offline events
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
@@ -82,24 +86,70 @@ const AppContent: React.FC = () => {
           pauseOnHover
           theme="dark"
         />
-        {isAuthenticated && (
-          <div className="fixed top-4 right-4 z-50">
-            <ProfileMenu />
-          </div>
-        )}
-        {isAuthenticated ? (
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/levels" element={<LevelsPage />} />
-            <Route path="/game/:levelId" element={<GamePage />} />
-            <Route path="/instructions" element={<InstructionsPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
-            <Route path="/scores" element={<ScoresPage />} />
-            <Route path="*" element={<NotFoundPage />} />
-          </Routes>
-        ) : (
-          <Auth />
-        )}
+        
+        {/* Routes - Reset password takes priority over authentication status */}
+        <Routes>
+          {/* Password reset route - always accessible */}
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
+          
+          {/* Authenticated routes */}
+          {isAuthenticated ? (
+            <>
+              <Route path="/" element={
+                <>
+                  <div className="fixed top-4 right-4 z-50">
+                    <ProfileMenu />
+                  </div>
+                  <HomePage />
+                </>
+              } />
+              <Route path="/levels" element={
+                <>
+                  <div className="fixed top-4 right-4 z-50">
+                    <ProfileMenu />
+                  </div>
+                  <LevelsPage />
+                </>
+              } />
+              <Route path="/game/:levelId" element={
+                <>
+                  <div className="fixed top-4 right-4 z-50">
+                    <ProfileMenu />
+                  </div>
+                  <GamePage />
+                </>
+              } />
+              <Route path="/instructions" element={
+                <>
+                  <div className="fixed top-4 right-4 z-50">
+                    <ProfileMenu />
+                  </div>
+                  <InstructionsPage />
+                </>
+              } />
+              <Route path="/settings" element={
+                <>
+                  <div className="fixed top-4 right-4 z-50">
+                    <ProfileMenu />
+                  </div>
+                  <SettingsPage />
+                </>
+              } />
+              <Route path="/scores" element={
+                <>
+                  <div className="fixed top-4 right-4 z-50">
+                    <ProfileMenu />
+                  </div>
+                  <ScoresPage />
+                </>
+              } />
+              <Route path="*" element={<NotFoundPage />} />
+            </>
+          ) : (
+            /* Unauthenticated routes */
+            <Route path="*" element={<Auth />} />
+          )}
+        </Routes>
       </div>
       <div className=" bg-yelloww py-5  text-yellow-100 font-semibold flex justify-center w-full">
         Copyright © 2025 Rareminds.

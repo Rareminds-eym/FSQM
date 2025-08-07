@@ -24,6 +24,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>
   signOut: () => Promise<{ error: AuthError | null }>
   resetPassword: (email: string) => Promise<{ error: AuthError | null }>
+  updatePassword: (newPassword: string) => Promise<{ error: AuthError | null }>
   logout: () => void
 }
 
@@ -257,6 +258,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }
 
+  const updatePassword = async (newPassword: string) => {
+    try {
+      console.log('🔄 Updating password...');
+      
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      })
+      
+      if (error) {
+        console.error('❌ Password update error:', error);
+      } else {
+        console.log('✅ Password updated successfully');
+      }
+      
+      return { error }
+    } catch (error) {
+      console.error('❌ Password update exception:', error);
+      return { error: error as AuthError }
+    }
+  }
+
   const value: AuthContextType = {
     user,
     session,
@@ -266,6 +288,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     signIn,
     signOut,
     resetPassword,
+    updatePassword,
     logout
   }
 

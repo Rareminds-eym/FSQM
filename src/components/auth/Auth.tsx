@@ -15,6 +15,7 @@ import RateLimitMessage from "../ui/RateLimitMessage";
 
 const Auth: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
+  const [isResetPassword, setIsResetPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [rateLimitInfo, setRateLimitInfo] = useState<{ blocked: boolean; remainingTime: number } | null>(null);
   const [formData, setFormData] = useState<FormData>({
@@ -29,7 +30,7 @@ const Auth: React.FC = () => {
     isTeamLeader: null,
     joinCode: "",
   });
-  const { signIn, signUp, loading } = useAuth();
+  const { signIn, signUp, resetPassword, updatePassword, loading } = useAuth();
 
   const handleRateLimitExpired = () => {
     setRateLimitInfo(null);
@@ -130,7 +131,22 @@ const Auth: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      if (isLogin) {
+      if (isResetPassword) {
+        // Handle password reset
+        if (!formData.email) {
+          toast.error("Please enter your email address");
+          return;
+        }
+        
+        const { error } = await resetPassword(formData.email);
+        if (error) {
+          toast.error(error.message);
+          return;
+        }
+        toast.success("Password reset email sent! Check your inbox.");
+        setIsResetPassword(false);
+        setIsLogin(true);
+      } else if (isLogin) {
         // Handle login
         const { error } = await signIn(formData.email, formData.password);
         if (error) {
@@ -394,13 +410,19 @@ const Auth: React.FC = () => {
           isLogin ? 'max-w-md' : 'max-w-5xl'
         }`}
       >
-        <AuthHeader isLogin={isLogin} />
+        <AuthHeader isLogin={isLogin} isResetPassword={isResetPassword} />
         <AuthForm
           isLogin={isLogin}
+          isResetPassword={isResetPassword}
           formData={formData}
           setFormData={setFormData}
           onSubmit={handleSubmit}
           loading={loading || isSubmitting}
+          onShowResetPassword={() => setIsResetPassword(true)}
+          onBackToLogin={() => {
+            setIsResetPassword(false);
+            setIsLogin(true);
+          }}
         />
 
         {/* Rate Limit Message */}
@@ -412,7 +434,9 @@ const Auth: React.FC = () => {
         )}
 
         <div className="mt-6 text-center">
-          <AuthToggle isLogin={isLogin} onToggle={() => setIsLogin(!isLogin)} />
+          {!isResetPassword && (
+            <AuthToggle isLogin={isLogin} onToggle={() => setIsLogin(!isLogin)} />
+          )}
 
           {/* Debug buttons - remove these in production */}
           {/* <div className="flex gap-1 justify-center flex-wrap">
