@@ -29,6 +29,17 @@ export interface GameUnlock {
 // Function to check if the game is locked
 export const checkGameLockStatus = async (): Promise<boolean> => {
   try {
+    // First check if user has special access based on email
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (user?.email) {
+      const userEmail = user.email;
+      if (userEmail && userEmail.endsWith("@rareminds.in")) {
+        console.log('🔓 Special unlock for user:', userEmail);
+        return false;
+      }
+    }
+
     const { data, error } = await supabase
       .from('game_unlock')
       .select('is_lock')
