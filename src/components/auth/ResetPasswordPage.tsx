@@ -16,25 +16,43 @@ const ResetPasswordPage: React.FC = () => {
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
   useEffect(() => {
-    // Check if we have a hash fragment with recovery type
+    // Check both hash fragment and query parameters for production compatibility
     const hash = window.location.hash.substring(1);
-    const urlParams = new URLSearchParams(hash);
-    const type = urlParams.get('type');
+    const search = window.location.search.substring(1);
     
+    // Try hash first (local), then query parameters (production)
+    let urlParams = new URLSearchParams(hash);
+    if (!urlParams.get('type') && search) {
+      urlParams = new URLSearchParams(search);
+    }
+    
+    const type = urlParams.get('type');
+    const accessToken = urlParams.get('access_token');
+    const refreshToken = urlParams.get('refresh_token');
+    
+    // Enhanced logging for production debugging
     console.log('Reset password page loaded:', {
       type,
       isAuthenticated,
       hasUser: !!user,
       hash,
-      fullUrl: window.location.href
+      search,
+      hasAccessToken: !!accessToken,
+      hasRefreshToken: !!refreshToken,
+      fullUrl: window.location.href,
+      environment: process.env.NODE_ENV || 'development'
     });
 
     // Give some time for auth state to settle
     const timer = setTimeout(() => {
       setIsCheckingAuth(false);
       
-      // If this is not a recovery type or user is not authenticated after auth settled
-      if (type !== 'recovery' && !isAuthenticated) {
+      // More robust check for valid reset link
+      const isValidResetLink = type === 'recovery' || (accessToken && refreshToken);
+      
+      // If this is not a valid reset link and user is not authenticated after auth settled
+      if (!isValidResetLink && !isAuthenticated) {
+        console.warn('Invalid reset link detected:', { type, hasTokens: !!(accessToken && refreshToken), isAuthenticated });
         toast.error('Invalid or expired reset link');
         setTimeout(() => navigate('/'), 3000);
       }
