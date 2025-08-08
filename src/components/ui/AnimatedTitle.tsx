@@ -45,7 +45,7 @@ const AnimatedTitle: React.FC<AnimatedTitleProps> = ({ text, className = '' }) =
           <motion.span
             key={index}
             variants={child}
-            className="text-4xl font-bold inline-block"
+            className="text-2xl lg:text-4xl font-bold inline-block"
           >
             <span className="bg-black/70
               bg-clip-text text-transparent">

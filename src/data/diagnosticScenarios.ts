@@ -46,17 +46,17 @@ export const scenarios: DiagnosticScenario[] = [
       options: [
         {
           id: "a",
+          text: "Only change the packaging vendor.",
+          isCorrect: false,
+        },
+        {
+          id: "b",
           text: "Discard the lot, review storage logs, and initiate refresher training on packaging protocols.",
           isCorrect: true,
         },
         {
-          id: "b",
-          text: "Ignore the complaint as the expiry date is valid.",
-          isCorrect: false,
-        },
-        {
           id: "c",
-          text: "Only change the packaging vendor.",
+          text: "Ignore the complaint as the expiry date is valid.",
           isCorrect: false,
         },
         {
@@ -114,22 +114,22 @@ export const scenarios: DiagnosticScenario[] = [
       options: [
         {
           id: "a",
-          text: "Investigate filtration unit, discard batch, and initiate maintenance of treatment systems.",
-          isCorrect: true,
-        },
-        {
-          id: "b",
-          text: "Just tighten the caps and resell the batch.",
+          text: "Sell the batch at discounted price with a disclaimer.",
           isCorrect: false,
         },
         {
-          id: "c",
+          id: "b",
           text: "Boil the bottled water before dispatch.",
           isCorrect: false,
         },
         {
+          id: "c",
+          text: "Investigate filtration unit, discard batch, and initiate maintenance of treatment systems.",
+          isCorrect: true,
+        },
+        {
           id: "d",
-          text: "Sell the batch at discounted price with a disclaimer.",
+          text: "Just tighten the caps and resell the batch.",
           isCorrect: false,
         },
       ],
@@ -182,8 +182,8 @@ export const scenarios: DiagnosticScenario[] = [
       options: [
         {
           id: "a",
-          text: "Ensure staff handwashing SOP retraining and install sink usage logs with supervision.",
-          isCorrect: true,
+          text: "Install music systems to improve morale.",
+          isCorrect: false,
         },
         {
           id: "b",
@@ -197,8 +197,8 @@ export const scenarios: DiagnosticScenario[] = [
         },
         {
           id: "d",
-          text: "Install music systems to improve morale.",
-          isCorrect: false,
+          text: "Ensure staff handwashing SOP retraining and install sink usage logs with supervision.",
+          isCorrect: true,
         },
       ],
     },
@@ -254,17 +254,17 @@ export const scenarios: DiagnosticScenario[] = [
         },
         {
           id: "b",
-          text: "Change product size on the packaging label.",
+          text: "Reduce QA frequency for faster output.",
           isCorrect: false,
         },
         {
           id: "c",
-          text: "Ignore minor differences as acceptable variation.",
+          text: "Change product size on the packaging label.",
           isCorrect: false,
         },
         {
           id: "d",
-          text: "Reduce QA frequency for faster output.",
+          text: "Ignore minor differences as acceptable variation.",
           isCorrect: false,
         },
       ],
@@ -316,17 +316,17 @@ export const scenarios: DiagnosticScenario[] = [
       options: [
         {
           id: "a",
+          text: "Discard all handwritten records immediately.",
+          isCorrect: false,
+        },
+        {
+          id: "b",
           text: "Implement electronic batch record system and train operators on Good Documentation Practices.",
           isCorrect: true,
         },
         {
-          id: "b",
-          text: "Avoid inspections during production days.",
-          isCorrect: false,
-        },
-        {
           id: "c",
-          text: "Discard all handwritten records immediately.",
+          text: "Avoid inspections during production days.",
           isCorrect: false,
         },
         {
@@ -383,22 +383,22 @@ export const scenarios: DiagnosticScenario[] = [
       options: [
         {
           id: "a",
-          text: "Implement electronic timestamped checklists and train operators on Good Documentation Practices.",
-          isCorrect: true,
-        },
-        {
-          id: "b",
-          text: "Ignore timestamps as long as cleaning was done.",
-          isCorrect: false,
-        },
-        {
-          id: "c",
           text: "Replace the cleaning staff with new hires.",
           isCorrect: false,
         },
         {
-          id: "d",
+          id: "b",
           text: "Only conduct audits after holidays.",
+          isCorrect: false,
+        },
+        {
+          id: "c",
+          text: "Implement electronic timestamped checklists and train operators on Good Documentation Practices.",
+          isCorrect: true,
+        },
+        {
+          id: "d",
+          text: "Ignore timestamps as long as cleaning was done.",
           isCorrect: false,
         },
       ],
@@ -451,8 +451,8 @@ export const scenarios: DiagnosticScenario[] = [
       options: [
         {
           id: "a",
-          text: "Hold the batch, investigate CCP failure, retrain operators on deviation handling.",
-          isCorrect: true,
+          text: "Ignore if consumer complaints are not reported.",
+          isCorrect: false,
         },
         {
           id: "b",
@@ -466,8 +466,8 @@ export const scenarios: DiagnosticScenario[] = [
         },
         {
           id: "d",
-          text: "Ignore if consumer complaints are not reported.",
-          isCorrect: false,
+          text: "Hold the batch, investigate CCP failure, retrain operators on deviation handling.",
+          isCorrect: true,
         },
       ],
     },
@@ -518,23 +518,23 @@ export const scenarios: DiagnosticScenario[] = [
       options: [
         {
           id: "a",
-          text: "Implement electronic inventory alerts and retrain staff on FIFO and expiry check protocols.",
-          isCorrect: true,
-        },
-        {
-          id: "b",
-          text: "Discard all future vendor deliveries permanently.",
-          isCorrect: false,
-        },
-        {
-          id: "c",
           text: "Shift expiry date labels to inside the cartons.",
           isCorrect: false,
         },
         {
-          id: "d",
+          id: "b",
           text: "Ask vendor to hide expired dates next time.",
           isCorrect: false,
+        },
+        {
+          id: "c",
+          text: "Discard all future vendor deliveries permanently.",
+          isCorrect: false,
+        },
+        {
+          id: "d",
+          text: "Implement electronic inventory alerts and retrain staff on FIFO and expiry check protocols.",
+          isCorrect: true,
         },
       ],
     },
@@ -586,17 +586,17 @@ export const scenarios: DiagnosticScenario[] = [
       options: [
         {
           id: "a",
+          text: "Issue apology letter without further action.",
+          isCorrect: false,
+        },
+        {
+          id: "b",
           text: "Quarantine the batch, investigate line clearance, and revalidate allergen cleaning procedures.",
           isCorrect: true,
         },
         {
-          id: "b",
-          text: "Simply change the packaging declaration to include peanuts.",
-          isCorrect: false,
-        },
-        {
           id: "c",
-          text: "Issue apology letter without further action.",
+          text: "Simply change the packaging declaration to include peanuts.",
           isCorrect: false,
         },
         {
@@ -653,22 +653,22 @@ export const scenarios: DiagnosticScenario[] = [
       options: [
         {
           id: "a",
+          text: "Use blank templates to avoid confusion.",
+          isCorrect: false,
+        },
+        {
+          id: "b",
           text: "Return the report, mandate RCA analysis with template tools and ensure CAPA timelines.",
           isCorrect: true,
         },
         {
-          id: "b",
+          id: "c",
           text: "Accept the deviation report with assumptions.",
           isCorrect: false,
         },
         {
-          id: "c",
-          text: "Ignore root cause and proceed with product release.",
-          isCorrect: false,
-        },
-        {
           id: "d",
-          text: "Use blank templates to avoid confusion.",
+          text: "Ignore root cause and proceed with product release.",
           isCorrect: false,
         },
       ],
@@ -720,22 +720,22 @@ export const scenarios: DiagnosticScenario[] = [
       options: [
         {
           id: "a",
-          text: "Initiate full recall, audit hygiene and water quality protocols, re-train and validate microbial controls.",
-          isCorrect: true,
-        },
-        {
-          id: "b",
-          text: "Update the product label to warn consumers.",
-          isCorrect: false,
-        },
-        {
-          id: "c",
           text: "Continue sales and monitor if further complaints arise.",
           isCorrect: false,
         },
         {
-          id: "d",
+          id: "b",
           text: "Disinfect outer packaging only.",
+          isCorrect: false,
+        },
+        {
+          id: "c",
+          text: "Initiate full recall, audit hygiene and water quality protocols, re-train and validate microbial controls.",
+          isCorrect: true,
+        },
+        {
+          id: "d",
+          text: "Update the product label to warn consumers.",
           isCorrect: false,
         },
       ],
@@ -788,22 +788,22 @@ export const scenarios: DiagnosticScenario[] = [
       options: [
         {
           id: "a",
-          text: "Shut down production, revalidate metal detection systems, inspect machinery, and destroy affected batch.",
-          isCorrect: true,
-        },
-        {
-          id: "b",
           text: "Export the products to countries with relaxed norms.",
           isCorrect: false,
         },
         {
-          id: "c",
-          text: "Manually remove metal particles and repackage.",
+          id: "b",
+          text: "Keep the batch in deep freezer as a precaution.",
           isCorrect: false,
         },
         {
+          id: "c",
+          text: "Shut down production, revalidate metal detection systems, inspect machinery, and destroy affected batch.",
+          isCorrect: true,
+        },
+        {
           id: "d",
-          text: "Keep the batch in deep freezer as a precaution.",
+          text: "Manually remove metal particles and repackage.",
           isCorrect: false,
         },
       ],
@@ -856,23 +856,23 @@ export const scenarios: DiagnosticScenario[] = [
       options: [
         {
           id: "a",
-          text: "Revise CAPA, use training + visual SOPs, assign QA validation during cleaning signoff.",
-          isCorrect: true,
-        },
-        {
-          id: "b",
-          text: "Blame the auditor for excessive scrutiny.",
+          text: "Outsource cleaning to housekeeping agencies.",
           isCorrect: false,
         },
         {
-          id: "c",
+          id: "b",
           text: "Submit an excuse letter for delayed cleaning.",
           isCorrect: false,
         },
         {
-          id: "d",
-          text: "Outsource cleaning to housekeeping agencies.",
+          id: "c",
+          text: "Blame the auditor for excessive scrutiny.",
           isCorrect: false,
+        },
+        {
+          id: "d",
+          text: "Revise CAPA, use training + visual SOPs, assign QA validation during cleaning signoff.",
+          isCorrect: true,
         },
       ],
     },
@@ -924,22 +924,22 @@ export const scenarios: DiagnosticScenario[] = [
       options: [
         {
           id: "a",
+          text: "Only change the jar supplier.",
+          isCorrect: false,
+        },
+        {
+          id: "b",
           text: "Issue public recall and PR response, investigate sterilization controls and glass integrity checks.",
           isCorrect: true,
         },
         {
-          id: "b",
+          id: "c",
           text: "Block the customer on social media.",
           isCorrect: false,
         },
         {
-          id: "c",
-          text: "Increase preservatives and ignore complaints.",
-          isCorrect: false,
-        },
-        {
           id: "d",
-          text: "Only change the jar supplier.",
+          text: "Increase preservatives and ignore complaints.",
           isCorrect: false,
         },
       ],
@@ -991,22 +991,22 @@ export const scenarios: DiagnosticScenario[] = [
       options: [
         {
           id: "a",
-          text: "Escalate to senior management, retrain staff, deploy eBMR with audit trail and restrict access control.",
-          isCorrect: true,
-        },
-        {
-          id: "b",
-          text: "Accept the BMR as is and improve next time.",
-          isCorrect: false,
-        },
-        {
-          id: "c",
           text: "Fire the junior staff involved and move on.",
           isCorrect: false,
         },
         {
-          id: "d",
+          id: "b",
           text: "Photocopy entries to hide tampering.",
+          isCorrect: false,
+        },
+        {
+          id: "c",
+          text: "Escalate to senior management, retrain staff, deploy eBMR with audit trail and restrict access control.",
+          isCorrect: true,
+        },
+        {
+          id: "d",
+          text: "Accept the BMR as is and improve next time.",
           isCorrect: false,
         },
       ],
