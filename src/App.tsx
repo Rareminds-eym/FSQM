@@ -1,4 +1,4 @@
-// src/App.tsx
+// src/App.tsx - Simple version without complex PWA logic
 import React, { useEffect, useState } from "react";
 import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
@@ -26,11 +26,7 @@ const AppContent: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const { isAuthenticated } = useAuth();
   const [_gameScenarios, _setGameScenarios] = useRecoilState(gameScenarios);
-
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
-
-  // Check if we're on the password reset page
-  const isPasswordResetPage = window.location.pathname === '/reset-password';
   
   // Effect to handle online/offline events
   useEffect(() => {

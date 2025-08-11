@@ -1,0 +1,386 @@
+// src/App.tsx
+import React, { useEffect, useState } from "react";
+import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { useRecoilState } from "recoil";
+import { Auth } from "./components/auth";
+import ResetPasswordPage from "./components/auth/ResetPasswordPage";
+import NotFoundPage from "./components/error/NotFoundPage";
+import GamePage from "./components/game/GamePage";
+import LevelsPage from "./components/game/levels/LevelsPage";
+import HomePage from "./components/home/HomePage";
+import { InstructionsPage } from "./components/instructions";
+import { LoaderScreen } from "./components/loader";
+import { InstallPrompt, OfflineIndicator } from "./components/pwa";
+import { ScoresPage } from "./components/scores";
+import SettingsPage from "./components/settings/SettingsPage";
+import ProfileMenu from "./components/ui/ProfileMenu";
+import { fetchAllLevels } from "./composables/fetchLevel";
+import { AuthProvider, useAuth } from "./components/home/AuthContext";
+import { GameProgressProvider } from "./context/GameProgressContext";
+import { SettingsProvider } from "./context/SettingsContext";
+import { gameScenarios } from "./data/recoilState";
+import Offline from "./Oflline";
+
+const AppContent: React.FC = () => {
+  const [isLoading, setIsLoading] = useState(true);
+  const { isAuthenticated } = useAuth();
+  const [_gameScenarios, _setGameScenarios] = useRecoilState(gameScenarios);
+  const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
+  
+  // PWA Install Prompt state
+  const [showPWAPrompt, setShowPWAPrompt] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [installationStatus, setInstallationStatus] = useState('');
+  const [installAttempts, setInstallAttempts] = useState(0);
+  
+  // Effect to handle online/offline events and PWA install prompt
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+
+    // PWA install prompt handler
+    const handleBeforeInstallPrompt = (e: Event) => {
+      console.log('PWA: beforeinstallprompt event received');
+      console.log('PWA: Event details:', e);
+      e.preventDefault();
+      setDeferredPrompt(e);
+      
+      // Show prompt immediately when browser allows it
+      setTimeout(() => {
+        if (!sessionStorage.getItem('pwa-prompt-dismissed')) {
+          setShowPWAPrompt(true);
+          console.log('PWA: Showing install prompt immediately');
+        } else {
+          console.log('PWA: Prompt was dismissed in this session');
+        }
+      }, 1000); // Reduced delay for faster prompt
+    };
+
+    // Listen for successful app installation
+    const handleAppInstalled = (e: Event) => {
+      console.log('PWA: App was installed successfully!', e);
+      setDeferredPrompt(null);
+      setShowPWAPrompt(false);
+      // Show success message
+      setTimeout(() => {
+        alert('🎉 FSQM Training Game installed successfully! You can now find it in your apps or home screen.');
+      }, 500);
+    };
+
+    // Check if app is already installed
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+    const isInWebAppScope = window.navigator.userAgent.includes('wv');
+    
+    console.log('PWA: Is standalone app:', isStandalone);
+    console.log('PWA: Is in web app scope:', isInWebAppScope);
+    
+    if (isStandalone) {
+      console.log('PWA: App is already running as installed PWA');
+    }
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.addEventListener('appinstalled', handleAppInstalled);
+
+    // For testing - show prompt immediately and try auto-install
+    setTimeout(() => {
+      console.log('PWA: Force showing prompt for testing');
+      setShowPWAPrompt(true);
+      
+      // Attempt automatic installation if prompt is available
+      if (deferredPrompt) {
+        console.log('PWA: Attempting automatic installation...');
+        attemptAutoInstall();
+      }
+    }, 2000); // Show very quickly
+
+    // Auto-install attempt function
+    const attemptAutoInstall = async () => {
+      if (deferredPrompt) {
+        try {
+          console.log('PWA: Auto-installing...');
+          setInstallationStatus('Auto-installing app...');
+          
+          // Automatically trigger the install prompt
+          await deferredPrompt.prompt();
+          const { outcome } = await deferredPrompt.userChoice;
+          
+          if (outcome === 'accepted') {
+            console.log('PWA: Auto-installation accepted');
+            setInstallationStatus('Installation successful!');
+          } else {
+            console.log('PWA: Auto-installation declined');
+            setInstallationStatus('Installation declined by user');
+          }
+        } catch (error) {
+          console.error('PWA: Auto-installation failed:', error);
+          setInstallationStatus('Auto-installation not available');
+        }
+      }
+    };
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', handleAppInstalled);
+    };
+  }, []);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        console.log("App.tsx: Fetching scenarios...");
+        const scenarios = await fetchAllLevels();
+        console.log("App.tsx: Scenarios fetched:", scenarios);
+        console.log("App.tsx: Scenarios length:", scenarios?.length);
+        _setGameScenarios(scenarios);
+        console.log("App.tsx: Scenarios set in global state");
+      } catch (error) {
+        console.error("App.tsx: Error fetching levels:", error);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  // PWA install handlers
+  const handlePWAInstall = async () => {
+    console.log('PWA: Install button clicked');
+    console.log('PWA: Deferred prompt available:', !!deferredPrompt);
+    
+    setInstallationStatus('Installing...');
+    
+    if (deferredPrompt) {
+      try {
+        console.log('PWA: Calling prompt()...');
+        await deferredPrompt.prompt();
+        
+        console.log('PWA: Waiting for user choice...');
+        const { outcome } = await deferredPrompt.userChoice;
+        
+        console.log('PWA: User choice outcome:', outcome);
+        
+        if (outcome === 'accepted') {
+          console.log('PWA: User accepted installation');
+          setInstallationStatus('Installation started! Check your browser...');
+          // Add visual feedback
+          setTimeout(() => {
+            alert('🎉 App installation started! Check your browser or device for the app.');
+          }, 500);
+        } else {
+          console.log('PWA: User dismissed installation');
+          setInstallationStatus('Installation cancelled');
+        }
+        
+        setDeferredPrompt(null);
+      } catch (error) {
+        console.error('PWA: Error during installation:', error);
+        setInstallationStatus('Installation failed');
+        alert('Installation failed. Please try installing manually from your browser menu.');
+      }
+    } else {
+      console.log('PWA: No deferred prompt - trying manual installation guide');
+      setInstallationStatus('Manual installation required');
+      // Provide manual installation instructions
+      alert(`To install this app manually:
+Chrome/Edge: Click the three dots menu → Install app
+Firefox: Look for the "Install" icon in the address bar
+Safari: Share → Add to Home Screen`);
+    }
+    
+    setTimeout(() => {
+      setShowPWAPrompt(false);
+      setInstallationStatus('');
+    }, 2000);
+  };
+
+  const handlePWADismiss = () => {
+    setShowPWAPrompt(false);
+    setInstallAttempts(prev => prev + 1);
+    
+    // Don't permanently dismiss - show again after some time
+    if (installAttempts < 3) {
+      // Show again in 30 seconds for the first 3 dismissals
+      setTimeout(() => {
+        console.log('PWA: Showing install prompt again...');
+        setShowPWAPrompt(true);
+      }, 30000);
+    } else {
+      // After 3 dismissals, store in session storage
+      sessionStorage.setItem('pwa-prompt-dismissed', 'true');
+    }
+  };
+
+  if (isLoading) {
+    return <LoaderScreen onComplete={() => setIsLoading(false)} />;
+  }
+
+  if (!isOnline) {
+    return <Offline />;
+  }
+
+  return (
+    <div className="relative bg-white">
+      {/* Floating Install Button - Always visible */}
+      {deferredPrompt && !window.matchMedia('(display-mode: standalone)').matches && (
+        <button
+          onClick={() => setShowPWAPrompt(true)}
+          className="fixed bottom-6 right-6 bg-gradient-to-r from-blue-600 to-purple-600 text-white p-4 rounded-full shadow-xl hover:shadow-2xl transform hover:scale-110 transition-all duration-300 z-40 animate-bounce"
+          title="Install FSQM App"
+        >
+          <span className="text-2xl">📱</span>
+        </button>
+      )}
+      
+      {/* PWA Install Prompt */}
+      {showPWAPrompt && !sessionStorage.getItem('pwa-prompt-dismissed') && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-gray-800 rounded-lg shadow-2xl p-6 max-w-md w-full mx-4 text-white">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">🚀 Install FSQM Training Game</h3>
+              <button onClick={handlePWADismiss} className="text-gray-400 hover:text-white">
+                ✕
+              </button>
+            </div>
+            
+            <p className="text-gray-300 mb-4">
+              🎯 One-click installation for the best gaming experience!
+            </p>
+            
+            <div className="bg-blue-900 p-3 rounded-lg mb-4">
+              <p className="text-blue-200 text-sm">
+                ✨ Features: Offline play, faster loading, desktop shortcuts
+              </p>
+            </div>
+            
+            {installationStatus && (
+              <div className="mb-4 p-3 bg-blue-900 rounded-lg">
+                <p className="text-blue-200 text-sm">{installationStatus}</p>
+              </div>
+            )}
+            
+            <div className="flex space-x-3">
+              <button
+                onClick={handlePWAInstall}
+                className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-bold py-4 px-6 rounded-lg hover:from-blue-700 hover:to-blue-800 transform hover:scale-105 transition-all duration-200 shadow-lg"
+              >
+                🚀 Install Now (One Click!)
+              </button>
+              <button
+                onClick={handlePWADismiss}
+                className="flex-1 bg-gray-600 text-gray-200 font-medium py-4 px-4 rounded-lg hover:bg-gray-500 transition-colors"
+              >
+                Maybe Later
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* PWA Update Prompt */}
+      <PWAUpdatePrompt />
+      
+      <div className="min-h-screen flex pb-0">
+        <ToastContainer
+          position="top-right"
+          autoClose={5000}
+          hideProgressBar
+          newestOnTop
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme="dark"
+        />
+        
+        {/* Routes - Reset password takes priority over authentication status */}
+        <Routes>
+          {/* Password reset route - always accessible */}
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
+          
+          {/* Authenticated routes */}
+          {isAuthenticated ? (
+            <>
+              <Route path="/" element={
+                <>
+                  <div className="fixed top-4 right-4 z-50">
+                    <ProfileMenu />
+                  </div>
+                  <HomePage />
+                </>
+              } />
+              <Route path="/levels" element={
+                <>
+                  <div className="fixed top-4 right-4 z-50">
+                    <ProfileMenu />
+                  </div>
+                  <LevelsPage />
+                </>
+              } />
+              <Route path="/game/:levelId" element={
+                <>
+                  <div className="fixed top-4 right-4 z-50">
+                    <ProfileMenu />
+                  </div>
+                  <GamePage />
+                </>
+              } />
+              <Route path="/instructions" element={
+                <>
+                  <div className="fixed top-4 right-4 z-50">
+                    <ProfileMenu />
+                  </div>
+                  <InstructionsPage />
+                </>
+              } />
+              <Route path="/settings" element={
+                <>
+                  <div className="fixed top-4 right-4 z-50">
+                    <ProfileMenu />
+                  </div>
+                  <SettingsPage />
+                </>
+              } />
+              <Route path="/scores" element={
+                <>
+                  <div className="fixed top-4 right-4 z-50">
+                    <ProfileMenu />
+                  </div>
+                  <ScoresPage />
+                </>
+              } />
+              <Route path="*" element={<NotFoundPage />} />
+            </>
+          ) : (
+            /* Unauthenticated routes */
+            <Route path="*" element={<Auth />} />
+          )}
+        </Routes>
+      </div>
+      <div className=" bg-yelloww py-5  text-yellow-100 font-semibold flex justify-center w-full">
+        Copyright © 2025 Rareminds.
+      </div>
+    </div>
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <AuthProvider>
+      <SettingsProvider>
+        <GameProgressProvider>
+          <Router>
+            <AppContent />
+          </Router>
+        </GameProgressProvider>
+      </SettingsProvider>
+    </AuthProvider>
+  );
+};
+
+export default App;

@@ -396,11 +396,19 @@ const Auth: React.FC = () => {
     >
       <CircuitLines />
     
-      <div className="flex justify-center items-center">
+      <div className="flex justify-center items-center gap-4">
+        <img
+          src="images/naan-mudhalvan.png"
+          alt="Rareminds"
+          className="w-24 mt-0 md:w-64 md:mt-10"
+        />
+        <div className="flex items-center justify-center self-center mt-0 md:mt-10">
+          <span className="text-2xl md:text-6xl font-bold text-black mx-4 ">×</span>
+        </div>
         <img
           src="images/RareMinds-Logo.png"
-          alt="Rareminds"
-          className="w-44 mt-0 md:w-64 md:mt-10"
+          alt="RareMinds Logo"
+          className="w-24 md:w-64 md:mt-10"
         />
       </div>
 

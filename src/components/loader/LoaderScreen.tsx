@@ -32,11 +32,19 @@ const LoaderScreen: React.FC<LoaderScreenProps> = ({ onComplete }) => {
       <CircuitLines />
 
       <div className="relative z-10 flex flex-col items-center">
-        <div className="-ml-[20px]">
+        <div className="flex justify-center items-center gap-2 md:gap-4 mt-[10%]">
+          <img
+            src="images/naan-mudhalvan.png"
+            alt="Rareminds"
+            className="w-24 mt-0 md:w-64 md:mt-10"
+          />
+          <div className="flex items-center justify-center self-center mt-0 md:mt-10">
+            <span className="text-2xl md:text-6xl font-bold text-black mx-4">×</span>
+          </div>
           <img
             src="/images/RareMinds-Logo.png"
             alt="RareMinds Logo"
-            className="w-[250px]"
+            className="w-24  mt-0 md:w-64 md:mt-10"
           />
         </div>
         <div className="w-48 h-48 mb-12">
