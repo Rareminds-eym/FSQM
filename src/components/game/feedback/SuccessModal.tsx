@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Trophy, ArrowRight } from 'lucide-react';
 import { scenarios } from '../../../data/diagnosticScenarios';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../home/AuthContext';
+import { saveGameProgress } from '../../../composables/gameProgress';
 
 interface SuccessModalProps {
   isOpen: boolean;
@@ -12,7 +14,39 @@ interface SuccessModalProps {
 
 const SuccessModal: React.FC<SuccessModalProps> = ({ isOpen, onNext, currentLevel }) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const isLastLevel = !scenarios.some(s => s.id === currentLevel + 1);
+
+  useEffect(() => {
+    const updatePlayerProgress = async () => {
+      if (isOpen && user) {
+        try {
+          // Create a game state with completed: true to update the database
+          const completedGameState = {
+            answeredQuestions: [], // Will be overridden by existing data if any
+            showResolution: true,
+            selectedResolution: [],
+            completed: true, // This is the key update we want
+            timeLeft: 0,
+            score: 100, // Will be overridden by actual score if exists
+            accuracy: 100 // Will be overridden by actual accuracy if exists
+          };
+
+          const result = await saveGameProgress(user.id, completedGameState, currentLevel.toString());
+          
+          if (result.success) {
+            console.log(`✅ Level ${currentLevel} marked as completed in database`);
+          } else {
+            console.error(`❌ Failed to update completion status for level ${currentLevel}:`, result.error);
+          }
+        } catch (error) {
+          console.error(`❌ Error updating player progress for level ${currentLevel}:`, error);
+        }
+      }
+    };
+
+    updatePlayerProgress();
+  }, [isOpen, user, currentLevel]);
 
   const handleNext = () => {
     if (isLastLevel) {

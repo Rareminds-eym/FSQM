@@ -10,7 +10,7 @@ import {Winner,Cracker} from "./LottieAnimation";
 import AnimatedTitle from "../ui/AnimatedTitle";
 
 interface PlayerProgressScore {
-  user_id: string;
+  user_id: string;  
   username: string;
   totalScore: number;
   completedLevels: number;
@@ -403,7 +403,7 @@ const ScoresPage: React.FC = () => {
             </div>
 
             <div className="space-y-4">
-              {playerScores.map((score, index) => (
+              {playerScores.slice(0, 10).map((score, index) => (
                 <div
                   key={score.user_id}
                   className="flex items-center justify-between p-4
