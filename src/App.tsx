@@ -9,6 +9,7 @@ import ResetPasswordPage from "./components/auth/ResetPasswordPage";
 import NotFoundPage from "./components/error/NotFoundPage";
 import GamePage from "./components/game/GamePage";
 import LevelsPage from "./components/game/levels/LevelsPage";
+import GmpSimulationScreen from "./components/gmp-simulation/GmpSimulationScreen";
 import HomePage from "./components/home/HomePage";
 import { InstructionsPage } from "./components/instructions";
 import { LoaderScreen } from "./components/loader";
@@ -68,8 +69,8 @@ const AppContent: React.FC = () => {
   }
 
   return (
-    <div className="relative bg-white">
-      <div className="min-h-screen flex pb-0">
+    <div className="relative bg-white min-h-screen flex flex-col">
+      <div className="flex-1 w-full min-h-0 min-w-0 flex flex-col">
         <ToastContainer
           position="top-right"
           autoClose={5000}
@@ -82,12 +83,10 @@ const AppContent: React.FC = () => {
           pauseOnHover
           theme="dark"
         />
-        
         {/* Routes - Reset password takes priority over authentication status */}
         <Routes>
           {/* Password reset route - always accessible */}
           <Route path="/reset-password" element={<ResetPasswordPage />} />
-          
           {/* Authenticated routes */}
           {isAuthenticated ? (
             <>
@@ -113,6 +112,22 @@ const AppContent: React.FC = () => {
                     <ProfileMenu />
                   </div>
                   <GamePage />
+                </>
+              } />
+              <Route path="/gmp-simulation/:levelId" element={
+                <>
+                  <div className="fixed top-4 right-4 z-50">
+                    <ProfileMenu />
+                  </div>
+                  <GmpSimulationScreen />
+                </>
+              } />
+              <Route path="/gmp-simulation" element={
+                <>
+                  <div className="fixed top-4 right-4 z-50">
+                    <ProfileMenu />
+                  </div>
+                  <GmpSimulationScreen />
                 </>
               } />
               <Route path="/instructions" element={
@@ -147,7 +162,7 @@ const AppContent: React.FC = () => {
           )}
         </Routes>
       </div>
-      <div className=" bg-yelloww py-5  text-yellow-100 font-semibold flex justify-center w-full">
+      <div className="bg-yelloww py-5 text-yellow-100 font-semibold flex justify-center w-full">
         Copyright © 2025 Rareminds.
       </div>
     </div>

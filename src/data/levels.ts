@@ -137,17 +137,17 @@ export const levels: Level[] = [
     accessType: "public",
   },
   {
-    id: "HL-1",
+    id: 16,
     title: "Hackathon Level 1",
     symptoms: "Forged entries and fake signatures in BMR",
     difficulty: "Hard",
     img: "",
     isEnabled: true,
     accessType: "public",
-    requiresSpecialPermission: false,
+    requiresSpecialPermission: true,
   },
-   {
-    id: "HL-2",
+  {
+    id: 17,
     title: "Hackathon Level 2",
     symptoms: "Forged entries and fake signatures in BMR",
     difficulty: "Hard",
