@@ -4,7 +4,7 @@ import {
   Star, Shield, Award, Crosshair, Brain, Trophy,
   Eye
 } from 'lucide-react';
-import { useDeviceLayout } from './hooks/useOrientation';
+import { useDeviceLayout } from '../hooks/useOrientation';
 import { Question } from './HackathonData';
 
 interface QuestionCardProps {

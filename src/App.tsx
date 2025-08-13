@@ -9,7 +9,7 @@ import ResetPasswordPage from "./components/auth/ResetPasswordPage";
 import NotFoundPage from "./components/error/NotFoundPage";
 import GamePage from "./components/game/GamePage";
 import LevelsPage from "./components/game/levels/LevelsPage";
-import GmpSimulationScreen from "./components/gmp-simulation/GmpSimulationScreen";
+import GameEngine from "./components/gmp-simulation/GmpSimulation";
 import HomePage from "./components/home/HomePage";
 import { InstructionsPage } from "./components/instructions";
 import { LoaderScreen } from "./components/loader";
@@ -119,7 +119,7 @@ const AppContent: React.FC = () => {
                   <div className="fixed top-4 right-4 z-50">
                     <ProfileMenu />
                   </div>
-                  <GmpSimulationScreen />
+                  <GameEngine />
                 </>
               } />
               <Route path="/gmp-simulation" element={
@@ -127,7 +127,7 @@ const AppContent: React.FC = () => {
                   <div className="fixed top-4 right-4 z-50">
                     <ProfileMenu />
                   </div>
-                  <GmpSimulationScreen />
+                  <GameEngine />
                 </>
               } />
               <Route path="/instructions" element={
