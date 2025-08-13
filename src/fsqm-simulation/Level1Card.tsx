@@ -15,7 +15,7 @@ import {
 } from "@dnd-kit/core";
 import { CheckCircle, ChevronRight, Search, Target } from "lucide-react";
 import React, { useState } from "react";
-import { useDeviceLayout } from "../../hooks/useOrientation";
+import { useDeviceLayout } from "../hooks/useOrientation";
 import { Question } from "./HackathonData";
 
 interface Level1CardProps {

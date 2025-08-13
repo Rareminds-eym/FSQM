@@ -70,11 +70,11 @@ const LevelCard: React.FC<LevelCardProps> = ({ level }) => {
     e.stopPropagation();
     if (!isUnlocked) return;
     if (Number(level.id) === 16) {
-      console.log("[LevelCard] Navigating to GMP Simulation for level 16 (HL1)");
-      navigate("/gmp-simulation/HL1");
+      console.log("[LevelCard] Navigating to FSQM Simulation for level 16 (HL1)");
+      navigate("/fsqm-simulation/HL1");
     } else if (Number(level.id) === 17) {
-      console.log("[LevelCard] Navigating to GMP Simulation for level 17 (HL2)");
-      navigate("/gmp-simulation/HL2");
+      console.log("[LevelCard] Navigating to FSQM Simulation for level 17 (HL2)");
+      navigate("/fsqm-simulation/HL2");
     } else {
       console.log(`[LevelCard] Navigating to /game/${level.id}`);
       navigate(`/game/${level.id}`);

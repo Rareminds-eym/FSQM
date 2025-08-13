@@ -9,7 +9,7 @@ import ResetPasswordPage from "./components/auth/ResetPasswordPage";
 import NotFoundPage from "./components/error/NotFoundPage";
 import GamePage from "./components/game/GamePage";
 import LevelsPage from "./components/game/levels/LevelsPage";
-import GameEngine from "./components/gmp-simulation/GmpSimulation";
+import GameEngine from "./fsqm-simulation/GmpSimulation";
 import HomePage from "./components/home/HomePage";
 import { InstructionsPage } from "./components/instructions";
 import { LoaderScreen } from "./components/loader";
@@ -108,25 +108,25 @@ const AppContent: React.FC = () => {
               } />
               <Route path="/game/:levelId" element={
                 <>
-                  <div className="fixed top-4 right-4 z-50">
+                  {/* <div className="fixed top-4 right-4 z-50">
                     <ProfileMenu />
-                  </div>
+                  </div> */}
                   <GamePage />
                 </>
               } />
-              <Route path="/gmp-simulation/:levelId" element={
+              <Route path="/fsqm-simulation/:levelId" element={
                 <>
-                  <div className="fixed top-4 right-4 z-50">
+                  {/* <div className="fixed top-4 right-4 z-50">
                     <ProfileMenu />
-                  </div>
+                  </div> */}
                   <GameEngine />
                 </>
               } />
-              <Route path="/gmp-simulation" element={
+              <Route path="/fsqm-simulation" element={
                 <>
-                  <div className="fixed top-4 right-4 z-50">
+                  {/* <div className="fixed top-4 right-4 z-50">
                     <ProfileMenu />
-                  </div>
+                  </div> */}
                   <GameEngine />
                 </>
               } />

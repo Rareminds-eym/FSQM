@@ -1,7 +1,7 @@
 import React from 'react';
 import { CheckCircle, Clock, ChevronRight, Target } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useDeviceLayout } from '../../hooks/useOrientation';
+import { useDeviceLayout } from '../hooks/useOrientation';
 
 interface ModuleCompleteModalProps {
   level1CompletionTime: number;
