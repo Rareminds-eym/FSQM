@@ -13,6 +13,7 @@ import AnimatedLogo from "../ui/AnimatedLogo";
 import CircuitLines from "../ui/animations/CircuitLines";
 import GlowingTitle from "../ui/GlowingTitle";
 import MenuItem from "./MenuItem";
+import SocialMediaIcons from "../ui/SocialMediaIcons";
 import { checkGameLockStatus } from "../../lib/supabase";
 
 const HomePage: React.FC = () => {
@@ -141,6 +142,7 @@ const HomePage: React.FC = () => {
   return (
     <div className="flex-1 p-8 relative overflow-hidden bg-yelloww flex items-center bg-cover bg-center bg-no-repeat" style={{backgroundImage: 'url("/images/background-4.png")'}}>
       <CircuitLines />
+      <SocialMediaIcons />
       <div className="max-w-md mx-auto relative z-10">
         
         <div className="flex flex-col lg:flex-row  items-center space-x-2 -mt-20 md:mb-[10%]">
@@ -162,6 +164,15 @@ const HomePage: React.FC = () => {
             </span>
           </GlowingTitle>
         </div>
+
+{/* Logo above menu items */}
+<div className="flex justify-center mb-4 sm:mb-6 md:mb-8 pt-2 sm:pt-4">
+          <img 
+            src="/images/logo_home.png" 
+            alt="Home Logo" 
+            className="w-20 h-auto sm:w-24 md:w-28 lg:w-32 xl:w-36 max-w-full object-contain opacity-90 hover:opacity-100 transition-all duration-300 ease-in-out transform hover:scale-105"
+          />
+        </div>        
 
         <div className="md:space-y-8 space-y-5">
           {menuItems

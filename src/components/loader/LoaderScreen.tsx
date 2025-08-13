@@ -33,14 +33,14 @@ const LoaderScreen: React.FC<LoaderScreenProps> = ({ onComplete }) => {
 
       <div className="relative z-10 flex flex-col items-center">
         <div className="flex justify-center items-center gap-2 md:gap-4 mt-[10%]">
-          <img
+          {/* <img
             src="images/naan-mudhalvan.png"
             alt="Rareminds"
             className="w-24 mt-0 md:w-64 md:mt-10"
           />
           <div className="flex items-center justify-center self-center mt-0 md:mt-10">
             <span className="text-2xl md:text-6xl font-bold text-black mx-4">×</span>
-          </div>
+          </div> */}
           <img
             src="/images/RareMinds-Logo.png"
             alt="RareMinds Logo"

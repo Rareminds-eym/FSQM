@@ -396,7 +396,7 @@ const Auth: React.FC = () => {
     >
       <CircuitLines />
     
-      <div className="flex justify-center items-center gap-4">
+      {/* <div className="flex justify-center items-center gap-4">
         <img
           src="images/naan-mudhalvan.png"
           alt="Rareminds"
@@ -410,7 +410,7 @@ const Auth: React.FC = () => {
           alt="RareMinds Logo"
           className="w-24 md:w-64 md:mt-10"
         />
-      </div>
+      </div> */}
 
       <div
         className={`bg-gradient-to-b from-yellow-200/85 to-yellow-300 rounded-[2rem] shadow-lg
