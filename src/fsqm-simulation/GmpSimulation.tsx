@@ -1474,7 +1474,7 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
         )}
 
         {/* Level Complete Modal */}
-        {gameState.showLevelModal && mode === "violation-root-cause" && (
+        {gameState.showLevelModal && (mode === "violation-root-cause" || mode === undefined) && (
           <ModuleCompleteModal
             level1CompletionTime={gameState.level1CompletionTime}
             onProceed={proceedToLevel2}

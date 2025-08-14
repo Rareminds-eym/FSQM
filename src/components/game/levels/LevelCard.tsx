@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useGameProgress } from "../../../context/GameProgressContext";
 import { Level } from "../../../types/game";
 import { getDifficultyBadge } from "../../../utils/difficultyBadge";
-import { fetchHackathonUnlockTimes } from "../../../utils/fetchHackathonUnlockTime";
+import { supabase } from "../../../lib/supabase";
 
 interface LevelCardProps {
   level: Level;
@@ -18,31 +18,35 @@ const LevelCard: React.FC<LevelCardProps> = ({ level }) => {
 
   const isHackathon = Number(level.id) > 15;
 
-  // Check hackathon unlock on mount and periodically
+  // Check hackathon unlock for levels 16 and 17
   useEffect(() => {
-    if (isHackathon) {
+    if (isHackathon && (Number(level.id) === 16 || Number(level.id) === 17)) {
       const checkUnlock = async () => {
-        const unlockMap = await fetchHackathonUnlockTimes(Number(level.id));
-        const unlockTime = unlockMap && unlockMap[Number(level.id)];
+        try {
+          const { data, error } = await supabase
+            .from("hackathon_unlocks")
+            .select("level_id, force_unlock")
+            .eq("level_id", Number(level.id))
+            .single();
 
-        if (!unlockTime) {
-          console.log(`[LevelCard] Level ${level.id}: No unlockTime from backend. unlockMap:`, unlockMap);
+          if (error) {
+            console.error(`[LevelCard] Error fetching hackathon unlock for level ${level.id}:`, error);
+            setHackathonUnlocked(false);
+            return;
+          }
+
+          if (!data) {
+            console.log(`[LevelCard] Level ${level.id}: No hackathon unlock data found`);
+            setHackathonUnlocked(false);
+            return;
+          }
+
+          // Use force_unlock boolean directly
+          const unlocked = !!data.force_unlock;
+          setHackathonUnlocked(unlocked);
+        } catch (err) {
           setHackathonUnlocked(false);
-          return;
         }
-
-        // Support force_unlock boolean from backend
-        let unlocked = false;
-        if (unlockTime === "unlocked" || unlockTime === true) {
-          unlocked = true;
-        } else if (unlockTime === false) {
-          unlocked = false;
-        } else {
-          const now = new Date();
-          unlocked = now >= unlockTime;
-        }
-        console.log(`[LevelCard] Level ${level.id}: unlockTime=`, unlockTime, `force_unlock logic unlocked=`, unlocked);
-        setHackathonUnlocked(unlocked);
       };
 
       checkUnlock();
@@ -123,11 +127,13 @@ const LevelCard: React.FC<LevelCardProps> = ({ level }) => {
 
             <div className="text-center">
               <h3 className="text-3xl font-bold mb-3 text-yellow-400">
-                Level {level.id}
+                {isHackathon ? level.title : `Level ${level.id}`}
               </h3>
-              <p className="text-lg mb-2 text-center text-blue-100">
-                {level.title}
-              </p>
+              {!isHackathon && (
+                <p className="text-lg mb-2 text-center text-blue-100">
+                  {level.title}
+                </p>
+              )}
               <div
                 className={`inline-flex px-3 py-1 rounded-full 
                 ${isUnlocked ? "bg-yellow-400/10 border border-yellow-200/30" : "bg-gray-400/10 border border-gray-200/30"}`}

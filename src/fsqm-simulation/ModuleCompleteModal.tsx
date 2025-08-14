@@ -87,7 +87,7 @@ export const ModuleCompleteModal: React.FC<ModuleCompleteModalProps> = ({
           
           {/* Proceed Button - Navigate to modules page */}
           <button
-            onClick={() => navigate('/modules')}
+            onClick={() => navigate('/levels')}
             className={`pixel-border bg-gradient-to-r from-green-500 to-green-600 hover:from-green-400 hover:to-green-500 text-white font-black pixel-text transition-all duration-200 flex items-center space-x-2 mx-auto transform hover:scale-105 shadow-lg ${
               isMobileHorizontal ? 'py-2 px-4' : 'py-3 px-6'
             }`}
