@@ -3,12 +3,19 @@ RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule . /index.html [L]
 
+# Set proper MIME types for JavaScript modules
+AddType application/javascript .js
+AddType application/javascript .mjs
+AddType text/javascript .js
+AddType application/json .json
+AddType text/css .css
+
 # Optional: Enable HTTPS redirect
 # RewriteCond %{HTTPS} off
 # RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
 # Set cache headers for static assets
-<FilesMatch "\.(css|js|png|jpg|jpeg|gif|ico|svg)$">
+<FilesMatch "\.(css|js|mjs|png|jpg|jpeg|gif|ico|svg)$">
     ExpiresActive On
     ExpiresDefault "access plus 1 month"
 </FilesMatch>
