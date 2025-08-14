@@ -16,9 +16,9 @@ import { LoaderScreen } from "./components/loader";
 import { ScoresPage } from "./components/scores";
 import SettingsPage from "./components/settings/SettingsPage";
 import ProfileMenu from "./components/ui/ProfileMenu";
-import PWAUpdatePrompt from "./components/PWAUpdatePrompt";
-import PWAInstallModalTest from "./components/PWAInstallModalTest";
-import PWAFloatingInstallButton from "./components/PWAFloatingInstallButton";
+import { InstallPrompt, OfflineIndicator } from "./PWA";
+// Direct service worker registration
+
 
 import { fetchAllLevels } from "./composables/fetchLevel";
 import { AuthProvider, useAuth } from "./components/home/AuthContext";
@@ -26,21 +26,43 @@ import { GameProgressProvider } from "./context/GameProgressContext";
 import { SettingsProvider } from "./context/SettingsContext";
 import { gameScenarios } from "./data/recoilState";
 import Offline from "./Oflline";
-import "./utils/resetPWA";
+
 
 const AppContent: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const { isAuthenticated } = useAuth();
   const [_gameScenarios, _setGameScenarios] = useRecoilState(gameScenarios);
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
-  
-  // Effect to handle online/offline events
+
+  // Effect to handle online/offline events and register service worker
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
 
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
+
+    // Register service worker directly
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then((registration) => {
+            console.log('SW registered: ', registration);
+
+            // Debug PWA installability
+            console.log('PWA Debug Info:');
+            console.log('- Service Worker registered:', !!registration);
+            console.log('- Manifest linked:', !!document.querySelector('link[rel="manifest"]'));
+            console.log('- HTTPS or localhost:', location.protocol === 'https:' || location.hostname === 'localhost');
+            console.log('- Display mode:', window.matchMedia('(display-mode: standalone)').matches ? 'standalone' : 'browser');
+          })
+          .catch((error) => {
+            console.error('SW registration failed: ', error);
+          });
+      });
+    } else {
+      console.warn('Service Worker not supported');
+    }
 
     return () => {
       window.removeEventListener("online", handleOnline);
@@ -75,6 +97,10 @@ const AppContent: React.FC = () => {
 
   return (
     <div className="relative bg-white min-h-screen flex flex-col">
+      {/* PWA Components */}
+      <InstallPrompt />
+      <OfflineIndicator />
+
       <div className="flex-1 w-full min-h-0 min-w-0 flex flex-col">
         <ToastContainer
           position="top-right"
@@ -170,9 +196,7 @@ const AppContent: React.FC = () => {
       <div className="bg-yelloww py-5 text-yellow-100 font-semibold flex justify-center w-full">
         Copyright © 2025 Rareminds.
       </div>
-      <PWAUpdatePrompt />
-      <PWAInstallModalTest />
-      <PWAFloatingInstallButton />
+
     </div>
   );
 };

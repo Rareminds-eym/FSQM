@@ -36,7 +36,7 @@ export function useDeviceLayout() {
       setTimeout(() => setLayout(getLayout()), 100);
     };
 
-    // Listen to multiple events for better PWA support
+    // Listen to multiple events for better orientation support
     window.addEventListener('resize', handleResize);
     window.addEventListener('orientationchange', handleResize);
 
