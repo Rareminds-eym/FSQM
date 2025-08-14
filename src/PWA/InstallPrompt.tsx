@@ -9,15 +9,18 @@ interface InstallPromptProps {
 export const InstallPrompt: React.FC<InstallPromptProps> = ({ className = '' }) => {
   const { isInstallable, installApp, dismissInstallPrompt } = usePWA();
 
-  if (!isInstallable) return null;
-
   const handleInstall = async () => {
-    const success = await installApp();
-    if (success) {
-      console.log('App installed successfully');
+    if (isInstallable) {
+      const success = await installApp();
+      if (success) {
+        console.log('App installed successfully');
+      } else {
+        // Fallback for browsers that don't support native install
+        console.log('Native install not available. Showing manual instructions.');
+        alert('To install this app:\n\n• Chrome/Edge: Click the install icon in the address bar\n• Safari: Tap Share → Add to Home Screen\n• Firefox: Look for "Install" in the menu');
+      }
     } else {
-      // Fallback for browsers that don't support native install
-      console.log('Native install not available. Showing manual instructions.');
+      // Show manual instructions when not installable
       alert('To install this app:\n\n• Chrome/Edge: Click the install icon in the address bar\n• Safari: Tap Share → Add to Home Screen\n• Firefox: Look for "Install" in the menu');
     }
   };
@@ -47,7 +50,7 @@ export const InstallPrompt: React.FC<InstallPromptProps> = ({ className = '' }) 
             <X className="h-5 w-5" />
           </button>
         </div>
-        
+
         <div className="mt-4 flex space-x-3">
           <button
             onClick={handleInstall}
