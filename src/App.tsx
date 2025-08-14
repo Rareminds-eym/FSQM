@@ -23,6 +23,7 @@ import { InstallPrompt, OfflineIndicator } from "./PWA";
 import { fetchAllLevels } from "./composables/fetchLevel";
 import { AuthProvider, useAuth } from "./components/home/AuthContext";
 import { GameProgressProvider } from "./context/GameProgressContext";
+import { EnhancedGameProgressProvider } from "./context/EnhancedGameProgressContext";
 import { SettingsProvider } from "./context/SettingsContext";
 import { gameScenarios } from "./data/recoilState";
 import Offline from "./Oflline";
@@ -206,9 +207,11 @@ const App: React.FC = () => {
     <AuthProvider>
       <SettingsProvider>
         <GameProgressProvider>
-          <Router>
-            <AppContent />
-          </Router>
+          <EnhancedGameProgressProvider>
+            <Router>
+              <AppContent />
+            </Router>
+          </EnhancedGameProgressProvider>
         </GameProgressProvider>
       </SettingsProvider>
     </AuthProvider>

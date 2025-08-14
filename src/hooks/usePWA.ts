@@ -35,11 +35,11 @@ export const usePWA = () => {
 
       setPwaState(prev => ({ ...prev, isInstalled }));
 
-      // For testing purposes, show install prompt even if not triggered by browser
-      if (!isInstalled && !localStorage.getItem('pwa-install-dismissed')) {
+      // Show install prompt if not already installed
+      if (!isInstalled) {
         setTimeout(() => {
           setPwaState(prev => ({ ...prev, isInstallable: true }));
-        }, 3000); // Show after 3 seconds
+        }, 2000); // Show after 2 seconds
       }
     };
 
@@ -137,13 +137,14 @@ export const usePWA = () => {
   };
 
   const dismissInstallPrompt = () => {
-    localStorage.setItem('pwa-install-dismissed', 'true');
     setPwaState(prev => ({
       ...prev,
       isInstallable: false,
       installPrompt: null,
     }));
   };
+
+
 
   const reloadApp = () => {
     window.location.reload();

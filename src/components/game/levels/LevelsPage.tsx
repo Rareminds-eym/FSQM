@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { levels } from '../../../data/levels';
-import { Home } from "lucide-react";
+import { Home, TestTube } from "lucide-react";
 import { useRecoilState } from "recoil";
 import { fetchTopLevel } from "../../../composables/fetchLevel";
 import { useGameProgress } from "../../../context/GameProgressContext";
@@ -48,8 +48,8 @@ const LevelsPage: React.FC = () => {
         <div className="absolute left-0 top-0">
           <button
             onClick={() => navigate("/")}
-            className="group p-3 rounded-lg bg-yellow-500/70 hover:bg-yellow-400/80 
-              border border-yellow-600/60 hover:border-orange-400/70 
+            className="group p-3 rounded-lg bg-yellow-500/70 hover:bg-yellow-400/80
+              border border-yellow-600/60 hover:border-orange-400/70
               transform hover:-translate-y-1 hover:translate-x-1
               transition-all duration-300"
           >
