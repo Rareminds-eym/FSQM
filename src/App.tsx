@@ -16,12 +16,17 @@ import { LoaderScreen } from "./components/loader";
 import { ScoresPage } from "./components/scores";
 import SettingsPage from "./components/settings/SettingsPage";
 import ProfileMenu from "./components/ui/ProfileMenu";
+import PWAUpdatePrompt from "./components/PWAUpdatePrompt";
+import PWAInstallModalTest from "./components/PWAInstallModalTest";
+import PWAFloatingInstallButton from "./components/PWAFloatingInstallButton";
+
 import { fetchAllLevels } from "./composables/fetchLevel";
 import { AuthProvider, useAuth } from "./components/home/AuthContext";
 import { GameProgressProvider } from "./context/GameProgressContext";
 import { SettingsProvider } from "./context/SettingsContext";
 import { gameScenarios } from "./data/recoilState";
 import Offline from "./Oflline";
+import "./utils/resetPWA";
 
 const AppContent: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -165,6 +170,9 @@ const AppContent: React.FC = () => {
       <div className="bg-yelloww py-5 text-yellow-100 font-semibold flex justify-center w-full">
         Copyright © 2025 Rareminds.
       </div>
+      <PWAUpdatePrompt />
+      <PWAInstallModalTest />
+      <PWAFloatingInstallButton />
     </div>
   );
 };
