@@ -1,10 +1,9 @@
-import { Lock, Battery, Zap, Gauge, BatteryCharging, Cpu } from "lucide-react";
+import { Lock } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useGameProgress } from "../../../context/GameProgressContext";
+import { useEnhancedGameProgress } from "../../../context/EnhancedGameProgressContext";
 import { Level } from "../../../types/game";
-import { getDifficultyBadge } from "../../../utils/difficultyBadge";
-import { supabase } from "../../../lib/supabase";
+import { checkLevelUnlockStatus } from "./levelUnlock";
 
 interface LevelCardProps {
   level: Level;
@@ -12,63 +11,73 @@ interface LevelCardProps {
 
 const LevelCard: React.FC<LevelCardProps> = ({ level }) => {
   const [isFlipped, setIsFlipped] = useState(false);
-  const [hackathonUnlocked, setHackathonUnlocked] = useState<boolean | null>(null);
+  const [levelUnlocked, setLevelUnlocked] = useState<boolean | null>(null);
+  const [isCheckingUnlock, setIsCheckingUnlock] = useState(true);
   const navigate = useNavigate();
-  const { progress } = useGameProgress();
+
+  // Use enhanced context that handles training status
+  const enhancedProgress = useEnhancedGameProgress();
+  const { progress } = enhancedProgress;
 
   const isHackathon = Number(level.id) > 15;
 
-  // Check hackathon unlock for levels 16 and 17
+  // Check level unlock status using enhanced environment-based system
   useEffect(() => {
-    if (isHackathon && (Number(level.id) === 16 || Number(level.id) === 17)) {
-      const checkUnlock = async () => {
-        try {
-          const { data, error } = await supabase
-            .from("hackathon_unlocks")
-            .select("level_id, force_unlock")
-            .eq("level_id", Number(level.id))
-            .single();
+    const checkUnlock = async () => {
+      try {
+        setIsCheckingUnlock(true);
+        const unlocked = await checkLevelUnlockStatus(Number(level.id));
+        setLevelUnlocked(unlocked);
+        console.log(`[LevelCard] Level ${level.id} unlock status:`, unlocked);
+      } catch (err) {
+        console.error(`[LevelCard] Error checking unlock status for level ${level.id}:`, err);
+        setLevelUnlocked(false);
+      } finally {
+        setIsCheckingUnlock(false);
+      }
+    };
 
-          if (error) {
-            console.error(`[LevelCard] Error fetching hackathon unlock for level ${level.id}:`, error);
-            setHackathonUnlocked(false);
-            return;
-          }
+    checkUnlock();
 
-          if (!data) {
-            console.log(`[LevelCard] Level ${level.id}: No hackathon unlock data found`);
-            setHackathonUnlocked(false);
-            return;
-          }
+    // Refresh unlock status every 1 minute for all levels
+    const interval = setInterval(checkUnlock, 60_000);
+    return () => clearInterval(interval);
+  }, [level.id, enhancedProgress.isTrainingActive]);
 
-          // Use force_unlock boolean directly
-          const unlocked = !!data.force_unlock;
-          setHackathonUnlocked(unlocked);
-        } catch (err) {
-          setHackathonUnlocked(false);
-        }
-      };
-
-      checkUnlock();
-      const interval = setInterval(checkUnlock, 60_000); // refresh every 1 minute
-      return () => clearInterval(interval);
+  // Compute unlock state with enhanced logic
+  const isUnlocked = (() => {
+    // If we're still checking or training is loading, show as locked
+    if (isCheckingUnlock || enhancedProgress.isLoading || levelUnlocked === null) {
+      return false;
     }
-  }, [level.id, isHackathon, progress.completedLevels]);
 
-  // Compute unlock state
-  const isUnlocked = !isHackathon
-    ? level.id === 1 || progress.completedLevels.includes(Number(level.id) - 1)
-    : !!hackathonUnlocked;
+    // Use the database-driven unlock status
+    if (!levelUnlocked) {
+      return false;
+    }
 
-  const isCompleted = progress.completedLevels.includes(Number(level.id));
+    // For hackathon levels (16, 17), rely purely on database status (independent of training)
+    if (isHackathon) {
+      return levelUnlocked;
+    }
 
-  const getBatteryIcon = (id: number) => {
-    const icons = [Battery, Zap, Gauge, BatteryCharging, Cpu];
-    return icons[id % icons.length];
-  };
+    // For training levels (1-15), check both database status and progression
+    if (enhancedProgress.isTrainingActive) {
+      // Level 1 is always unlocked if training is active and database allows it
+      if (Number(level.id) === 1) {
+        return levelUnlocked;
+      }
+      // Other training levels require previous level completion
+      return levelUnlocked && progress.completedLevels.includes(Number(level.id) - 1);
+    }
 
-  const Icon = getBatteryIcon(level.id);
-  const difficulty = getDifficultyBadge(level.difficulty);
+    // If training is inactive, training levels are locked regardless of database status
+    return false;
+  })();
+
+  const isCompleted = enhancedProgress.isTrainingActive
+    ? progress.completedLevels.includes(Number(level.id))
+    : false;
 
   const handleStartLevel = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -148,7 +157,7 @@ const LevelCard: React.FC<LevelCardProps> = ({ level }) => {
 
             {isUnlocked ? (
               <div
-                className="absolute bottom-4 left-1/2 -translate-x-1/2 
+                className="absolute bottom-4 left-1/2 -translate-x-1/2
                 text-black font-bold text-xs"
               >
                 {isCompleted
@@ -157,11 +166,17 @@ const LevelCard: React.FC<LevelCardProps> = ({ level }) => {
               </div>
             ) : (
               <div
-                className="absolute bottom-4 left-1/2 -translate-x-1/2 
-                text-black text-xs font-bold"
+                className="absolute bottom-4 left-1/2 -translate-x-1/2
+                text-black text-xs font-bold text-center px-2"
               >
-                {isHackathon
+                {isCheckingUnlock || enhancedProgress.isLoading
+                  ? "Checking access..."
+                  : isHackathon
                   ? "Unlocks at scheduled time"
+                  : !enhancedProgress.isTrainingActive
+                  ? "Training mode disabled"
+                  : Number(level.id) === 1
+                  ? "Level locked by admin"
                   : "Complete previous level to unlock"}
               </div>
             )}
