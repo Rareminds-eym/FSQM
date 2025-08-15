@@ -9,7 +9,7 @@ interface AnimatedLogoProps {
 
 const AnimatedLogo: React.FC<AnimatedLogoProps> = ({ className = '' }) => {
   return (
-    <div className={`relative ${className} w-44 h-44`}>
+    <div className={`relative ${className} w-40 h-44`}>
       <div className="transform-gpu transition-transform duration-500 hover:scale-110">
         <Lottie 
         animationData={Food}
