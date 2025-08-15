@@ -6,6 +6,7 @@ import type { Question } from "./HackathonData";
 import { hackathonData } from "./HackathonData";
 // @ts-ignore
 import { ModuleCompleteModal } from "./ModuleCompleteModal";
+import CautionModal from "./CautionModal";
 import { QuestionCard } from "./QuestionCard";
 import { Results } from "./Results";
 import { Timer } from "./Timer";
@@ -34,10 +35,14 @@ interface GmpSimulationProps {
   onProceedToLevel2?: () => void;
 }
 
+
 const GameEngine: React.FC<GmpSimulationProps> = ({
   mode,
   onProceedToLevel2,
 }) => {
+  // Caution modal state (must be inside component)
+  const [showCautionModal, setShowCautionModal] = useState(false);
+  const [pendingNext, setPendingNext] = useState(false);
   // Device layout detection
   const { isMobile, isHorizontal } = useDeviceLayout();
   const isMobileHorizontal = isMobile && isHorizontal;
@@ -880,38 +885,38 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
     }
   };
 
+  // Show caution modal after each question in Level 1
   const nextQuestion = () => {
+    if (gameState.currentLevel === 1 && gameState.currentQuestion < 4) {
+      setShowCautionModal(true);
+      setPendingNext(true);
+      return;
+    }
+    // If not Level 1 or last question, proceed as normal
     setGameState((prev) => {
       const nextQuestionIndex = prev.currentQuestion + 1;
-
-      // Save the new position when user proceeds
       if (nextQuestionIndex < 5) {
         saveCurrentPosition(nextQuestionIndex);
       }
-
       if (nextQuestionIndex >= 5) {
         if (prev.currentLevel === 1) {
-          // Level 1 completed - show modal
           const level1Time = Math.max(0, 5400 - prev.timeRemaining);
-          // Save attempt to backend
           saveIndividualAttempt(
             calculateScore(prev.answers, prev.questions),
             level1Time,
             5
           );
-          saveTeamAttempt(5); // Save team summary for module 5
+          saveTeamAttempt(5);
           return {
             ...prev,
             showLevelModal: true,
             level1CompletionTime: level1Time,
           };
         } else {
-          // Level 2 completed - finish game
           const finalScore = calculateScore(prev.answers, prev.questions);
-          // Save attempt to backend
           const finalTime = Math.max(0, 5400 - prev.timeRemaining);
           saveIndividualAttempt(finalScore, finalTime, 6);
-          saveTeamAttempt(6); // Save team summary for module 6
+          saveTeamAttempt(6);
           return {
             ...prev,
             gameCompleted: true,
@@ -919,10 +924,7 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
           };
         }
       } else {
-        // Move to next question and ensure answer object exists
         const newAnswers = [...prev.answers];
-
-        // Ensure the next question has an answer object initialized
         if (!newAnswers[nextQuestionIndex]) {
           newAnswers[nextQuestionIndex] = {
             violation: "",
@@ -930,11 +932,7 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
             solution: "",
           };
         }
-
-        // Only clear the next question's answers if we're in normal gameplay
-        // (not when restoring from saved progress)
         if (!progressLoaded || nextQuestionIndex > prev.currentQuestion) {
-          // Clear only the fields relevant to the current level
           if (prev.currentLevel === 1) {
             newAnswers[nextQuestionIndex].violation = "";
             newAnswers[nextQuestionIndex].rootCause = "";
@@ -942,15 +940,41 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
             newAnswers[nextQuestionIndex].solution = "";
           }
         }
-
-
-
         return {
           ...prev,
           currentQuestion: nextQuestionIndex,
           answers: newAnswers,
         };
       }
+    });
+  };
+
+  // Handler for closing caution modal and proceeding
+  const handleCautionProceed = () => {
+    setShowCautionModal(false);
+    setPendingNext(false);
+    setGameState((prev) => {
+      const nextQuestionIndex = prev.currentQuestion + 1;
+      if (nextQuestionIndex < 5) {
+        saveCurrentPosition(nextQuestionIndex);
+      }
+      const newAnswers = [...prev.answers];
+      if (!newAnswers[nextQuestionIndex]) {
+        newAnswers[nextQuestionIndex] = {
+          violation: "",
+          rootCause: "",
+          solution: "",
+        };
+      }
+      if (!progressLoaded || nextQuestionIndex > prev.currentQuestion) {
+        newAnswers[nextQuestionIndex].violation = "";
+        newAnswers[nextQuestionIndex].rootCause = "";
+      }
+      return {
+        ...prev,
+        currentQuestion: nextQuestionIndex,
+        answers: newAnswers,
+      };
     });
   };
 
@@ -1478,8 +1502,21 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
           <ModuleCompleteModal
             level1CompletionTime={gameState.level1CompletionTime}
             onProceed={proceedToLevel2}
+            scenarios={gameState.questions.map((q, i) => ({
+              caseFile: q.caseFile,
+              violation: gameState.answers[i]?.violation || "",
+              rootCause: gameState.answers[i]?.rootCause || "",
+              solution: gameState.answers[i]?.solution || "",
+            }))}
           />
         )}
+
+        {/* Caution Modal for Level 1 */}
+        <CautionModal
+          open={showCautionModal}
+          onClose={handleCautionProceed}
+          onCancel={() => setShowCautionModal(false)}
+        />
 
         {/* Module 6 Button (only if unlocked) */}
         {canAccessModule6 && gameState.currentLevel === 1 && (
