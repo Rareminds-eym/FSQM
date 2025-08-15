@@ -226,6 +226,11 @@ const Auth: React.FC = () => {
         signupRateLimiter.reset(formData.email);
         setRateLimitInfo(null);
 
+        // Show confirmation email message immediately after successful signup
+        toast.success("Confirmation email has been sent to your device. Please check your inbox and verify your account before logging in.", {
+          autoClose: 8000,
+        });
+
         // Get user information with improved error handling
         let user = signUpUser;
         let retries = 0;
@@ -337,9 +342,9 @@ const Auth: React.FC = () => {
 
             console.log('Team created successfully with join code:', joinCode);
 
-            // Show join code prominently
+            // Show join code prominently and remind about email confirmation
             toast.success(
-              `Team created successfully!\n\nYour Join Code: ${joinCode}\n\nShare this code with your team members!`,
+              `Team created successfully!\n\nYour Join Code: ${joinCode}\n\nShare this code with your team members!\n\nBefore logging in, please check your email for a confirmation mail and follow the instructions to verify your account.`,
               {
                 autoClose: false, // Don't auto-close
                 closeOnClick: false,

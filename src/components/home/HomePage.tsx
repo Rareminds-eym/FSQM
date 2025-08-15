@@ -19,6 +19,8 @@ import { checkGameLockStatus } from "../../lib/supabase";
 const HomePage: React.FC = () => {
   // Toggle this to enable/disable navigation for menu items
   const navigationEnabled = true;
+  // Toggle this to lock/unlock View Scores separately
+  const isViewScoresLocked = false;
   const navigate = useNavigate();
   const [hasProgress, setHasProgress] = useState(false);
   const [menuItems, setMenuItems] = useState<any>([]);
@@ -83,10 +85,14 @@ const HomePage: React.FC = () => {
           }
         : null,
       {
-        icon: Trophy,
+        icon: isViewScoresLocked ? Lock : Trophy,
         title: "View Scores",
         onClick: () => {
           if (!navigationEnabled) return;
+          if (isViewScoresLocked) {
+            setShowGameLockedModal(true);
+            return;
+          }
           navigate("/scores");
         },
       },
@@ -116,6 +122,7 @@ const HomePage: React.FC = () => {
   useEffect(() => {
     const fetchGameLockStatus = async () => {
       const isLocked = await checkGameLockStatus();
+      console.log('🔒 Game lock status:', isLocked);
       setIsGameLocked(isLocked);
     };
 
