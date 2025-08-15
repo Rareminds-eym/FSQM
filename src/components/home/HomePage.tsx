@@ -55,7 +55,7 @@ const HomePage: React.FC = () => {
     setMenuItems([
       {
         icon: isGameLocked ? Lock : Play,
-        title: "Start Game",
+        title: "Start Hackathon",
         onClick: () => {
           if (!navigationEnabled) return;
           if (isGameLocked) {
@@ -73,7 +73,7 @@ const HomePage: React.FC = () => {
       hasProgress
         ? {
             icon: isGameLocked ? Lock : FastForward,
-            title: "Continue",
+            title: "Continue Hackathon",
             onClick: () => {
               if (!navigationEnabled) return;
               if (isGameLocked) {
