@@ -52,7 +52,9 @@ const LoaderScreen: React.FC<LoaderScreenProps> = ({ onComplete }) => {
         </div>
 
         <GlowingTitle className="mb-16 text-center">
-          Food Safety and Quality Management
+          {/* Food Safety and Quality Management */}
+          SafeBite 2.0
+          <h1>Hackathon</h1>
         </GlowingTitle>
 
         <div className="text-blue-400 mt-20 font-medium flex flex-col items-center justify-center">
