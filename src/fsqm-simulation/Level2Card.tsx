@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import {
   ChevronRight, CheckCircle, Target, Trophy
 } from 'lucide-react';
+import { ProceedConfirmationModal } from './components/ProceedConfirmationModal';
 import { Question } from './HackathonData';
 
 interface Level2CardProps {
@@ -24,12 +25,31 @@ const Level2Card: React.FC<Level2CardProps> = ({
   const [selectedSolution, setSelectedSolution] = useState(currentAnswer?.solution || '');
   const [isDragOver, setIsDragOver] = useState(false);
   const [draggedItem, setDraggedItem] = useState<string | null>(null);
+  const [showConfirmation, setShowConfirmation] = useState(false);
 
   const canProceed = selectedSolution;
 
   const handleSolutionSelect = (solution: string) => {
     setSelectedSolution(solution);
     onAnswer({ solution });
+  };
+
+  // Handle proceed button click - show confirmation modal
+  const handleProceedClick = () => {
+    if (canProceed) {
+      setShowConfirmation(true);
+    }
+  };
+
+  // Handle confirmation - actually proceed
+  const handleConfirmProceed = () => {
+    setShowConfirmation(false);
+    onNext();
+  };
+
+  // Handle cancel - close modal
+  const handleCancelProceed = () => {
+    setShowConfirmation(false);
   };
 
   // Drag and Drop handlers
@@ -172,7 +192,7 @@ const Level2Card: React.FC<Level2CardProps> = ({
             Drag & Drop or Click to deploy solution
           </div>
           <button
-            onClick={onNext}
+            onClick={handleProceedClick}
             disabled={!canProceed}
             className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-bold transition-all ${
               canProceed
@@ -185,6 +205,14 @@ const Level2Card: React.FC<Level2CardProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Proceed Confirmation Modal */}
+      <ProceedConfirmationModal
+        show={showConfirmation}
+        onConfirm={handleConfirmProceed}
+        onCancel={handleCancelProceed}
+        level={2}
+      />
     </div>
   );
 };

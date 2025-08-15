@@ -16,7 +16,7 @@ const LevelsPage: React.FC = () => {
   const navigate = useNavigate();
   const [, setGameScenarios] = useRecoilState<any>(gameScenarios);
   const [topLevel, setTopLevel] = useState(0);
-  const { completeLevel } = useGameProgress();
+  const { progress, completeLevel } = useGameProgress();
   const { user } = useAuth();
 
   // Initialize diagnostic scenarios in global state for game use
@@ -36,8 +36,15 @@ const LevelsPage: React.FC = () => {
   }, [user]);
 
   useEffect(() => {
-    for (let i = 1; i <= topLevel; i++) completeLevel(i);
-  }, [topLevel, completeLevel]);
+    if (topLevel > 0) {
+      // Only complete levels that aren't already completed
+      for (let i = 1; i <= topLevel; i++) {
+        if (!progress.completedLevels.includes(i)) {
+          completeLevel(i);
+        }
+      }
+    }
+  }, [topLevel, progress.completedLevels, completeLevel]);
 
   return (
     <div className="flex-1 bg-gradient-to-b from-yellow-400 via-yellow-400 to-yellow-500 p-8 relative overflow-hidden">

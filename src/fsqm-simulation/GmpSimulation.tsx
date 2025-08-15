@@ -1,990 +1,66 @@
-import { AlertTriangle, Clock, Eye, Factory, Play, Trophy } from "lucide-react";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import { AlertTriangle, Clock, Eye, Factory, Play, RotateCcw, Trophy } from "lucide-react";
+import React, { useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useDeviceLayout } from "../hooks/useOrientation";
 import { supabase } from "../lib/supabase";
-import type { Question } from "./HackathonData";
-import { hackathonData } from "./HackathonData";
-// @ts-ignore
-import { ModuleCompleteModal } from "./ModuleCompleteModal";
+import "./styles/landscape-prompt.css";
+
+// Import our modular components and hooks
+import { LoadingScreen } from "./components/LoadingScreen";
+import { SavedProgressModal } from "./components/SavedProgressModal";
+import { TeamScoreModal } from "./components/TeamScoreModal";
+import { useAuth } from "./hooks/useAuth";
+import { useGameState } from "./hooks/useGameState";
+import { useGameTimer } from "./hooks/useGameTimer";
+import { DatabaseService } from "./services/databaseService";
+import { AuthService } from "./services/authService";
+import type { GmpSimulationProps } from "./types";
+
+// Import existing components that we're keeping
 import { QuestionCard } from "./QuestionCard";
-import { Results } from "./Results";
 import { Timer } from "./Timer";
 
-
-
-export interface GameState {
-  currentLevel: 1 | 2;
-  currentQuestion: number;
-  questions: Question[];
-  answers: Array<{
-    violation: string;
-    rootCause: string;
-    solution: string;
-  }>;
-  score: number;
-  timeRemaining: number;
-  gameStarted: boolean;
-  gameCompleted: boolean;
-  showLevelModal: boolean;
-  level1CompletionTime: number;
-}
-
-interface GmpSimulationProps {
-  mode?: string;
-  onProceedToLevel2?: () => void;
-}
-
-const GameEngine: React.FC<GmpSimulationProps> = ({
+const GmpSimulation: React.FC<GmpSimulationProps> = ({
   mode,
   onProceedToLevel2,
 }) => {
-  // Device layout detection
+  const navigate = useNavigate();
   const { isMobile, isHorizontal } = useDeviceLayout();
   const isMobileHorizontal = isMobile && isHorizontal;
 
-  // Case brief modal state
+  // Authentication and team info
+  const { teamInfo, teamInfoError, isLoadingTeamInfo, retryAuth, clearError } = useAuth();
+
+  // Game state management
+  const {
+    gameState,
+    setGameState,
+    isLoadingProgress,
+    progressLoaded,
+    hasSavedProgress,
+    hasAnyProgress,
+    savedProgressInfo,
+    gameStateRef,
+    sessionIdRef,
+    emailRef,
+    updateRefs,
+    selectRandomQuestions,
+    calculateScore,
+    isHackathonCompleted,
+    loadSavedProgress,
+    startGame,
+  } = useGameState(mode);
+
+  // Local UI state
+  const [showTeamScoreModal, setShowTeamScoreModal] = useState(false);
   const [showCaseBrief, setShowCaseBrief] = useState(false);
+  const [showCaseChangeIndicator, setShowCaseChangeIndicator] = useState(false);
+  const [previousQuestionId, setPreviousQuestionId] = useState<string | null>(null);
 
-  // Utility function to ensure valid session before API calls
-  const ensureValidSession = async () => {
-    try {
-      const { data: { session }, error } = await supabase.auth.getSession();
+  const [showLandscapePrompt, setShowLandscapePrompt] = useState(false);
+  const [hasUserDismissedPrompt, setHasUserDismissedPrompt] = useState(false);
 
-      if (error || !session) {
-        // Try to refresh the session
-        const { error: refreshError } = await supabase.auth.refreshSession();
-        if (refreshError) {
-          throw new Error("Session expired. Please log in again.");
-        }
-      }
-
-      return true;
-    } catch (err) {
-      console.error("Session validation failed:", err);
-      setTeamInfoError("Session expired. Please log in again.");
-      return false;
-    }
-  };
-  
-  // Walkthrough video handler
-  const showWalkthroughVideo = () => {
-    // You can replace this URL with the actual walkthrough video URL
-    const videoUrl = "https://www.youtube.com/watch?v=your-walkthrough-video-id";
-    window.open(videoUrl, '_blank');
-  };
-
-  // Save team attempt to backend
-  const saveTeamAttempt = async (module_number: number) => {
-    if (!session_id) {
-      console.warn("No session_id available for team attempt.");
-      return;
-    }
-
-    // Ensure valid session before saving
-    const sessionValid = await ensureValidSession();
-    if (!sessionValid) {
-      console.error("Cannot save team attempt: Invalid session");
-      return;
-    }
-
-    // Fetch all individual attempts for this session and module
-    const { data: attempts, error } = await supabase
-      .from("individual_attempts")
-      .select("score, completion_time_sec")
-      .eq("session_id", session_id)
-      .eq("module_number", module_number);
-    if (error) {
-      console.error(
-        "Supabase fetch error (individual_attempts):",
-        error.message,
-        error.details
-      );
-      if (error.message.includes("JWT") || error.message.includes("expired")) {
-        setTeamInfoError("Session expired while loading team data. Please log in again.");
-      }
-      return;
-    }
-    if (!attempts || attempts.length === 0) {
-      console.warn("No individual attempts found for team.");
-      return;
-    }
-    // Calculate average score, top scorer, and average time
-    const scores = attempts.map(a => a.score || 0);
-    const totalScore = scores.reduce((sum, s) => sum + s, 0);
-    const avgScore = scores.length > 0 ? totalScore / scores.length : 0;
-    const topScore = scores.length > 0 ? Math.max(...scores) : 0;
-    const weightedAvgScore = (0.7 * avgScore + 0.3 * topScore).toFixed(2);
-    const avgTimeSec = Math.round(
-      attempts.reduce((sum, a) => sum + (a.completion_time_sec || 0), 0) /
-        attempts.length
-    );
-    // Debug logs
-    console.log("[TEAM SCORING] Individual scores:", scores);
-    console.log(`[TEAM SCORING] Avg score: ${avgScore}, Top score: ${topScore}, Weighted team score: ${weightedAvgScore}`);
-    console.log(`[TEAM SCORING] Avg time (sec): ${avgTimeSec}`);
-    // Insert into team_attempts
-    const { error: insertError } = await supabase
-      .from("team_attempts")
-      .insert([
-        {
-          session_id: session_id,
-          module_number,
-          weighted_avg_score: weightedAvgScore,
-          avg_time_sec: avgTimeSec,
-          unlocked_next_module: false,
-        },
-      ]);
-    if (insertError) {
-      console.error(
-        "Supabase insert error (team_attempts):",
-        insertError.message,
-        insertError.details
-      );
-      if (insertError.message.includes("JWT") || insertError.message.includes("expired")) {
-        setTeamInfoError("Session expired while saving team data. Please log in again.");
-      }
-    }
-  };
-  // Error state for loading team info
-  const [teamInfoError, setTeamInfoError] = useState<string | null>(null);
-  // Determine which level to show based on mode
-  // mode === 'violation-root-cause' => Level 1 (HL1)
-  // mode === 'solution' => Level 2 (HL2)
-  const initialLevel = mode === "solution" ? 2 : 1;
-
-  const [gameState, setGameState] = useState<GameState>(() => {
-    const initialState: GameState = {
-      currentLevel: initialLevel as 1 | 2,
-      currentQuestion: 0,
-      questions: [],
-      answers: [],
-      score: 0,
-      timeRemaining: 5400, // 1.5 hours in seconds
-      gameStarted: false,
-      gameCompleted: false,
-      showLevelModal: false,
-      level1CompletionTime: 0,
-    };
-
-    return initialState;
-  });
-  // Team unlock state
-  const [canAccessModule6, setCanAccessModule6] = useState(false);
-  // Session/user info (fetch from teams table for current user)
-  const [session_id, setSessionId] = useState<string | null>(null);
-  const [email, setEmail] = useState<string | null>(null);
-
-  // Progress loading state
-  const [isLoadingProgress, setIsLoadingProgress] = useState(false);
-  const [progressLoaded, setProgressLoaded] = useState(false);
-  const [hasSavedProgress, setHasSavedProgress] = useState(false);
-  const [savedProgressInfo, setSavedProgressInfo] = useState<{
-    currentQuestion: number;
-    totalQuestions: number;
-    answeredQuestions: number;
-    timeRemaining: number;
-  } | null>(null);
-
-  // Block UI until session_id, email are loaded and progress is checked
-  const loadingIds = !session_id || !email || isLoadingProgress;
-
-  // Periodic timer save interval
-  const [timerSaveInterval, setTimerSaveInterval] = useState<NodeJS.Timeout | null>(null);
-
-  // Timer save status indicator
-  const [showSaveIndicator, setShowSaveIndicator] = useState(false);
-
-  // Refs to access current values in intervals without causing re-renders
-  const gameStateRef = useRef(gameState);
-  const sessionIdRef = useRef(session_id);
-  const emailRef = useRef(email);
-
-  // Update refs when values change
-  useEffect(() => {
-    gameStateRef.current = gameState;
-    sessionIdRef.current = session_id;
-    emailRef.current = email;
-
-
-  }, [gameState, session_id, email]);
-
-  // Enhanced auth handling with JWT refresh
-  useEffect(() => {
-    const fetchTeamInfo = async () => {
-      try {
-        // First, try to refresh the session if it's expired
-        const { error: refreshError } = await supabase.auth.refreshSession();
-
-        if (refreshError) {
-          console.warn("Session refresh failed:", refreshError.message);
-        }
-
-        // Get current user's email from Supabase Auth
-        const {
-          data: { session },
-          error: authError,
-        } = await supabase.auth.getSession();
-
-        if (authError) {
-          console.error("Auth error:", authError);
-          if (authError.message.includes("JWT") || authError.message.includes("expired")) {
-            setTeamInfoError("Session expired. Please log in again.");
-          } else {
-            setTeamInfoError("Authentication error. Please log in.");
-          }
-          return;
-        }
-
-        if (!session || !session.user || !session.user.email) {
-          setTeamInfoError("User session not found. Please log in.");
-          return;
-        }
-
-        const userEmail = session.user.email;
-
-        // Fetch session_id from teams table using email
-        const { data, error } = await supabase
-          .from("teams")
-          .select("session_id")
-          .eq("email", userEmail)
-          .single();
-
-        if (error) {
-          console.error("Database error:", error);
-          if (error.message.includes("JWT") || error.message.includes("expired")) {
-            setTeamInfoError("Session expired. Please log in again.");
-          } else {
-            setTeamInfoError("Could not load team info. " + (error.message || "Unknown error."));
-          }
-        } else if (!data) {
-          setTeamInfoError("No team info found for this user.");
-        } else {
-          setSessionId(data.session_id);
-          setEmail(userEmail);
-        }
-      } catch (err) {
-        console.error("Unexpected error:", err);
-        setTeamInfoError("An unexpected error occurred. Please try again.");
-      }
-    };
-
-    fetchTeamInfo();
-  }, []);
-
-  // Load saved progress when session_id and email are available
-  useEffect(() => {
-    const loadSavedProgress = async () => {
-      if (!session_id || !email || progressLoaded) return;
-
-      setIsLoadingProgress(true);
-      try {
-        // Determine module number based on current level/mode
-        const moduleNumber = initialLevel === 1 ? 5 : 6;
-
-        // Load saved attempt details
-        const { data: attemptDetails, error } = await supabase
-          .from("attempt_details")
-          .select("*")
-          .eq("email", email)
-          .eq("session_id", session_id)
-          .eq("module_number", moduleNumber)
-          .order("question_index", { ascending: true });
-
-        if (error) {
-          console.error("Error loading saved progress:", error);
-          setProgressLoaded(true);
-          return;
-        }
-
-        if (attemptDetails && attemptDetails.length > 0) {
-          setHasSavedProgress(true);
-
-          console.log("Loading saved progress:", {
-            attemptDetailsLength: attemptDetails.length,
-            moduleNumber,
-            initialLevel,
-            attemptDetails: attemptDetails.map(d => ({
-              question_index: d.question_index,
-              hasQuestion: !!d.question,
-              hasAnswer: !!d.answer
-            }))
-          });
-
-          // Always restore game state if there are saved attempt details,
-          // even if no answers have been provided yet
-          // This fixes the "No saved questions found" error when user starts game but doesn't answer anything
-          if (attemptDetails.length > 0) {
-            // The saved data might not have all 5 questions if user didn't reach them all
-            // We need to reconstruct the full game state properly
-
-            // First, get the questions that were saved
-            const savedQuestionData = attemptDetails.map(detail => ({
-              index: detail.question_index,
-              question: detail.question,
-              answer: detail.answer
-            })).sort((a, b) => a.index - b.index);
-
-            console.log("Saved question data:", savedQuestionData);
-
-            // If we don't have a complete set, we need to generate the missing questions
-            // This happens when user didn't reach all questions before saving
-            if (savedQuestionData.length < 5) {
-              console.log("Incomplete saved data, generating missing questions...");
-
-              // Generate a fresh set of 5 questions
-              const allQuestions = selectRandomQuestions();
-              const allAnswers = allQuestions.map(() => ({
-                violation: "",
-                rootCause: "",
-                solution: "",
-              }));
-
-              // Restore the saved questions and answers in their correct positions
-              savedQuestionData.forEach(({ index, question, answer }) => {
-                if (index < 5 && question) {
-                  allQuestions[index] = question;
-                  allAnswers[index] = answer || { violation: "", rootCause: "", solution: "" };
-                }
-              });
-
-              // Use the reconstructed arrays
-              var finalQuestions = allQuestions;
-              var finalAnswers = allAnswers;
-            } else {
-              console.log("Complete saved data found, using saved questions...");
-              // We have all 5 questions saved
-              var finalQuestions = savedQuestionData.map(item => item.question).filter(q => q) as Question[];
-              var finalAnswers = savedQuestionData.map(item => item.answer || { violation: "", rootCause: "", solution: "" }) as { violation: string; rootCause: string; solution: string; }[];
-
-              // Ensure we still have 5 questions even if some were null
-              if (finalQuestions.length < 5) {
-                console.warn("Some saved questions were null, filling with random questions...");
-                const additionalQuestions = selectRandomQuestions();
-                while (finalQuestions.length < 5) {
-                  finalQuestions.push(additionalQuestions[finalQuestions.length]);
-                  finalAnswers.push({ violation: "", rootCause: "", solution: "" });
-                }
-              }
-            }
-
-            console.log("Final questions and answers:", {
-              questionsLength: finalQuestions.length,
-              answersLength: finalAnswers.length,
-              questions: finalQuestions.map(q => q?.id || 'null')
-            });
-
-            // Find the furthest question the user has navigated to
-            // This represents where they should continue from (after clicking Proceed)
-            let currentQuestionIndex = 0;
-            let furthestQuestionIndex = -1;
-            let completeCount = 0;
-            let savedTimeRemaining = 5400; // Default timer value
-
-            // The furthest question is the highest question_index in the saved data
-            // This represents the last question the user navigated to (via Proceed button)
-            attemptDetails.forEach(detail => {
-              if (detail.question_index > furthestQuestionIndex) {
-                furthestQuestionIndex = detail.question_index;
-                // Get the timer state from the furthest question reached
-                if (detail.time_remaining && typeof detail.time_remaining === 'number' && !isNaN(detail.time_remaining)) {
-                  savedTimeRemaining = Math.max(0, Math.min(detail.time_remaining, 5400)); // Ensure valid range
-                }
-              }
-            });
-
-            // Validate savedTimeRemaining before using it
-            if (isNaN(savedTimeRemaining) || savedTimeRemaining < 0 || savedTimeRemaining > 5400) {
-              savedTimeRemaining = 5400;
-            }
-
-            // Count complete answers for progress display
-            for (let i = 0; i < finalAnswers.length; i++) {
-              const answer = finalAnswers[i];
-              if (answer) {
-                let isComplete = false;
-                if (initialLevel === 1) {
-                  isComplete = !!(answer.violation && answer.violation.trim() !== "" &&
-                             answer.rootCause && answer.rootCause.trim() !== "");
-                } else {
-                  isComplete = !!(answer.solution && answer.solution.trim() !== "");
-                }
-                if (isComplete) completeCount++;
-              }
-            }
-
-            // Continue from the furthest question the user reached
-            if (furthestQuestionIndex >= 0) {
-              currentQuestionIndex = furthestQuestionIndex;
-            } else {
-              currentQuestionIndex = 0;
-            }
-
-            // Set progress info
-            setSavedProgressInfo({
-              currentQuestion: currentQuestionIndex + 1,
-              totalQuestions: finalQuestions.length,
-              answeredQuestions: completeCount,
-              timeRemaining: savedTimeRemaining,
-            });
-
-            // Ensure currentQuestion is within valid bounds
-            currentQuestionIndex = Math.max(0, Math.min(currentQuestionIndex, finalQuestions.length - 1));
-
-            // Final validation of savedTimeRemaining before setting state
-            const finalTimeRemaining = (isNaN(savedTimeRemaining) || savedTimeRemaining < 0 || savedTimeRemaining > 5400) ? 5400 : savedTimeRemaining;
-
-            // Check if all cases are completed during restoration
-            const allCasesCompleted = completeCount >= finalQuestions.length;
-
-            if (allCasesCompleted) {
-              // All cases completed - show level complete modal immediately
-              if (initialLevel === 1) {
-                const level1Time = Math.max(0, 5400 - finalTimeRemaining);
-                // Save attempt to backend
-                saveIndividualAttempt(
-                  calculateScore(finalAnswers, finalQuestions),
-                  level1Time,
-                  5
-                );
-                saveTeamAttempt(5); // Save team summary for module 5
-
-                // Restore game state with level modal shown
-                setGameState(prev => ({
-                  ...prev,
-                  questions: finalQuestions,
-                  answers: finalAnswers,
-                  currentQuestion: finalQuestions.length - 1, // Set to last question
-                  gameStarted: false,
-                  currentLevel: initialLevel,
-                  timeRemaining: finalTimeRemaining,
-                  showLevelModal: true,
-                  level1CompletionTime: level1Time,
-                }));
-              } else {
-                // Level 2 completed - finish game
-                const finalScore = calculateScore(finalAnswers, finalQuestions);
-                const finalTime = Math.max(0, 5400 - finalTimeRemaining);
-                saveIndividualAttempt(finalScore, finalTime, 6);
-                saveTeamAttempt(6); // Save team summary for module 6
-
-                // Restore game state as completed
-                setGameState(prev => ({
-                  ...prev,
-                  questions: finalQuestions,
-                  answers: finalAnswers,
-                  currentQuestion: finalQuestions.length - 1, // Set to last question
-                  gameStarted: false,
-                  currentLevel: initialLevel,
-                  timeRemaining: finalTimeRemaining,
-                  gameCompleted: true,
-                  score: finalScore,
-                }));
-              }
-            } else {
-              // Not all cases completed - restore normal game state
-              console.log("Restoring normal game state:", {
-                questionsLength: finalQuestions.length,
-                answersLength: finalAnswers.length,
-                currentQuestionIndex,
-                finalTimeRemaining
-              });
-
-              setGameState(prev => ({
-                ...prev,
-                questions: finalQuestions,
-                answers: finalAnswers,
-                currentQuestion: currentQuestionIndex,
-                gameStarted: false, // Let user choose to continue
-                currentLevel: initialLevel,
-                timeRemaining: finalTimeRemaining, // Restore timer state with validation
-              }));
-            }
-
-
-          }
-        } else {
-          console.log("No saved attempt details found");
-          setHasSavedProgress(false);
-        }
-
-        setProgressLoaded(true);
-      } catch (err) {
-        console.error("Error loading progress:", err);
-        // Even if loading fails, if we detected saved progress, keep that flag
-        // The continue game function will handle generating questions if needed
-        setProgressLoaded(true);
-      } finally {
-        setIsLoadingProgress(false);
-      }
-    };
-
-    loadSavedProgress();
-  }, [session_id, email, initialLevel, progressLoaded]);
-
-  // Poll for module 6 unlock after Module 5
-  useEffect(() => {
-    let pollInterval: NodeJS.Timeout;
-    if (gameState.gameCompleted && gameState.currentLevel === 1) {
-      // Only poll after Module 5 completion
-      const poll = async () => {
-        const { data } = await supabase
-          .from("teams")
-          .select("can_access_module6")
-          .eq("session_id", session_id)
-          .single();
-        if (data && data.can_access_module6) {
-          setCanAccessModule6(true);
-          clearInterval(pollInterval);
-        }
-      };
-      pollInterval = setInterval(poll, 3000); // Poll every 3s
-      poll();
-    }
-    return () => pollInterval && clearInterval(pollInterval);
-  }, [gameState.gameCompleted, gameState.currentLevel, session_id]);
-
-  // Cleanup timer save interval on component unmount
-  useEffect(() => {
-    return () => {
-      if (timerSaveInterval) {
-        clearInterval(timerSaveInterval);
-      }
-    };
-  }, []);
-
-  // Auto-show case brief for Level 1 in mobile horizontal mode when game starts
-  useEffect(() => {
-    if (gameState.gameStarted && gameState.currentLevel === 1 && isMobileHorizontal) {
-      setTimeout(() => setShowCaseBrief(true), 100);
-    }
-  }, [gameState.gameStarted, gameState.currentLevel, isMobileHorizontal]);
-
-  // Periodic timer save - save timer every 30 seconds during active gameplay
-  useEffect(() => {
-    if (!gameState.gameStarted || gameState.gameCompleted || gameState.showLevelModal || !session_id || !email) {
-      // Clear any existing interval if game is not active or level modal is shown
-      if (timerSaveInterval) {
-        clearInterval(timerSaveInterval);
-        setTimerSaveInterval(null);
-      }
-      return;
-    }
-
-    // Only create interval if one doesn't exist
-    if (!timerSaveInterval) {
-      const interval = setInterval(async () => {
-        try {
-          const currentState = gameStateRef.current;
-          const currentSession = sessionIdRef.current;
-          const currentEmailValue = emailRef.current;
-
-          // Skip if game is no longer active or level modal is shown
-          if (!currentState.gameStarted || currentState.gameCompleted || currentState.showLevelModal || !currentSession || !currentEmailValue) {
-            return;
-          }
-
-          // Only save if we have meaningful progress (timer has been running for at least 10 seconds)
-          if (currentState.timeRemaining < 5390) { // 5400 - 10 seconds
-            // Ensure valid session before saving
-            const sessionValid = await ensureValidSession();
-            if (!sessionValid) {
-              return;
-            }
-
-            await supabase.from("attempt_details").upsert(
-              [
-                {
-                  email: currentEmailValue,
-                  session_id: currentSession,
-                  module_number: currentState.currentLevel === 1 ? 5 : 6,
-                  question_index: currentState.currentQuestion,
-                  question: currentState.questions[currentState.currentQuestion] || null,
-                  answer: currentState.answers[currentState.currentQuestion] || { violation: "", rootCause: "", solution: "" },
-                  time_remaining: currentState.timeRemaining,
-                },
-              ],
-              { onConflict: "email,session_id,module_number,question_index" }
-            );
-
-            // Update save indicator
-            setShowSaveIndicator(true);
-
-            // Hide save indicator after 2 seconds
-            setTimeout(() => {
-              setShowSaveIndicator(false);
-            }, 2000);
-          }
-        } catch (err) {
-          console.error('Periodic timer save error:', err);
-          if (err instanceof Error && (err.message.includes("JWT") || err.message.includes("expired"))) {
-            console.warn("Session expired during periodic timer save");
-          }
-        }
-      }, 30000); // Fixed 30-second interval
-
-      setTimerSaveInterval(interval);
-    }
-  }, [gameState.gameStarted, gameState.gameCompleted, gameState.showLevelModal, session_id, email, timerSaveInterval]);
-
-  // Save individual attempt to backend
-  const saveIndividualAttempt = async (
-    score: number,
-    completion_time_sec: number,
-    module_number: number
-  ) => {
-    // Ensure valid session before saving
-    const sessionValid = await ensureValidSession();
-    if (!sessionValid) {
-      console.error("Cannot save attempt: Invalid session");
-      return;
-    }
-
-    const { error } = await supabase.from("individual_attempts").insert([
-      {
-        email: email,
-        session_id: session_id,
-        module_number,
-        score,
-        completion_time_sec,
-      },
-    ]);
-    if (error) {
-      console.error("Supabase insert error:", error.message, error.details);
-      if (error.message.includes("JWT") || error.message.includes("expired")) {
-        setTeamInfoError("Session expired while saving. Please log in again.");
-      } else {
-        alert("Error saving attempt: " + error.message);
-      }
-    }
-  };
-
-  // Clear saved progress for a fresh start
-  const clearSavedProgress = async () => {
-    if (!session_id || !email) return;
-
-    try {
-      const moduleNumber = initialLevel === 1 ? 5 : 6;
-      await supabase
-        .from("attempt_details")
-        .delete()
-        .eq("email", email)
-        .eq("session_id", session_id)
-        .eq("module_number", moduleNumber);
-
-
-    } catch (err) {
-      console.error("Error clearing saved progress:", err);
-    }
-  };
-
-  // Select 5 random questions for the user
-  const selectRandomQuestions = () => {
-    const shuffled = [...hackathonData].sort(() => Math.random() - 0.5);
-    return shuffled.slice(0, 5);
-  };
-
-  const startGame = async () => {
-    // Clear any existing saved progress for a fresh start
-    await clearSavedProgress();
-
-    const questions = selectRandomQuestions();
-    const initialAnswers = questions.map(() => ({
-      violation: "",
-      rootCause: "",
-      solution: "",
-    }));
-
-    setGameState((prev) => ({
-      ...prev,
-      questions,
-      answers: initialAnswers,
-      gameStarted: true,
-      // Ensure correct level is set on start
-      currentLevel: initialLevel,
-      // Reset timer to full time for new game
-      timeRemaining: 5400,
-    }));
-
-    // Save initial position (question 0) when starting new game
-    setTimeout(() => {
-      saveCurrentPosition(0);
-    }, 100);
-
-    // Reset progress flags
-    setProgressLoaded(false);
-    setHasSavedProgress(false);
-    setSavedProgressInfo(null);
-  };
-
-  const continueGame = () => {
-    // Game state should already be restored from saved progress
-    // Just ensure the game is marked as started
-    setGameState(prev => {
-      // Debug logging to understand the issue
-      console.log("Continue Game Debug:", {
-        questionsLength: prev.questions.length,
-        answersLength: prev.answers.length,
-        currentQuestion: prev.currentQuestion,
-        hasSavedProgress,
-        progressLoaded,
-        gameStarted: prev.gameStarted
-      });
-
-      // Validate game state before continuing
-      if (prev.questions.length === 0) {
-        console.error("No questions found in game state. Attempting to restore from saved progress...");
-
-        // If we have saved progress but questions weren't loaded, try to generate them
-        if (hasSavedProgress) {
-          console.log("Attempting to generate questions for continue game...");
-          const questions = selectRandomQuestions();
-          const initialAnswers = questions.map(() => ({
-            violation: "",
-            rootCause: "",
-            solution: "",
-          }));
-
-          return {
-            ...prev,
-            questions,
-            answers: initialAnswers,
-            gameStarted: true,
-          };
-        }
-
-        alert("Error: No saved questions found. Please start a new game.");
-        return prev;
-      }
-
-      if (prev.currentQuestion >= prev.questions.length) {
-        alert("Error: Invalid saved progress. Please start a new game.");
-        return prev;
-      }
-
-      if (prev.answers.length !== prev.questions.length) {
-        console.warn("Answers length mismatch. Fixing...");
-        // Fix the answers array to match questions length
-        const fixedAnswers = [...prev.answers];
-        while (fixedAnswers.length < prev.questions.length) {
-          fixedAnswers.push({
-            violation: "",
-            rootCause: "",
-            solution: "",
-          });
-        }
-
-        return {
-          ...prev,
-          answers: fixedAnswers,
-          gameStarted: true,
-        };
-      }
-
-      return {
-        ...prev,
-        gameStarted: true,
-      };
-    });
-  };
-
-  const handleAnswer = (answer: {
-    violation?: string;
-    rootCause?: string;
-    solution?: string;
-  }) => {
-    setGameState((prev) => {
-      const newAnswers = [...prev.answers];
-      if (answer.violation !== undefined) {
-        newAnswers[prev.currentQuestion].violation = answer.violation;
-      }
-      if (answer.rootCause !== undefined) {
-        newAnswers[prev.currentQuestion].rootCause = answer.rootCause;
-      }
-      if (answer.solution !== undefined) {
-        newAnswers[prev.currentQuestion].solution = answer.solution;
-      }
-
-      // Auto-save answers and questions to database after every answer
-      const saveAttemptDetails = async () => {
-        try {
-          // Ensure valid session before auto-saving
-          const sessionValid = await ensureValidSession();
-          if (!sessionValid) {
-            console.warn("Cannot auto-save: Invalid session");
-            return;
-          }
-
-          await supabase.from("attempt_details").upsert(
-            [
-              {
-                email: email,
-                session_id: session_id,
-                module_number: prev.currentLevel === 1 ? 5 : 6,
-                question_index: prev.currentQuestion,
-                question: prev.questions[prev.currentQuestion],
-                answer: newAnswers[prev.currentQuestion],
-                time_remaining: prev.timeRemaining, // Save current timer state
-              },
-            ],
-            { onConflict: "email,session_id,module_number,question_index" }
-          );
-
-          // Update save indicator
-          setShowSaveIndicator(true);
-          setTimeout(() => setShowSaveIndicator(false), 2000);
-        } catch (err) {
-          console.error("Auto-save error:", err);
-          if (err instanceof Error && (err.message.includes("JWT") || err.message.includes("expired"))) {
-            console.warn("Session expired during auto-save");
-            // Don't show error to user for auto-save failures, just log it
-          }
-        }
-      };
-      saveAttemptDetails();
-
-      return {
-        ...prev,
-        answers: newAnswers,
-      };
-    });
-  };
-
-  // Save current position to database
-  const saveCurrentPosition = async (questionIndex: number) => {
-    if (!session_id || !email) return;
-
-    try {
-      const sessionValid = await ensureValidSession();
-      if (!sessionValid) return;
-
-      await supabase.from("attempt_details").upsert(
-        [
-          {
-            email: email,
-            session_id: session_id,
-            module_number: initialLevel === 1 ? 5 : 6,
-            question_index: questionIndex,
-            question: gameState.questions[questionIndex] || null,
-            answer: gameState.answers[questionIndex] || { violation: "", rootCause: "", solution: "" },
-            time_remaining: gameState.timeRemaining, // Save current timer state
-          },
-        ],
-        { onConflict: "email,session_id,module_number,question_index" }
-      );
-
-      // Update save indicator
-      setShowSaveIndicator(true);
-      setTimeout(() => setShowSaveIndicator(false), 2000);
-    } catch (err) {
-      console.error("Error saving position:", err);
-    }
-  };
-
-  const nextQuestion = () => {
-    setGameState((prev) => {
-      const nextQuestionIndex = prev.currentQuestion + 1;
-
-      // Save the new position when user proceeds
-      if (nextQuestionIndex < 5) {
-        saveCurrentPosition(nextQuestionIndex);
-      }
-
-      if (nextQuestionIndex >= 5) {
-        if (prev.currentLevel === 1) {
-          // Level 1 completed - show modal
-          const level1Time = Math.max(0, 5400 - prev.timeRemaining);
-          // Save attempt to backend
-          saveIndividualAttempt(
-            calculateScore(prev.answers, prev.questions),
-            level1Time,
-            5
-          );
-          saveTeamAttempt(5); // Save team summary for module 5
-          return {
-            ...prev,
-            showLevelModal: true,
-            level1CompletionTime: level1Time,
-          };
-        } else {
-          // Level 2 completed - finish game
-          const finalScore = calculateScore(prev.answers, prev.questions);
-          // Save attempt to backend
-          const finalTime = Math.max(0, 5400 - prev.timeRemaining);
-          saveIndividualAttempt(finalScore, finalTime, 6);
-          saveTeamAttempt(6); // Save team summary for module 6
-          return {
-            ...prev,
-            gameCompleted: true,
-            score: finalScore,
-          };
-        }
-      } else {
-        // Move to next question and ensure answer object exists
-        const newAnswers = [...prev.answers];
-
-        // Ensure the next question has an answer object initialized
-        if (!newAnswers[nextQuestionIndex]) {
-          newAnswers[nextQuestionIndex] = {
-            violation: "",
-            rootCause: "",
-            solution: "",
-          };
-        }
-
-        // Only clear the next question's answers if we're in normal gameplay
-        // (not when restoring from saved progress)
-        if (!progressLoaded || nextQuestionIndex > prev.currentQuestion) {
-          // Clear only the fields relevant to the current level
-          if (prev.currentLevel === 1) {
-            newAnswers[nextQuestionIndex].violation = "";
-            newAnswers[nextQuestionIndex].rootCause = "";
-          } else {
-            newAnswers[nextQuestionIndex].solution = "";
-          }
-        }
-
-
-
-        return {
-          ...prev,
-          currentQuestion: nextQuestionIndex,
-          answers: newAnswers,
-        };
-      }
-    });
-  };
-
-  const proceedToLevel2 = () => {
-    // Only allow proceeding to Level 2 if mode is not 'solution' AND not 'violation-root-cause'
-    // In HL1 (violation-root-cause), do NOT show Level 2 after modal
-    if (mode === "solution") {
-      // Do nothing, stay in Level 2
-      return;
-    }
-    // If mode is 'violation-root-cause', trigger navigation to HL2 via parent
-    if (onProceedToLevel2) onProceedToLevel2();
-  };
-
-  const calculateScore = (
-    answers: Array<{ violation: string; rootCause: string; solution: string }>,
-    questions: Question[]
-  ) => {
-    let score = 0;
-
-    questions.forEach((question, index) => {
-      const answer = answers[index];
-
-      // Level 1 scoring (10 points each for violation and root cause)
-      if (answer.violation === question.correctViolation) score += 10;
-      if (answer.rootCause === question.correctRootCause) score += 10;
-
-      // Level 2 scoring (20 points for solution)
-      if (answer.solution === question.correctSolution) score += 20;
-    });
-
-    return score;
-  };
-
+  // Handle time up
   const handleTimeUp = useCallback(() => {
     const currentGameState = gameStateRef.current;
     const finalScore = calculateScore(currentGameState.answers, currentGameState.questions);
@@ -994,588 +70,1027 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
       score: finalScore,
       timeRemaining: 0,
     }));
-  }, []); // Empty dependency array - use ref for current values
+  }, [calculateScore, gameStateRef, setGameState]);
 
-  const handleSetTimeRemaining = useCallback((timeOrUpdater: number | ((prev: number) => number)) => {
-    if (typeof timeOrUpdater === 'function') {
-      // Handle functional update
-      setGameState((prev) => {
-        const newTime = timeOrUpdater(prev.timeRemaining);
-        // Validate the result
-        if (isNaN(newTime) || newTime < 0) {
-          return prev;
-        }
-        const validTime = Math.max(0, Math.min(newTime, 5400));
-        return { ...prev, timeRemaining: validTime };
-      });
-    } else {
-      // Handle direct value
-      if (isNaN(timeOrUpdater) || timeOrUpdater < 0) {
-        return;
+  // Timer and auto-save
+  const { showSaveIndicator } = useGameTimer(
+    gameState,
+    teamInfo,
+    { gameStateRef, sessionIdRef, emailRef },
+    handleTimeUp
+  );
+
+  // Update refs when values change
+  useEffect(() => {
+    updateRefs(gameState, teamInfo?.session_id || null, teamInfo?.email || null);
+  }, [gameState, teamInfo, updateRefs]);
+
+  // Load saved progress when team info is available
+  useEffect(() => {
+    console.log("🔍 Checking if should load saved progress:", {
+      hasTeamInfo: !!teamInfo,
+      progressLoaded,
+      isLoadingProgress,
+      teamInfo: teamInfo ? { session_id: teamInfo.session_id, email: teamInfo.email } : null
+    });
+
+    if (teamInfo && !progressLoaded && !isLoadingProgress) {
+      console.log("🚀 Loading saved progress...");
+      loadSavedProgress(teamInfo);
+    }
+  }, [teamInfo, progressLoaded, isLoadingProgress, loadSavedProgress]);
+
+  // Debug effect to monitor progress state changes
+  useEffect(() => {
+    console.log("📊 Progress state changed:", {
+      progressLoaded,
+      isLoadingProgress,
+      hasSavedProgress,
+      hasAnyProgress,
+      savedProgressInfo: !!savedProgressInfo
+    });
+  }, [progressLoaded, isLoadingProgress, hasSavedProgress, hasAnyProgress, savedProgressInfo]);
+
+  // Module 6 polling removed - no longer needed since Results screen is removed
+
+  // Force landscape orientation for better gameplay experience
+  useEffect(() => {
+    const checkOrientation = () => {
+      // Check if device is mobile and in portrait mode
+      const isMobilePortrait = isMobile && !isHorizontal;
+
+      if (isMobilePortrait && !hasUserDismissedPrompt) {
+        setShowLandscapePrompt(true);
+      } else {
+        setShowLandscapePrompt(false);
       }
-      const validTime = Math.max(0, Math.min(timeOrUpdater, 5400));
-      setGameState((prev) => ({ ...prev, timeRemaining: validTime }));
+    };
+
+    // Check orientation on mount and when orientation changes
+    checkOrientation();
+
+    // Listen for orientation changes
+    const handleOrientationChange = () => {
+      setTimeout(checkOrientation, 100); // Small delay to ensure orientation is updated
+    };
+
+    window.addEventListener('orientationchange', handleOrientationChange);
+    window.addEventListener('resize', handleOrientationChange);
+
+    return () => {
+      window.removeEventListener('orientationchange', handleOrientationChange);
+      window.removeEventListener('resize', handleOrientationChange);
+    };
+  }, [isMobile, isHorizontal, hasUserDismissedPrompt]);
+
+  // Show landscape prompt immediately when game starts on mobile portrait
+  useEffect(() => {
+    if (gameState.gameStarted && isMobile && !isHorizontal && !hasUserDismissedPrompt) {
+      setShowLandscapePrompt(true);
+    }
+  }, [gameState.gameStarted, isMobile, isHorizontal, hasUserDismissedPrompt]);
+
+  // Show case brief for mobile horizontal (legacy behavior)
+  useEffect(() => {
+    if (gameState.gameStarted && gameState.currentLevel === 1 && isMobileHorizontal) {
+      setTimeout(() => setShowCaseBrief(true), 100);
+    }
+  }, [gameState.gameStarted, gameState.currentLevel, isMobileHorizontal]);
+
+  // Detect case changes and show indicator
+  useEffect(() => {
+    const currentQuestion = gameState.questions[gameState.currentQuestion];
+
+    if (currentQuestion && previousQuestionId && previousQuestionId !== String(currentQuestion.id)) {
+      // Case has changed, show the indicator
+      setShowCaseChangeIndicator(true);
+
+      // Hide the indicator after 3 seconds
+      const timer = setTimeout(() => {
+        setShowCaseChangeIndicator(false);
+      }, 3000);
+
+      return () => clearTimeout(timer);
+    }
+
+    // Update the previous question ID
+    if (currentQuestion) {
+      setPreviousQuestionId(String(currentQuestion.id));
+    }
+  }, [gameState.questions, gameState.currentQuestion, previousQuestionId]);
+
+  // Handle answer submission
+  const handleAnswer = useCallback(async (answer: Partial<{ violation: string; rootCause: string; solution: string }>) => {
+    setGameState((prev) => {
+      const newAnswers = [...prev.answers];
+      const currentAnswer = prev.answers[prev.currentQuestion] || { violation: "", rootCause: "", solution: "" };
+
+      // Merge the partial answer with the current answer
+      const updatedAnswer = {
+        violation: answer.violation ?? currentAnswer.violation,
+        rootCause: answer.rootCause ?? currentAnswer.rootCause,
+        solution: answer.solution ?? currentAnswer.solution,
+      };
+
+      newAnswers[prev.currentQuestion] = updatedAnswer;
+
+      // Auto-save answers and questions to database after every answer
+      const saveAttemptDetails = async () => {
+        if (!teamInfo?.session_id || !teamInfo?.email) {
+          console.log("❌ Auto-save skipped - missing team info:", {
+            hasSessionId: !!teamInfo?.session_id,
+            hasEmail: !!teamInfo?.email
+          });
+          return;
+        }
+
+        console.log("💾 Auto-saving attempt details:", {
+          email: teamInfo.email,
+          sessionId: teamInfo.session_id,
+          moduleNumber: prev.currentLevel === 1 ? 5 : 6,
+          questionIndex: prev.currentQuestion,
+          hasQuestion: !!prev.questions[prev.currentQuestion],
+          answer: updatedAnswer,
+          timeRemaining: prev.timeRemaining
+        });
+
+        try {
+          const result = await DatabaseService.saveCurrentPosition(
+            teamInfo.email,
+            teamInfo.session_id,
+            prev.currentLevel === 1 ? 5 : 6,
+            prev.currentQuestion,
+            prev.questions[prev.currentQuestion],
+            updatedAnswer,
+            prev.timeRemaining
+          );
+
+          console.log("💾 Auto-save result:", result);
+
+          if (!result.success) {
+            console.error("❌ Auto-save failed:", result.error);
+          } else {
+            console.log("✅ Auto-save successful");
+          }
+        } catch (error) {
+          console.error("💥 Error auto-saving attempt details:", error);
+        }
+      };
+
+      saveAttemptDetails();
+
+      return {
+        ...prev,
+        answers: newAnswers,
+      };
+    });
+  }, [setGameState, teamInfo]);
+
+  // Handle next question
+  const nextQuestion = useCallback(() => {
+    setGameState((prev) => {
+      const nextQuestionIndex = prev.currentQuestion + 1;
+
+      if (nextQuestionIndex >= prev.questions.length) {
+        // All questions completed
+        const finalScore = calculateScore(prev.answers, prev.questions);
+        
+        // Save individual attempt
+        if (teamInfo?.session_id && teamInfo?.email) {
+          const finalTime = 600 - prev.timeRemaining;
+          const moduleNumber = prev.currentLevel === 1 ? 5 : 6;
+          
+          DatabaseService.saveIndividualAttempt(
+            teamInfo.email,
+            teamInfo.session_id,
+            moduleNumber,
+            finalScore,
+            finalTime
+          ).then(() => {
+            setShowTeamScoreModal(true);
+
+            // Check if team is complete and save team attempt
+            DatabaseService.checkTeamComplete(teamInfo.session_id, moduleNumber).then((result) => {
+              if (result.success && result.isComplete) {
+                DatabaseService.saveTeamAttempt(teamInfo.session_id, moduleNumber);
+              }
+            });
+
+            // If this is level 1 and we have a callback to proceed to level 2, call it after a short delay
+            if (prev.currentLevel === 1 && onProceedToLevel2) {
+              setTimeout(() => {
+                onProceedToLevel2();
+              }, 2000); // 2 second delay to allow the team score modal to be seen
+            }
+          });
+        }
+
+        return {
+          ...prev,
+          gameCompleted: true,
+          score: finalScore,
+          showLevelModal: false, // Removed completion time modal
+        };
+      } else {
+        // Save current position to database
+        if (teamInfo?.session_id && teamInfo?.email) {
+          DatabaseService.saveCurrentPosition(
+            teamInfo.email,
+            teamInfo.session_id,
+            prev.currentLevel === 1 ? 5 : 6,
+            nextQuestionIndex,
+            prev.questions[nextQuestionIndex] || null,
+            prev.answers[nextQuestionIndex] || null,
+            prev.timeRemaining
+          );
+        }
+
+        return {
+          ...prev,
+          currentQuestion: nextQuestionIndex,
+        };
+      }
+    });
+  }, [setGameState, calculateScore, teamInfo]);
+
+  // Continue game from saved progress
+  const continueGame = useCallback(async () => {
+    console.log("🎮 Continue button clicked!");
+    console.log("🔍 Continue game state:", {
+      hasTeamInfo: !!teamInfo,
+      hasSavedProgress,
+      hasAnyProgress,
+      savedProgressInfo: !!savedProgressInfo,
+      mode
+    });
+
+    if (!teamInfo) {
+      console.error("❌ No team info available for continue");
+      return;
+    }
+
+    try {
+      const moduleNumber = mode === "solution" ? 6 : 5;
+      console.log("📊 Loading progress for module:", moduleNumber);
+
+      const result = await DatabaseService.loadSavedProgress(
+        teamInfo.email,
+        teamInfo.session_id,
+        moduleNumber
+      );
+
+      console.log("📥 Load progress result:", result);
+
+      if (result.success && result.data && result.data.length > 0) {
+        const attemptDetails = result.data;
+        console.log("✅ Found attempt details:", attemptDetails);
+
+        // Get the last saved position
+        const lastDetail = attemptDetails[attemptDetails.length - 1];
+        const lastQuestionIndex = lastDetail.question_index;
+        const timeRemaining = lastDetail.time_remaining || 600;
+
+        console.log("📍 Last saved position:", {
+          lastQuestionIndex,
+          timeRemaining,
+          totalSavedQuestions: attemptDetails.length
+        });
+
+        // Create questions and answers arrays from saved data
+        const savedQuestions: any[] = [];
+        const savedAnswers: any[] = [];
+
+        // Sort attempt details by question_index to ensure correct order
+        const sortedDetails = attemptDetails.sort((a, b) => a.question_index - b.question_index);
+
+        for (const detail of sortedDetails) {
+          savedQuestions[detail.question_index] = detail.question;
+          savedAnswers[detail.question_index] = detail.answer;
+        }
+
+        // Fill any missing slots with new questions
+        const allQuestions = selectRandomQuestions();
+        for (let i = 0; i < 5; i++) {
+          if (!savedQuestions[i]) {
+            savedQuestions[i] = allQuestions[i];
+            savedAnswers[i] = { violation: "", rootCause: "", solution: "" };
+          }
+        }
+
+        // Calculate the next question to continue from
+        // If answered questions 0,1 (2 questions), should continue from question 2 (index 2)
+        const nextQuestionIndex = Math.max(...attemptDetails.map(d => d.question_index)) + 1;
+        const currentQuestionIndex = Math.min(nextQuestionIndex, savedQuestions.length - 1);
+
+        // Determine the correct level based on module number
+        const restoredLevel = moduleNumber === 5 ? 1 : 2;
+
+        console.log("🎯 Setting game state:", {
+          questionsLength: savedQuestions.length,
+          answersLength: savedAnswers.length,
+          lastQuestionIndex: lastQuestionIndex,
+          nextQuestionIndex: nextQuestionIndex,
+          currentQuestion: currentQuestionIndex,
+          timeRemaining,
+          moduleNumber,
+          restoredLevel,
+          answeredQuestions: attemptDetails.length
+        });
+
+        setGameState(prev => ({
+          ...prev,
+          currentLevel: restoredLevel as 1 | 2,
+          questions: savedQuestions,
+          answers: savedAnswers,
+          currentQuestion: currentQuestionIndex,
+          timeRemaining: timeRemaining,
+          gameStarted: true,
+          showCountdown: false,
+        }));
+
+        console.log("✅ Game continued from saved progress successfully!");
+      } else {
+        // No saved progress found, start new game
+        console.log("⚠️ No saved progress found, starting new game");
+        if (teamInfo) {
+          startGame(teamInfo);
+        }
+      }
+    } catch (error) {
+      console.error("❌ Error continuing game:", error);
+      // Fallback to new game
+      console.log("🔄 Falling back to new game");
+      if (teamInfo) {
+        startGame(teamInfo);
+      }
+    }
+  }, [teamInfo, hasSavedProgress, hasAnyProgress, savedProgressInfo, mode, startGame, selectRandomQuestions, setGameState]);
+
+  // Debug function to test continue functionality
+  const testContinue = useCallback(() => {
+    console.log("🧪 Test continue function called");
+    console.log("🔍 Current state:", {
+      hasTeamInfo: !!teamInfo,
+      teamInfo: teamInfo ? { email: teamInfo.email, session_id: teamInfo.session_id } : null,
+      hasAnyProgress,
+      hasSavedProgress,
+      gameStarted: gameState.gameStarted,
+      mode
+    });
+
+    // Force start the game for testing
+    setGameState(prev => ({
+      ...prev,
+      gameStarted: true,
+      showCountdown: false,
+    }));
+  }, [teamInfo, hasAnyProgress, hasSavedProgress, gameState.gameStarted, mode, setGameState]);
+
+  // Debug function to manually trigger progress loading
+  const testLoadProgress = useCallback(() => {
+    console.log("🔄 Manually triggering progress load...");
+    if (teamInfo) {
+      loadSavedProgress(teamInfo);
+    } else {
+      console.log("❌ No team info available for manual load");
+    }
+  }, [teamInfo, loadSavedProgress]);
+
+  // Debug function to test database directly
+  const testDatabase = useCallback(async () => {
+    console.log("🗄️ Testing database connection...");
+    if (!teamInfo) {
+      console.log("❌ No team info for database test");
+      return;
+    }
+
+    try {
+      const moduleNumber = mode === "solution" ? 6 : 5;
+      console.log("📊 Testing database query:", {
+        email: teamInfo.email,
+        session_id: teamInfo.session_id,
+        moduleNumber
+      });
+
+      const result = await DatabaseService.loadSavedProgress(
+        teamInfo.email,
+        teamInfo.session_id,
+        moduleNumber
+      );
+
+      console.log("📥 Direct database result:", result);
+
+      // Additional comprehensive check
+      console.log("🔍 Comprehensive database check:");
+      console.log("- Email:", teamInfo.email);
+      console.log("- Session ID:", teamInfo.session_id);
+      console.log("- Module Number:", moduleNumber);
+      console.log("- Mode:", mode);
+
+      // Check if there's any data at all in the table
+      const { data: anyData, error: anyError } = await supabase
+        .from("attempt_details")
+        .select("count", { count: 'exact' });
+
+      console.log("📊 Total records in attempt_details:", { count: anyData, error: anyError });
+
+      // Show a sample of recent records to understand the data structure
+      const { data: recentRecords, error: recentError } = await supabase
+        .from("attempt_details")
+        .select("email, session_id, module_number, question_index, created_at")
+        .order("created_at", { ascending: false })
+        .limit(10);
+
+      console.log("📋 Recent records (last 10):", { recentRecords, recentError });
+
+      // Show records grouped by user to see the pattern
+      const { data: groupedRecords, error: groupedError } = await supabase
+        .from("attempt_details")
+        .select("email, session_id, module_number, count(*)")
+        .order("created_at", { ascending: false });
+
+      console.log("👥 All users with progress:", { groupedRecords, groupedError });
+
+    } catch (error) {
+      console.error("💥 Database test error:", error);
+    }
+  }, [teamInfo, mode]);
+
+  // Debug function to test saving progress manually
+  const testSaveProgress = useCallback(async () => {
+    console.log("💾 Testing manual save progress...");
+    if (!teamInfo) {
+      console.log("❌ No team info for save test");
+      return;
+    }
+
+    try {
+      const moduleNumber = mode === "solution" ? 6 : 5;
+      // Use a proper question structure from the game state or create a minimal valid one
+      const testQuestion = gameState.questions.length > 0 ? gameState.questions[0] : null;
+      const testAnswer = {
+        violation: "Test violation answer",
+        rootCause: "Test root cause answer",
+        solution: "Test solution answer"
+      };
+
+      console.log("🧪 Attempting to save test data:", {
+        email: teamInfo.email,
+        sessionId: teamInfo.session_id,
+        moduleNumber,
+        questionIndex: 0,
+        question: testQuestion ? "Valid question object" : "No question available",
+        answer: testAnswer,
+        timeRemaining: gameState.timeRemaining
+      });
+
+      const result = await DatabaseService.saveCurrentPosition(
+        teamInfo.email,
+        teamInfo.session_id,
+        moduleNumber,
+        0,
+        testQuestion,
+        testAnswer,
+        gameState.timeRemaining
+      );
+
+      console.log("💾 Save test result:", result);
+
+      if (result.success) {
+        console.log("✅ Manual save successful! Now testing load...");
+
+        // Test loading the saved data
+        const loadResult = await DatabaseService.loadSavedProgress(
+          teamInfo.email,
+          teamInfo.session_id,
+          moduleNumber
+        );
+
+        console.log("📥 Load test result:", loadResult);
+      } else {
+        console.error("❌ Manual save failed:", result.error);
+      }
+
+    } catch (error) {
+      console.error("💥 Save test error:", error);
+    }
+  }, [teamInfo, mode, gameState.timeRemaining, gameState.questions]);
+
+  // Debug function to check session status
+  const testSession = useCallback(async () => {
+    console.log("🔐 Testing session status...");
+
+    try {
+      // Check current session
+      const { data: { session }, error } = await supabase.auth.getSession();
+
+      console.log("🔐 Current session:", {
+        hasSession: !!session,
+        hasUser: !!session?.user,
+        userEmail: session?.user?.email,
+        sessionError: error?.message
+      });
+
+      // Test session validation
+      const sessionValid = await AuthService.ensureValidSession();
+      console.log("🔐 Session validation result:", sessionValid);
+
+      // Test team info fetch
+      const teamResult = await AuthService.fetchTeamInfo();
+      console.log("👥 Team info fetch result:", teamResult);
+
+    } catch (error) {
+      console.error("💥 Session test error:", error);
     }
   }, []);
 
-  // Reset game state when mode changes (e.g., after navigation to HL2)
-  React.useEffect(() => {
-    if (mode === "solution") {
-      // Preserve Level 1 answers for summary in Level 2
-      setGameState((prev) => {
-        // If already in Level 2, do nothing
-        if (prev.currentLevel === 2) return prev;
-        // Use previous questions and answers, only reset solution field
-        const newAnswers = prev.answers.map((ans) => ({
-          violation: ans.violation,
-          rootCause: ans.rootCause,
-          solution: "", // clear solution for Level 2
-        }));
-        return {
-          ...prev,
-          currentLevel: 2,
-          currentQuestion: 0,
-          // Keep previous questions and answers
-          questions:
-            prev.questions.length === 5
-              ? prev.questions
-              : selectRandomQuestions(),
-          answers:
-            prev.answers.length === 5
-              ? newAnswers
-              : selectRandomQuestions().map(() => ({
-                  violation: "",
-                  rootCause: "",
-                  solution: "",
-                })),
-          gameStarted: true,
-          gameCompleted: false,
-          showLevelModal: false,
-          level1CompletionTime: 0,
-        };
-      });
-    }
-  }, [mode]);
+  // Comprehensive diagnostic function
+  const runDiagnostics = useCallback(async () => {
+    console.log("🔬 Running comprehensive diagnostics...");
 
-  // Only show Level 1 UI for HL1 (mode violation-root-cause)
-  // Only show Level 2 UI for HL2 (mode solution)
-  if (!gameState.gameStarted) {
-    if (loadingIds || teamInfoError) {
-      return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-800 relative p-2">
-          {/* Background Pattern */}
-          <div className="absolute inset-0 bg-pixel-pattern opacity-10"></div>
-          <div className="absolute inset-0 bg-scan-lines opacity-20"></div>
-          
-          <div className="pixel-border bg-gradient-to-r from-cyan-600 to-blue-600 p-4 max-w-md w-full text-center relative z-10">
-            <h2 className="text-lg font-black mb-3 text-cyan-100 pixel-text">
-              LOADING TEAM INFO...
-            </h2>
-            {teamInfoError ? (
-              <>
-                <p className="text-red-300 mb-4 font-bold text-sm">{teamInfoError}</p>
-                <div className="flex flex-col gap-2">
-                  {teamInfoError.includes("expired") || teamInfoError.includes("JWT") ? (
-                    <>
-                      <button
-                        className="pixel-border bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white font-black py-2 px-4 pixel-text transition-all text-sm"
-                        onClick={() => {
-                          // Redirect to login page
-                          window.location.href = '/login'; // Adjust this path as needed
-                        }}
-                      >
-                        GO TO LOGIN
-                      </button>
-                      <button
-                        className="pixel-border bg-gradient-to-r from-green-500 to-green-600 hover:from-green-400 hover:to-green-500 text-white font-black py-1 px-3 pixel-text transition-all text-sm"
-                        onClick={async () => {
-                          setTeamInfoError(null);
-                          // Try to sign out and clear any cached tokens
-                          try {
-                            await supabase.auth.signOut();
-                          } catch (err) {
-                            console.warn("Sign out error:", err);
-                          }
-                          window.location.reload();
-                        }}
-                      >
-                        RETRY
-                      </button>
-                    </>
-                  ) : (
-                    <button
-                      className="pixel-border bg-gradient-to-r from-green-500 to-green-600 hover:from-green-400 hover:to-green-500 text-white font-black py-1 px-3 pixel-text transition-all text-sm"
-                      onClick={() => {
-                        setTeamInfoError(null);
-                        window.location.reload();
-                      }}
-                    >
-                      RETRY
-                    </button>
-                  )}
-                </div>
-              </>
-            ) : (
-              <>
-                <p className="text-cyan-100 mb-4 text-sm font-bold">
-                  Please wait while we load your team session and check for saved progress.
-                </p>
-                <div className="animate-pulse text-cyan-300 font-black pixel-text text-sm">
-                  {isLoadingProgress ? "LOADING PROGRESS..." : "LOADING..."}
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      );
-    }
-    if (initialLevel === 1) {
-      return (
-        <div className="min-h-screen bg-gray-800 flex items-center justify-center p-2 relative">
-          {/* Background Pattern */}
-          <div className="absolute inset-0 bg-pixel-pattern opacity-10"></div>
-          <div className="absolute inset-0 bg-scan-lines opacity-20"></div>
-          
-          <div className="pixel-border-thick bg-gradient-to-r from-cyan-600 to-blue-600 p-4 max-w-xl w-full text-center relative z-10">
-            <div className="flex justify-center mb-4">
-              <div className="w-12 h-12 bg-cyan-500 pixel-border flex items-center justify-center">
-                <Factory className="w-6 h-6 text-cyan-900" />
-              </div>
-            </div>
-            <h1 className="text-xl font-black text-cyan-100 mb-3 pixel-text">
-              GOOD MANUFACTURING PRACTICES
-            </h1>
-            {/* <p className="text-cyan-100 mb-4 text-sm font-bold">
-              Test your knowledge of Good Manufacturing Practices through
-              interactive case studies
-            </p> */}
-            <div className="grid grid-cols-3 gap-2 mb-4">
-              <div className="pixel-border bg-gradient-to-r from-blue-700 to-blue-600 p-2">
-                <div className="w-6 h-6 bg-blue-800 pixel-border mx-auto mb-1 flex items-center justify-center">
-                  <Clock className="w-3 h-3 text-blue-300" />
-                </div>
-                <h3 className="font-black text-white text-xs pixel-text">
-                  90 MINUTES
-                </h3>
-                <p className="text-blue-100 text-xs font-bold">
-                  Complete all questions
-                </p>
-              </div>
-              <div className="pixel-border bg-gradient-to-r from-green-700 to-green-600 p-2">
-                <div className="w-6 h-6 bg-green-800 pixel-border mx-auto mb-1 flex items-center justify-center">
-                  <Trophy className="w-3 h-3 text-green-300" />
-                </div>
-                <h3 className="font-black text-white text-xs pixel-text">
-                  2 LEVELS
-                </h3>
-                <p className="text-green-100 text-xs font-bold">
-                  Analysis & Solution
-                </p>
-              </div>
-              <div className="pixel-border bg-gradient-to-r from-orange-700 to-orange-600 p-2">
-                <div className="w-6 h-6 bg-orange-800 pixel-border mx-auto mb-1 flex items-center justify-center">
-                  <AlertTriangle className="w-3 h-3 text-orange-300" />
-                </div>
-                <h3 className="font-black text-white text-xs pixel-text">
-                  5 CASES
-                </h3>
-                <p className="text-orange-100 text-xs font-bold">
-                  Random GMP scenarios
-                </p>
-              </div>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
-              {hasSavedProgress ? (
-                <div className="flex flex-col items-center gap-2">
-                  <button
-                    onClick={continueGame}
-                    className="pixel-border bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-400 hover:to-yellow-500 text-white font-black py-2 px-4 pixel-text transition-all transform hover:scale-105 text-sm"
-                  >
-                    CONTINUE GAME
-                  </button>
-                  {/* {savedProgressInfo && (
-                    <div className="text-xs text-cyan-200 font-bold space-y-1">
-                      <div>Progress: {savedProgressInfo.answeredQuestions}/{savedProgressInfo.totalQuestions} questions answered</div>
-                      <div>Time remaining: {Math.floor(savedProgressInfo.timeRemaining / 60)}:{String(savedProgressInfo.timeRemaining % 60).padStart(2, '0')}</div>
-                    </div>
-                  )} */}
-                </div>
-              ) : (
-                <button
-                  onClick={startGame}
-                  className="pixel-border bg-gradient-to-r from-green-500 to-green-600 hover:from-green-400 hover:to-green-500 text-white font-black py-2 px-4 pixel-text transition-all transform hover:scale-105 text-sm"
-                >
-                  START SIMULATION
-                </button>
-              )}
-              <button
-                onClick={showWalkthroughVideo}
-                className="pixel-border bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white font-black py-2 px-4 pixel-text transition-all transform hover:scale-105 text-sm flex items-center gap-2"
-              >
-                <Play className="w-4 h-4" />
-                WALKTHROUGH VIDEO
-              </button>
-            </div>
-          </div>
-        </div>
-      );
-    } else {
-      // Level 2 only UI (HL2)
-      return (
-        <div className="min-h-screen bg-gray-800 flex items-center justify-center p-2 relative">
-          {/* Background Pattern */}
-          <div className="absolute inset-0 bg-pixel-pattern opacity-10"></div>
-          <div className="absolute inset-0 bg-scan-lines opacity-20"></div>
-          
-          <div className="pixel-border-thick bg-gradient-to-r from-purple-600 to-purple-700 p-4 max-w-xl w-full text-center relative z-10">
-            <div className="flex justify-center mb-4">
-              <div className="w-12 h-12 bg-purple-500 pixel-border flex items-center justify-center">
-                <Trophy className="w-6 h-6 text-purple-900" />
-              </div>
-            </div>
-            <h1 className="text-xl font-black text-purple-100 mb-3 pixel-text">
-              GMP SOLUTION ROUND
-            </h1>
-            <p className="text-purple-100 mb-4 text-sm font-bold">
-              Select the best solutions for each GMP case scenario
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-4">
-              <div className="pixel-border bg-gradient-to-r from-blue-700 to-blue-600 p-2">
-                <div className="w-6 h-6 bg-blue-800 pixel-border mx-auto mb-1 flex items-center justify-center">
-                  <Clock className="w-3 h-3 text-blue-300" />
-                </div>
-                <h3 className="font-black text-white text-xs pixel-text">
-                  90 MINUTES
-                </h3>
-                <p className="text-blue-100 text-xs font-bold">
-                  Complete all solutions
-                </p>
-              </div>
-              <div className="pixel-border bg-gradient-to-r from-orange-700 to-orange-600 p-2">
-                <div className="w-6 h-6 bg-orange-800 pixel-border mx-auto mb-1 flex items-center justify-center">
-                  <AlertTriangle className="w-3 h-3 text-orange-300" />
-                </div>
-                <h3 className="font-black text-white text-xs pixel-text">
-                  5 CASES
-                </h3>
-                <p className="text-orange-100 text-xs font-bold">
-                  Random GMP scenarios
-                </p>
-              </div>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
-              {hasSavedProgress ? (
-                <div className="flex flex-col items-center gap-2">
-                  <button
-                    onClick={continueGame}
-                    className="pixel-border bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-400 hover:to-yellow-500 text-white font-black py-2 px-4 pixel-text transition-all transform hover:scale-105 text-sm"
-                  >
-                    CONTINUE GAME
-                  </button>
-                  {/* {savedProgressInfo && (
-                    <div className="text-xs text-purple-200 font-bold space-y-1">
-                      <div>Progress: {savedProgressInfo.answeredQuestions}/{savedProgressInfo.totalQuestions} questions answered</div>
-                      <div>Time remaining: {Math.floor(savedProgressInfo.timeRemaining / 60)}:{String(savedProgressInfo.timeRemaining % 60).padStart(2, '0')}</div>
-                    </div>
-                  )} */}
-                </div>
-              ) : (
-                <button
-                  onClick={startGame}
-                  className="pixel-border bg-gradient-to-r from-green-500 to-green-600 hover:from-green-400 hover:to-green-500 text-white font-black py-2 px-4 pixel-text transition-all transform hover:scale-105 text-sm"
-                >
-                  START SOLUTION ROUND
-                </button>
-              )}
-              <button
-                onClick={showWalkthroughVideo}
-                className="pixel-border bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white font-black py-2 px-4 pixel-text transition-all transform hover:scale-105 text-sm flex items-center gap-2"
-              >
-                <Play className="w-4 h-4" />
-                WALKTHROUGH VIDEO
-              </button>
-            </div>
-          </div>
-        </div>
-      );
-    }
-  }
+    try {
+      // 1. Check team info
+      console.log("1️⃣ Team Info Check:");
+      console.log("- Has team info:", !!teamInfo);
+      if (teamInfo) {
+        console.log("- Email:", teamInfo.email);
+        console.log("- Session ID:", teamInfo.session_id);
+        console.log("- Team Name:", teamInfo.teamName);
+      }
 
-  if (gameState.gameCompleted) {
-    // After Module 5, show waiting screen if not unlocked
-    if (gameState.currentLevel === 1 && !canAccessModule6) {
-      return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-800 relative p-2">
-          {/* Background Pattern */}
-          <div className="absolute inset-0 bg-pixel-pattern opacity-10"></div>
-          <div className="absolute inset-0 bg-scan-lines opacity-20"></div>
-          
-          <div className="pixel-border bg-gradient-to-r from-cyan-600 to-blue-600 p-4 max-w-md w-full text-center relative z-10">
-            <h2 className="text-lg font-black mb-3 text-cyan-100 pixel-text">
-              AWAITING TEAM EVALUATION
-            </h2>
-            <p className="text-cyan-100 mb-4 text-sm font-bold">
-              Your team's results are being evaluated. Please wait for Module 6
-              to unlock.
-            </p>
-            <div className="animate-pulse text-cyan-300 font-black pixel-text text-sm">
-              CHECKING TEAM STATUS...
-            </div>
-          </div>
-        </div>
-      );
+      // 2. Check session
+      console.log("2️⃣ Session Check:");
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      console.log("- Has session:", !!session);
+      console.log("- Session error:", sessionError?.message);
+      if (session?.user) {
+        console.log("- User email:", session.user.email);
+      }
+
+      // 3. Check database connectivity
+      console.log("3️⃣ Database Connectivity Check:");
+      const { data: testData, error: testError } = await supabase
+        .from("attempt_details")
+        .select("count", { count: 'exact' })
+        .limit(1);
+
+      console.log("- Database accessible:", !testError);
+      console.log("- Database error:", testError?.message);
+      console.log("- Total records:", testData);
+
+      // 4. Check table structure
+      console.log("4️⃣ Table Structure Check:");
+      const { data: sampleRecord, error: structureError } = await supabase
+        .from("attempt_details")
+        .select("*")
+        .limit(1);
+
+      console.log("- Structure accessible:", !structureError);
+      console.log("- Structure error:", structureError?.message);
+      if (sampleRecord && sampleRecord.length > 0) {
+        console.log("- Sample record keys:", Object.keys(sampleRecord[0]));
+      }
+
+      // 5. Test session validation
+      console.log("5️⃣ Session Validation Check:");
+      const sessionValid = await AuthService.ensureValidSession();
+      console.log("- Session valid:", sessionValid);
+
+      // 6. Check for existing progress
+      if (teamInfo) {
+        console.log("6️⃣ Existing Progress Check:");
+        const moduleNumber = mode === "solution" ? 6 : 5;
+        const { data: existingProgress, error: progressError } = await supabase
+          .from("attempt_details")
+          .select("*")
+          .eq("email", teamInfo.email)
+          .eq("session_id", teamInfo.session_id)
+          .eq("module_number", moduleNumber);
+
+        console.log("- Progress query error:", progressError?.message);
+        console.log("- Existing progress count:", existingProgress?.length || 0);
+        if (existingProgress && existingProgress.length > 0) {
+          console.log("- Progress details:", existingProgress);
+        }
+      }
+
+      console.log("🔬 Diagnostics complete!");
+
+    } catch (error) {
+      console.error("💥 Diagnostics error:", error);
     }
-    // If unlocked or Module 6, show results
+  }, [teamInfo, mode]);
+
+  // Show walkthrough video
+  const showWalkthroughVideo = useCallback(() => {
+    const videoUrl = "https://www.youtube.com/watch?v=7CemV2XIaXo";
+    window.open(videoUrl, '_blank');
+  }, []);
+
+  // Attempt to request landscape orientation
+  const requestLandscapeOrientation = useCallback(async () => {
+    try {
+      // Check if the Screen Orientation API is available
+      if ('screen' in window && 'orientation' in window.screen && 'lock' in window.screen.orientation) {
+        await (window.screen.orientation as any).lock('landscape');
+        console.log('Successfully locked to landscape orientation');
+      } else if ('orientation' in window.screen) {
+        // Fallback for older browsers
+        console.log('Screen Orientation API not fully supported, showing prompt only');
+      }
+    } catch (error) {
+      console.log('Could not lock orientation:', error);
+      // This is expected on many browsers/devices, so we just show the prompt
+    }
+
+    // Hide the prompt after attempting to rotate
+    setShowLandscapePrompt(false);
+    setHasUserDismissedPrompt(true);
+  }, []);
+
+  // Loading state
+  const loadingIds = !teamInfo?.session_id || !teamInfo?.email || isLoadingProgress;
+
+  // Determine what to render
+  const shouldShowLoading = !gameState.gameStarted && !gameState.showCountdown && (loadingIds || teamInfoError);
+  const shouldShowSavedProgressModal = !gameState.gameStarted && !gameState.showCountdown && !shouldShowLoading && hasSavedProgress && savedProgressInfo && teamInfo;
+  const shouldShowStartScreen = !gameState.gameStarted && !gameState.showCountdown && !shouldShowLoading && !shouldShowSavedProgressModal;
+
+  // Debug logging
+  console.log("🎯 Render decision:", {
+    shouldShowLoading,
+    shouldShowSavedProgressModal,
+    shouldShowStartScreen,
+    hasSavedProgress,
+    hasAnyProgress,
+    hasSavedProgressInfo: !!savedProgressInfo,
+    hasTeamInfo: !!teamInfo,
+    gameStarted: gameState.gameStarted,
+    showCountdown: gameState.showCountdown
+  });
+
+  // Render loading screen
+  if (shouldShowLoading) {
     return (
-      <Results gameState={gameState} canAccessModule6={canAccessModule6} />
+      <LoadingScreen
+        isLoadingTeamInfo={isLoadingProgress}
+        teamInfoError={teamInfoError}
+        onRetry={retryAuth}
+        onClearError={clearError}
+      />
     );
   }
 
-  const currentQuestion = gameState.questions[gameState.currentQuestion];
-  const progress = ((gameState.currentQuestion + 1) / 5) * 100;
+  // Render saved progress modal
+  if (shouldShowSavedProgressModal) {
+    console.log("📱 Showing SavedProgressModal");
+    return (
+      <SavedProgressModal
+        show={true}
+        progressInfo={savedProgressInfo}
+        onContinue={continueGame}
+        onStartFresh={() => startGame(teamInfo)}
+      />
+    );
+  }
 
+  // Render start screen
+  if (shouldShowStartScreen) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-800 relative p-2">
+        <div className="absolute inset-0 bg-pixel-pattern opacity-10"></div>
+        <div className="absolute inset-0 bg-scan-lines opacity-20"></div>
+        <div className="pixel-border bg-gradient-to-r from-cyan-600 to-blue-600 p-6 max-w-lg w-full text-center relative z-10">
+          <h1 className="text-2xl font-black mb-4 text-cyan-100 pixel-text">
+            {mode === "solution" ? "LEVEL 2: SOLUTION PHASE" : "LEVEL 1: DIAGNOSTIC PHASE"}
+          </h1>
+          <p className="text-cyan-200 mb-6 font-medium">
+            {mode === "solution"
+              ? "Implement corrective actions for the identified violations."
+              : "Analyze food safety violations and identify root causes."
+            }
+          </p>
 
+          {/* Show progress status if any progress exists */}
+          {hasAnyProgress && (
+            <div className="mb-4 p-3 bg-yellow-600/20 border border-yellow-500/30 rounded pixel-border">
+              <p className="text-yellow-200 text-sm font-medium">
+                📋 Previous progress detected
+              </p>
+              <p className="text-yellow-300 text-xs mt-1">
+                You can continue from where you left off or start fresh
+              </p>
+              <p className="text-yellow-400 text-xs mt-2">
+                Current Level: {gameState.currentLevel} | Mode: {mode || "diagnostic"} | Module: {mode === "solution" ? 6 : 5}
+              </p>
+            </div>
+          )}
 
+          {/* Debug information */}
+          <div className="mb-4 p-2 bg-gray-700/50 border border-gray-600 rounded text-xs">
+            <p className="text-gray-300 mb-1">🔧 Debug Info:</p>
+            <p className="text-gray-400">Progress Loaded: {progressLoaded ? "✅" : "❌"}</p>
+            <p className="text-gray-400">Loading Progress: {isLoadingProgress ? "🔄" : "❌"}</p>
+            <p className="text-gray-400">Has Any Progress: {hasAnyProgress ? "✅" : "❌"}</p>
+            <p className="text-gray-400">Has Saved Progress: {hasSavedProgress ? "✅" : "❌"}</p>
+            <p className="text-gray-400">Team Info: {teamInfo ? "✅" : "❌"}</p>
+            {teamInfo && (
+              <div className="mt-2 text-xs">
+                <p className="text-gray-500">Email: {teamInfo.email}</p>
+                <p className="text-gray-500">Session: {teamInfo.session_id}</p>
+                <p className="text-gray-500">Module: {mode === "solution" ? 6 : 5}</p>
+              </div>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-3">
+            {hasAnyProgress ? (
+              <>
+                <button
+                  className="pixel-border bg-gradient-to-r from-green-500 to-green-600 hover:from-green-400 hover:to-green-500 text-white font-black py-3 px-6 pixel-text transition-all flex items-center justify-center gap-2"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    console.log("🖱️ Continue button clicked!");
+                    continueGame();
+                  }}
+                >
+                  <Play className="w-5 h-5" />
+                  CONTINUE GAME
+                </button>
+                <button
+                  className="pixel-border bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-400 hover:to-purple-500 text-white font-black py-2 px-4 pixel-text transition-all text-sm flex items-center justify-center gap-2"
+                  onClick={testContinue}
+                >
+                  🧪 TEST CONTINUE
+                </button>
+                <button
+                  className="pixel-border bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white font-black py-2 px-4 pixel-text transition-all text-sm flex items-center justify-center gap-2"
+                  onClick={testLoadProgress}
+                >
+                  🔄 LOAD PROGRESS
+                </button>
+                <button
+                  className="pixel-border bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-400 hover:to-indigo-500 text-white font-black py-2 px-4 pixel-text transition-all text-sm flex items-center justify-center gap-2"
+                  onClick={testDatabase}
+                >
+                  🗄️ TEST DB
+                </button>
+                <button
+                  className="pixel-border bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-400 hover:to-pink-500 text-white font-black py-2 px-4 pixel-text transition-all text-sm flex items-center justify-center gap-2"
+                  onClick={testSaveProgress}
+                >
+                  💾 TEST SAVE
+                </button>
+                <button
+                  className="pixel-border bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-400 hover:to-yellow-500 text-white font-black py-2 px-4 pixel-text transition-all text-sm flex items-center justify-center gap-2"
+                  onClick={testSession}
+                >
+                  🔐 TEST SESSION
+                </button>
+                <button
+                  className="pixel-border bg-gradient-to-r from-red-500 to-red-600 hover:from-red-400 hover:to-red-500 text-white font-black py-2 px-4 pixel-text transition-all text-sm flex items-center justify-center gap-2"
+                  onClick={runDiagnostics}
+                >
+                  🔬 RUN DIAGNOSTICS
+                </button>
+                <button
+                  className="pixel-border bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-400 hover:to-orange-500 text-white font-black py-2 px-4 pixel-text transition-all text-sm flex items-center justify-center gap-2"
+                  onClick={() => teamInfo && startGame(teamInfo)}
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  START FRESH
+                </button>
+              </>
+            ) : (
+              <button
+                className="pixel-border bg-gradient-to-r from-green-500 to-green-600 hover:from-green-400 hover:to-green-500 text-white font-black py-3 px-6 pixel-text transition-all flex items-center justify-center gap-2"
+                onClick={() => teamInfo && startGame(teamInfo)}
+              >
+                <Play className="w-5 h-5" />
+                START GAME
+              </button>
+            )}
+
+            <button
+              className="pixel-border bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white font-black py-2 px-4 pixel-text transition-all text-sm flex items-center justify-center gap-2"
+              onClick={showWalkthroughVideo}
+            >
+              <Eye className="w-4 h-4" />
+              WATCH TUTORIAL
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Countdown screen
+  if (gameState.showCountdown) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-800 relative">
+        <div className="absolute inset-0 bg-pixel-pattern opacity-10"></div>
+        <div className="absolute inset-0 bg-scan-lines opacity-20"></div>
+        <div className="text-center relative z-10">
+          <div className="text-8xl font-black text-cyan-400 pixel-text animate-pulse mb-4">
+            {gameState.countdownNumber}
+          </div>
+          <div className="text-xl font-bold text-cyan-200 pixel-text">
+            {gameState.isCountdownForContinue ? "CONTINUING..." : "GET READY!"}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Game completed - skip results screen, team score modal handles everything
+  if (gameState.gameCompleted && !gameState.showLevelModal) {
+    // Ensure the team score modal is shown
+    if (!showTeamScoreModal) {
+      setShowTeamScoreModal(true);
+    }
+
+    // Return a minimal background while the modal is displayed
+    return (
+      <div className="min-h-screen bg-gray-800 relative overflow-hidden">
+        <div className="absolute inset-0 bg-pixel-pattern opacity-10"></div>
+        <div className="absolute inset-0 bg-scan-lines opacity-20"></div>
+
+        {/* TeamScoreModal will be rendered by the modal section below */}
+        <TeamScoreModal
+          show={showTeamScoreModal}
+          level={gameState.currentLevel}
+          onClose={() => setShowTeamScoreModal(false)}
+          onDownload={() => {
+            console.log("Download attempted scenarios");
+          }}
+          onHome={() => {
+            console.log("Navigate to home");
+            setShowTeamScoreModal(false);
+            window.location.href = '/';
+          }}
+        />
+      </div>
+    );
+  }
+
+  // Main game UI
   return (
-    <div className="h-screen bg-gray-800 flex flex-col overflow-hidden relative">
-      {/* Background Pattern */}
+    <div className="min-h-screen bg-gray-800 relative overflow-hidden">
+      {/* Background patterns */}
       <div className="absolute inset-0 bg-pixel-pattern opacity-10"></div>
       <div className="absolute inset-0 bg-scan-lines opacity-20"></div>
 
-      {/* Pixel Game Header */}
-      <div className="pixel-border-thick bg-gradient-to-r from-gray-900 to-gray-800 relative z-10">
-        <div className="container mx-auto px-3 py-2">
-          <div className="flex items-center justify-between">
-            {/* Left - Game Identity */}
-            <div className="flex items-center gap-3">
-              {/* Level Badge */}
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-gray-700 pixel-border flex items-center justify-center">
-                  <span className="text-gray-100 font-black text-sm pixel-text">
-                    {gameState.currentLevel}
-                  </span>
-                </div>
-                <div>
-                  <h1 className="text-gray-100 font-black text-sm pixel-text">
-                    LEVEL {gameState.currentLevel}
-                  </h1>
-                  {/* Simple Progress Indicator */}
-                  <div className="text-gray-300 text-xs font-bold">
-                    CASE {gameState.currentQuestion + 1}/5
-                  </div>
-                </div>
+      {/* Header with timer and progress */}
+      <div className="relative z-10 p-4 border-b border-cyan-600/30 bg-gray-900/50">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Factory className="w-8 h-8 text-cyan-400" />
+            <div>
+              <h1 className="text-xl font-black text-cyan-100 pixel-text">
+                {mode === "solution" ? "SOLUTION PHASE" : "DIAGNOSTIC PHASE"}
+              </h1>
+              <p className="text-cyan-300 text-sm">
+                Question {gameState.currentQuestion + 1} of {gameState.questions.length}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-6">
+            {/* Save indicator */}
+            {showSaveIndicator && (
+              <div className="flex items-center gap-2 text-green-400 text-sm font-medium">
+                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                SAVED
               </div>
+            )}
+
+            {/* Score */}
+            <div className="flex items-center gap-2 text-yellow-400">
+              <Trophy className="w-5 h-5" />
+              <span className="font-bold">{gameState.score}</span>
             </div>
 
-            {/* Right - Controls */}
+            {/* Timer */}
             <div className="flex items-center gap-2">
-              {/* Mobile Case Brief Button */}
-              {isMobileHorizontal && gameState.currentLevel === 1 && (
-                <button
-                  onClick={() => setShowCaseBrief(true)}
-                  className="pixel-border bg-gradient-to-r from-gray-700 to-gray-600 hover:from-gray-600 hover:to-gray-500 px-2 py-1 transition-all text-xs font-black text-white flex items-center gap-1 pixel-text"
-                >
-                  <Eye className="w-3 h-3" />
-                  BRIEF
-                </button>
-              )}
-
-              {/* Timer */}
-              <div className="flex items-center gap-1 pixel-border bg-gradient-to-r from-gray-700 to-gray-600 px-2 py-1">
-                <div className="w-3 h-3 bg-gray-800 pixel-border flex items-center justify-center">
-                  <Clock className="w-2 h-2 text-gray-300" />
-                </div>
-                <Timer
-                  key="game-timer"
-                  timeRemaining={gameState.timeRemaining}
-                  onTimeUp={handleTimeUp}
-                  setTimeRemaining={handleSetTimeRemaining}
-                  initialTime={5400}
-                  isActive={gameState.gameStarted && !gameState.gameCompleted && !gameState.showLevelModal}
-                />
-
-                {/* Auto-save indicator */}
-                {showSaveIndicator && (
-                  <div className="ml-1 text-xs text-green-400 font-bold animate-pulse">
-                    ●
-                  </div>
-                )}
-              </div>
-
-              {/* Overall Progress */}
-              <div className="hidden sm:flex items-center gap-2 pixel-border bg-gradient-to-r from-gray-700 to-gray-600 px-2 py-1">
-                <div className="w-3 h-3 bg-yellow-600 pixel-border flex items-center justify-center">
-                  <Trophy className="w-2 h-2 text-yellow-300" />
-                </div>
-                <div className="flex items-center gap-1">
-                  <div className="w-16 h-2 bg-gray-800 pixel-border overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 transition-all duration-500"
-                      style={{ width: `${progress}%` }}
-                    />
-                  </div>
-                  <span className="text-white text-xs font-black min-w-[2rem] pixel-text">
-                    {Math.round(progress)}%
-                  </span>
-                </div>
-              </div>
-
-
+              <Clock className="w-5 h-5 text-red-400" />
+              <Timer
+                timeRemaining={gameState.timeRemaining}
+                initialTime={600}
+                onTimeUp={handleTimeUp}
+                setTimeRemaining={(timeOrUpdater) => {
+                  if (typeof timeOrUpdater === 'function') {
+                    setGameState(prev => {
+                      const newTime = timeOrUpdater(prev.timeRemaining);
+                      if (newTime <= 0) {
+                        handleTimeUp();
+                        return { ...prev, timeRemaining: 0 };
+                      }
+                      return { ...prev, timeRemaining: newTime };
+                    });
+                  } else {
+                    const newTime = timeOrUpdater;
+                    if (newTime <= 0) {
+                      handleTimeUp();
+                      setGameState(prev => ({ ...prev, timeRemaining: 0 }));
+                    } else {
+                      setGameState(prev => ({ ...prev, timeRemaining: newTime }));
+                    }
+                  }
+                }}
+              />
             </div>
           </div>
         </div>
       </div>
 
-      {/* Main Content Area */}
-      <div className="flex-1 container mx-auto px-1 min-h-0">
-        {/* Question Card */}
-        {currentQuestion && gameState.questions.length > 0 && gameState.currentQuestion < gameState.questions.length ? (
-          <QuestionCard
-            question={currentQuestion}
-            level={gameState.currentLevel}
-            onAnswer={handleAnswer}
-            onNext={nextQuestion}
-            currentAnswer={gameState.answers[gameState.currentQuestion]}
-            session_id={session_id}
-            email={email}
-          />
-        ) : gameState.gameStarted && (
-          <div className="flex items-center justify-center h-full">
-            <div className="pixel-border bg-gradient-to-r from-red-600 to-red-700 p-6 text-center max-w-md">
-              <h3 className="text-white font-black pixel-text mb-4 text-lg">GAME STATE ERROR</h3>
-              <div className="text-red-100 text-sm space-y-2">
-                <p>Question {gameState.currentQuestion + 1} not found.</p>
-                <p>Questions available: {gameState.questions.length}</p>
-                <p>Current index: {gameState.currentQuestion}</p>
-                <p>Game started: {gameState.gameStarted ? "Yes" : "No"}</p>
-              </div>
-              <div className="flex gap-2 mt-4 justify-center">
-                <button
-                  onClick={() => {
-                    setGameState(prev => ({
-                      ...prev,
-                      currentQuestion: 0,
-                      gameStarted: false
-                    }));
-                  }}
-                  className="pixel-border bg-yellow-600 hover:bg-yellow-500 text-white px-3 py-2 text-xs font-bold"
-                >
-                  RESET TO START
-                </button>
-                <button
-                  onClick={() => window.location.reload()}
-                  className="pixel-border bg-red-500 hover:bg-red-400 text-white px-3 py-2 text-xs font-bold"
-                >
-                  RELOAD GAME
-                </button>
-              </div>
-            </div>
+      {/* Case change indicator */}
+      {showCaseChangeIndicator && (
+        <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 animate-bounce">
+          <div className="pixel-border bg-gradient-to-r from-yellow-500 to-orange-500 px-4 py-2 text-white font-black pixel-text text-sm">
+            <AlertTriangle className="w-4 h-4 inline mr-2" />
+            NEW CASE LOADED
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Level Complete Modal */}
-        {gameState.showLevelModal && (mode === "violation-root-cause" || mode === undefined) && (
-          <ModuleCompleteModal
-            level1CompletionTime={gameState.level1CompletionTime}
-            onProceed={proceedToLevel2}
-          />
-        )}
+      {/* Main game content */}
+      <div className="relative z-10 p-4">
+        <div className="max-w-7xl mx-auto">
+          {gameState.questions.length > 0 && gameState.currentQuestion < gameState.questions.length && (
+            <QuestionCard
+              question={gameState.questions[gameState.currentQuestion]}
+              level={gameState.currentLevel}
+              onAnswer={handleAnswer}
+              onNext={nextQuestion}
+              currentAnswer={gameState.answers[gameState.currentQuestion]}
+              session_id={teamInfo?.session_id || ""}
+              email={teamInfo?.email || ""}
+            />
+          )}
+        </div>
+      </div>
 
-        {/* Module 6 Button (only if unlocked) */}
-        {canAccessModule6 && gameState.currentLevel === 1 && (
-          <div className="flex justify-center mt-4">
+      {/* Landscape orientation prompt */}
+      {showLandscapePrompt && (
+        <div className="landscape-prompt-overlay">
+          <div className="landscape-prompt-modal">
+            <div className="mb-4">
+              <RotateCcw className="rotate-icon" />
+            </div>
+            <h3 className="landscape-prompt-title">
+              🔄 ROTATE YOUR DEVICE
+            </h3>
+            <p className="landscape-prompt-text">
+              This game is optimized for <strong>landscape mode</strong>. Please rotate your device horizontally for the best gaming experience.
+            </p>
+            <div className="landscape-prompt-buttons">
+              <button
+                className="landscape-prompt-button primary"
+                onClick={requestLandscapeOrientation}
+              >
+                ROTATE TO LANDSCAPE
+              </button>
+              <button
+                className="landscape-prompt-button secondary"
+                onClick={() => {
+                  setShowLandscapePrompt(false);
+                  setHasUserDismissedPrompt(true);
+                }}
+              >
+                CONTINUE IN PORTRAIT
+              </button>
+            </div>
+            <p className="landscape-prompt-note">
+              Note: Portrait mode may affect gameplay experience
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Case brief modal for mobile */}
+      {showCaseBrief && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+          <div className="pixel-border bg-gradient-to-r from-blue-600 to-purple-600 p-6 max-w-md w-full">
+            <h3 className="text-lg font-black mb-4 text-blue-100 pixel-text">
+              📱 MOBILE DETECTED
+            </h3>
+            <p className="text-blue-200 mb-4 text-sm">
+              For the best experience, please rotate your device to landscape mode or use a larger screen.
+            </p>
             <button
-              className="pixel-border bg-gradient-to-r from-green-500 to-green-600 hover:from-green-400 hover:to-green-500 text-white font-black py-2 px-4 pixel-text text-sm"
-              onClick={() =>
-                setGameState((prev) => {
-                  // Preserve Level 1 answers and questions
-                  const newAnswers = prev.answers.map((ans) => ({
-                    violation: ans.violation,
-                    rootCause: ans.rootCause,
-                    solution: "",
-                  }));
-                  return {
-                    ...prev,
-                    currentLevel: 2,
-                    currentQuestion: 0,
-                    questions:
-                      prev.questions.length === 5
-                        ? prev.questions
-                        : selectRandomQuestions(),
-                    answers:
-                      prev.answers.length === 5
-                        ? newAnswers
-                        : selectRandomQuestions().map(() => ({
-                            violation: "",
-                            rootCause: "",
-                            solution: "",
-                          })),
-                    gameStarted: true,
-                    gameCompleted: false,
-                    showLevelModal: false,
-                    level1CompletionTime: 0,
-                  };
-                })
-              }
+              className="pixel-border bg-gradient-to-r from-green-500 to-green-600 hover:from-green-400 hover:to-green-500 text-white font-black py-2 px-4 pixel-text transition-all w-full"
+              onClick={() => setShowCaseBrief(false)}
             >
-              START MODULE 6
+              CONTINUE ANYWAY
             </button>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* PROBLEM SCENARIO Modal - Only visible when toggled in mobile horizontal */}
-        {showCaseBrief && currentQuestion && (
-          <div
-            className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-2"
-            onClick={() => setShowCaseBrief(false)}
-          >
-            <div
-              className="pixel-border-thick bg-gradient-to-r from-cyan-600 to-blue-600 p-4 max-w-lg w-full max-h-[80vh] overflow-y-auto relative"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Background Pattern */}
-              <div className="absolute inset-0 bg-pixel-pattern opacity-10"></div>
-              <div className="absolute inset-0 bg-scan-lines opacity-20"></div>
-              
-              <div className="relative z-10">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-5 h-5 bg-cyan-500 pixel-border flex items-center justify-center">
-                      <Eye className="w-3 h-3 text-cyan-900" />
-                    </div>
-                    <h3 className="text-base font-black text-cyan-100 pixel-text">
-                      PROBLEM SCENARIO
-                    </h3>
-                    <div className="pixel-border bg-gradient-to-r from-green-600 to-green-500 px-2 py-1">
-                      <span className="text-green-100 font-black text-xs pixel-text">
-                        ACTIVE
-                      </span>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setShowCaseBrief(false)}
-                    className="pixel-border bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 text-red-100 hover:text-white transition-all text-lg font-black w-6 h-6 flex items-center justify-center"
-                  >
-                    ×
-                  </button>
-                </div>
-                <div className="pixel-border bg-gradient-to-r from-gray-700 to-gray-600 p-3">
-                  <div className="flex items-start space-x-2">
-                    <div className="w-2 h-2 bg-red-500 pixel-border mt-1 animate-pulse flex-shrink-0"></div>
-                    <p className="text-gray-100 text-sm leading-relaxed font-bold">
-                      {currentQuestion.caseFile} Read the scenario carefully, spot
-                      the violation and its root cause, and place them in the
-                      right category containers.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
+      {/* TeamScoreModal is now rendered in the completion state above */}
+      {/* ModuleCompleteModal removed - no longer showing completion time popup */}
     </div>
   );
 };
 
-export default GameEngine;
+export default GmpSimulation;

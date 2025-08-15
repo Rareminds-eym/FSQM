@@ -16,6 +16,7 @@ import {
 import { CheckCircle, ChevronRight, Search, Target } from "lucide-react";
 import React, { useState } from "react";
 import { useDeviceLayout } from "../hooks/useOrientation";
+import { ProceedConfirmationModal } from "./components/ProceedConfirmationModal";
 import { Question } from "./HackathonData";
 
 interface Level1CardProps {
@@ -163,6 +164,7 @@ const Level1Card: React.FC<Level1CardProps> = ({
     text: string;
     type: "violation" | "rootCause";
   } | null>(null);
+  const [showConfirmation, setShowConfirmation] = useState(false);
   const { isMobile, isHorizontal } = useDeviceLayout();
   const isMobileHorizontal = isMobile && isHorizontal;
 
@@ -225,6 +227,24 @@ const Level1Card: React.FC<Level1CardProps> = ({
   );
 
   const canProceed = selectedViolation && selectedRootCause;
+
+  // Handle proceed button click - show confirmation modal
+  const handleProceedClick = () => {
+    if (canProceed) {
+      setShowConfirmation(true);
+    }
+  };
+
+  // Handle confirmation - actually proceed
+  const handleConfirmProceed = () => {
+    setShowConfirmation(false);
+    onNext();
+  };
+
+  // Handle cancel - close modal
+  const handleCancelProceed = () => {
+    setShowConfirmation(false);
+  };
 
   // Simple haptic feedback for mobile devices
   const triggerHapticFeedback = (intensity: 'light' | 'medium' | 'strong' = 'light') => {
@@ -649,7 +669,7 @@ const Level1Card: React.FC<Level1CardProps> = ({
           {/* Proceed Button - Fixed Position */}
           <div className="absolute bottom-4 right-4 z-20">
             <button
-              onClick={onNext}
+              onClick={handleProceedClick}
               disabled={!canProceed}
               className={`flex items-center space-x-2 px-4 py-3 pixel-border font-black pixel-text transition-all shadow-lg ${
                 canProceed
@@ -677,6 +697,14 @@ const Level1Card: React.FC<Level1CardProps> = ({
           </div>
         ) : null}
       </DragOverlay>
+
+      {/* Proceed Confirmation Modal */}
+      <ProceedConfirmationModal
+        show={showConfirmation}
+        onConfirm={handleConfirmProceed}
+        onCancel={handleCancelProceed}
+        level={1}
+      />
     </DndContext>
   );
 };
