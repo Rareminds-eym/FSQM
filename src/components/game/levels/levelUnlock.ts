@@ -52,10 +52,11 @@ export function getEnvironmentConfigSync(): EnvironmentConfig | null {
 /**
  * Check if training levels should be accessible (affects GameProgressContext usage)
  * @returns boolean - Whether training is enabled
+ * Note: In the config, true = locked, false = unlocked
  */
 export function isTrainingEnabled(): boolean {
   const config = getEnvironmentConfigSync();
-  return config?.training ?? false; // Default to false (locked) if error
+  return !(config?.training ?? true); // Invert: true in config means locked, so return false for enabled
 }
 
 /**
@@ -74,20 +75,24 @@ export function checkLevelUnlockStatus(levelId: number): boolean {
     }
 
     // Apply locking logic based on requirements:
+    // Note: In config, true = locked, false = unlocked, so we need to invert
     if (levelId >= 1 && levelId <= 15) {
       // Training levels (1-15) are controlled ONLY by training column
-      // If training is false, lock all training levels including level 1
+      // If training is true in config, lock all training levels including level 1
       const environment = getEnvironment();
-      console.log(`[Level Unlock] Training level ${levelId} - environment: ${environment}, training: ${config.training}, unlocked: ${config.training}`);
-      return config.training;
+      const unlocked = !config.training; // Invert: true in config means locked
+      console.log(`[Level Unlock] Training level ${levelId} - environment: ${environment}, training config: ${config.training} (locked), unlocked: ${unlocked}`);
+      return unlocked;
     } else if (levelId === 16) {
       // HL1 level (16) - controlled ONLY by hl_1 column (independent of training)
-      console.log(`[Level Unlock] HL1 level ${levelId} - hl_1: ${config.hl_1}, unlocked: ${config.hl_1}`);
-      return config.hl_1;
+      const unlocked = !config.hl_1; // Invert: true in config means locked
+      console.log(`[Level Unlock] HL1 level ${levelId} - hl_1 config: ${config.hl_1} (locked), unlocked: ${unlocked}`);
+      return unlocked;
     } else if (levelId === 17) {
       // HL2 level (17) - controlled ONLY by hl_2 column (independent of training)
-      console.log(`[Level Unlock] HL2 level ${levelId} - hl_2: ${config.hl_2}, unlocked: ${config.hl_2}`);
-      return config.hl_2;
+      const unlocked = !config.hl_2; // Invert: true in config means locked
+      console.log(`[Level Unlock] HL2 level ${levelId} - hl_2 config: ${config.hl_2} (locked), unlocked: ${unlocked}`);
+      return unlocked;
     } else {
       // Levels 18+ are not controlled by the system
       console.log(`[Level Unlock] Level ${levelId} is not controlled by environment tables`);
@@ -119,7 +124,7 @@ export function getEnvironmentInfo(): {
                 hostname === 'fsqm.netlify.app' ||
                 hostname === 'fsqmdev.rareminds.in';
 
-  const isProd = hostname === 'fsqm.rareminds.i';
+  const isProd = hostname === 'fsqm.rareminds.in';
 
   return {
     environment,
@@ -127,6 +132,52 @@ export function getEnvironmentInfo(): {
     isDev,
     isProd
   };
+}
+
+/**
+ * Debug function to log all environment and configuration details
+ * Call this from browser console to debug training level locking issues
+ */
+export function debugEnvironmentConfig(): void {
+  console.log('🔍 DEBUGGING ENVIRONMENT CONFIGURATION');
+  console.log('=====================================');
+  console.log('📝 NOTE: In config, true = LOCKED, false = UNLOCKED');
+  console.log('');
+
+  const envInfo = getEnvironmentInfo();
+  console.log('🌍 Environment Info:', envInfo);
+
+  console.log('🔧 Environment Variables:');
+  console.log('  - import.meta.env.DEV:', import.meta.env.DEV);
+  console.log('  - import.meta.env.MODE:', import.meta.env.MODE);
+  console.log('  - window.location.hostname:', window.location.hostname);
+  console.log('  - window.location.href:', window.location.href);
+
+  const config = getEnvironmentConfigSync();
+  console.log('⚙️ Retrieved Configuration (true=locked, false=unlocked):', config);
+
+  if (config) {
+    console.log('📊 Configuration Interpretation:');
+    console.log(`  - Training levels (1-15): config.training=${config.training} → ${config.training ? 'LOCKED 🔒' : 'UNLOCKED ✅'}`);
+    console.log(`  - HL1 level (16): config.hl_1=${config.hl_1} → ${config.hl_1 ? 'LOCKED 🔒' : 'UNLOCKED ✅'}`);
+    console.log(`  - HL2 level (17): config.hl_2=${config.hl_2} → ${config.hl_2 ? 'LOCKED 🔒' : 'UNLOCKED ✅'}`);
+  }
+
+  const trainingEnabled = isTrainingEnabled();
+  console.log('🎯 Training Enabled (after inversion):', trainingEnabled);
+
+  console.log('📋 Level Unlock Status (1-17):');
+  for (let i = 1; i <= 17; i++) {
+    const unlocked = checkLevelUnlockStatus(i);
+    console.log(`  Level ${i}: ${unlocked ? '✅ Unlocked' : '🔒 Locked'}`);
+  }
+
+  console.log('=====================================');
+}
+
+// Make debug function available globally for console testing
+if (typeof window !== 'undefined') {
+  (window as any).debugEnvironmentConfig = debugEnvironmentConfig;
 }
 
 
