@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 
 interface GameProgress {
   completedLevels: number[];
@@ -43,7 +43,7 @@ export const GameProgressProvider: React.FC<{ children: React.ReactNode }> = ({
     return defaultProgress;
   });
 
-  const completeLevel = (levelId: number) => {
+  const completeLevel = useCallback((levelId: number) => {
     console.log(`Completing level ${levelId}`);
     setProgress((prev) => {
       const updatedProgress = {
@@ -54,17 +54,17 @@ export const GameProgressProvider: React.FC<{ children: React.ReactNode }> = ({
       console.log("Updated progress:", updatedProgress);
       return updatedProgress;
     });
-  };
+  }, []);
 
-  const resetCompleteLevel = () => {
+  const resetCompleteLevel = useCallback(() => {
     setProgress({
       completedLevels: [],
       currentLevel: 1,
       unlockedClues: {},
     });
-  };
+  }, []);
 
-  const unlockClue = (levelId: number, clueIndex: number) => {
+  const unlockClue = useCallback((levelId: number, clueIndex: number) => {
     setProgress((prev) => ({
       ...prev,
       unlockedClues: {
@@ -72,11 +72,11 @@ export const GameProgressProvider: React.FC<{ children: React.ReactNode }> = ({
         [levelId]: [...(prev.unlockedClues[levelId] || []), clueIndex],
       },
     }));
-  };
+  }, []);
 
-  const getUnlockedClues = (levelId: number) => {
+  const getUnlockedClues = useCallback((levelId: number) => {
     return progress.unlockedClues[levelId] || [];
-  };
+  }, [progress.unlockedClues]);
 
   // Save progress to localStorage whenever it changes
   useEffect(() => {
