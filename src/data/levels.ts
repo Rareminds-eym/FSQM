@@ -7,7 +7,7 @@ export const levels: Level[] = [
     symptoms: "Customer complaint about bread with mold inside",
     difficulty: "Easy",
     img: "",
-    isEnabled: true,
+    // isEnabled removed - now fetched from database via checkLevelUnlockStatus
     accessType: "public",
   },
   {
@@ -16,7 +16,7 @@ export const levels: Level[] = [
     symptoms: "Particles floating inside bottled water",
     difficulty: "Easy",
     img: "",
-    isEnabled: true,
+    // isEnabled removed - now fetched from database via checkLevelUnlockStatus
     accessType: "public",
   },
   {
@@ -25,7 +25,7 @@ export const levels: Level[] = [
     symptoms: "Handwash sinks found dry and unused",
     difficulty: "Easy",
     img: "",
-    isEnabled: true,
+    // isEnabled removed - now fetched from database via checkLevelUnlockStatus
     accessType: "public",
   },
   {
@@ -34,7 +34,7 @@ export const levels: Level[] = [
     symptoms: "Inconsistent size and weight across same batch",
     difficulty: "Easy",
     img: "",
-    isEnabled: true,
+    // isEnabled removed - now fetched from database via checkLevelUnlockStatus
     accessType: "public",
   },
   {
@@ -43,7 +43,7 @@ export const levels: Level[] = [
     symptoms: "Production logs missing for jam unit",
     difficulty: "Easy",
     img: "",
-    isEnabled: true,
+    // isEnabled removed - now fetched from database via checkLevelUnlockStatus
     accessType: "public",
   },
   {
@@ -52,7 +52,7 @@ export const levels: Level[] = [
     symptoms: "Same timestamp for all equipment cleaning",
     difficulty: "Medium",
     img: "",
-    isEnabled: true,
+    // isEnabled removed - now fetched from database via checkLevelUnlockStatus
     accessType: "public",
   },
   {
@@ -61,7 +61,7 @@ export const levels: Level[] = [
     symptoms: "Temperature dip below 65°C unnoticed",
     difficulty: "Medium",
     img: "",
-    isEnabled: true,
+    // isEnabled removed - now fetched from database via checkLevelUnlockStatus
     accessType: "public",
   },
   {
@@ -70,7 +70,7 @@ export const levels: Level[] = [
     symptoms: "Expired raw material found during audit",
     difficulty: "Medium",
     img: "",
-    isEnabled: true,
+    // isEnabled removed - now fetched from database via checkLevelUnlockStatus
     accessType: "public",
   },
   {
@@ -79,7 +79,7 @@ export const levels: Level[] = [
     symptoms: "Peanut allergens found in nut-free product",
     difficulty: "Medium",
     img: "",
-    isEnabled: true,
+    // isEnabled removed - now fetched from database via checkLevelUnlockStatus
     accessType: "public",
   },
   {
@@ -88,7 +88,7 @@ export const levels: Level[] = [
     symptoms: "Deviation report missing root cause details",
     difficulty: "Medium",
     img: "",
-    isEnabled: true,
+    // isEnabled removed - now fetched from database via checkLevelUnlockStatus
     accessType: "public",
   },
   {
@@ -97,7 +97,7 @@ export const levels: Level[] = [
     symptoms: "High E.coli count triggering recall",
     difficulty: "Hard",
     img: "",
-    isEnabled: true,
+    // isEnabled removed - now fetched from database via checkLevelUnlockStatus
     accessType: "public",
   },
   {
@@ -106,7 +106,7 @@ export const levels: Level[] = [
     symptoms: "Metal shavings detected despite metal detectors",
     difficulty: "Hard",
     img: "",
-    isEnabled: true,
+    // isEnabled removed - now fetched from database via checkLevelUnlockStatus
     accessType: "public",
   },
   {
@@ -115,7 +115,7 @@ export const levels: Level[] = [
     symptoms: "Same cleaning failures in successive audits",
     difficulty: "Hard",
     img: "",
-    isEnabled: true,
+    // isEnabled removed - now fetched from database via checkLevelUnlockStatus
     accessType: "public",
   },
   {
@@ -124,7 +124,7 @@ export const levels: Level[] = [
     symptoms: "Social media backlash over worm in pickle jar",
     difficulty: "Hard",
     img: "",
-    isEnabled: true,
+    // isEnabled removed - now fetched from database via checkLevelUnlockStatus
     accessType: "public",
   },
   {
@@ -133,7 +133,7 @@ export const levels: Level[] = [
     symptoms: "Forged entries and fake signatures in BMR",
     difficulty: "Hard",
     img: "",
-    isEnabled: true,
+    // isEnabled removed - now fetched from database via checkLevelUnlockStatus
     accessType: "public",
   },
   {
@@ -142,7 +142,7 @@ export const levels: Level[] = [
     symptoms: "Forged entries and fake signatures in BMR",
     difficulty: "Hard",
     img: "",
-    isEnabled: true,
+    // isEnabled removed - now fetched from database via checkLevelUnlockStatus
     accessType: "public",
     requiresSpecialPermission: true,
   },
@@ -152,7 +152,7 @@ export const levels: Level[] = [
     symptoms: "Forged entries and fake signatures in BMR",
     difficulty: "Hard",
     img: "",
-    isEnabled: false,
+    // isEnabled removed - now fetched from database via checkLevelUnlockStatus
     accessType: "restricted",
     requiresSpecialPermission: true,
   },

@@ -21,12 +21,12 @@ const LevelCard: React.FC<LevelCardProps> = ({ level }) => {
 
   const isHackathon = Number(level.id) > 15;
 
-  // Check level unlock status using enhanced environment-based system
+  // Check level unlock status using local data system
   useEffect(() => {
-    const checkUnlock = async () => {
+    const checkUnlock = () => {
       try {
         setIsCheckingUnlock(true);
-        const unlocked = await checkLevelUnlockStatus(Number(level.id));
+        const unlocked = checkLevelUnlockStatus(Number(level.id));
         setLevelUnlocked(unlocked);
         console.log(`[LevelCard] Level ${level.id} unlock status:`, unlocked);
       } catch (err) {
@@ -38,10 +38,6 @@ const LevelCard: React.FC<LevelCardProps> = ({ level }) => {
     };
 
     checkUnlock();
-
-    // Refresh unlock status every 1 minute for all levels
-    const interval = setInterval(checkUnlock, 60_000);
-    return () => clearInterval(interval);
   }, [level.id, enhancedProgress.isTrainingActive]);
 
   // Compute unlock state with enhanced logic
@@ -172,7 +168,7 @@ const LevelCard: React.FC<LevelCardProps> = ({ level }) => {
                 {isCheckingUnlock || enhancedProgress.isLoading
                   ? "Checking access..."
                   : isHackathon
-                  ? "Unlocks at scheduled time"
+                  ? "Locked"
                   : !enhancedProgress.isTrainingActive
                   ? "Training mode disabled"
                   : Number(level.id) === 1
