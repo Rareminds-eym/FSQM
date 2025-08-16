@@ -171,7 +171,6 @@ const ProfileMenu: React.FC = () => {
                   disabled={saving}
                 />
                 <button className="text-green-700 font-bold" disabled={saving} onClick={() => handleSaveField('full_name')}>Save</button>
-                <button className="text-gray-500" disabled={saving} onClick={() => setEditField(null)}>Cancel</button>
               </div>
             ) : (
               <p className="text-yellow-900 text-sm font-medium">{getDisplayName()}</p>
@@ -197,7 +196,6 @@ const ProfileMenu: React.FC = () => {
                   disabled={saving}
                 />
                 <button className="text-green-700 font-bold" disabled={saving} onClick={() => handleSaveField('email')}>Save</button>
-                <button className="text-gray-500" disabled={saving} onClick={() => setEditField(null)}>Cancel</button>
               </div>
             ) : (
               <p className="text-yellow-900 text-sm break-all font-medium">{teamInfo.email || 'N/A'}</p>
@@ -235,7 +233,6 @@ const ProfileMenu: React.FC = () => {
                       disabled={saving}
                     />
                     <button className="text-green-700 font-bold" disabled={saving} onClick={() => handleSaveField('team_name')}>Save</button>
-                    <button className="text-gray-500" disabled={saving} onClick={() => setEditField(null)}>Cancel</button>
                   </div>
                 ) : (
                   <p className="text-yellow-900 text-sm font-medium">{teamInfo.team_name}</p>
@@ -269,7 +266,6 @@ const ProfileMenu: React.FC = () => {
                       disabled={saving}
                     />
                     <button className="text-green-700 font-bold" disabled={saving} onClick={() => handleSaveField('college_code')}>Save</button>
-                    <button className="text-gray-500" disabled={saving} onClick={() => setEditField(null)}>Cancel</button>
                   </div>
                 ) : (
                   <p className="text-yellow-900 text-sm font-medium">{teamInfo.college_code}</p>
