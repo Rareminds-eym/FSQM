@@ -1167,7 +1167,8 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
               </div>
             </div>
             <h1 className="text-xl font-black text-cyan-100 mb-3 pixel-text">
-              GOOD MANUFACTURING PRACTICES
+              {/* GOOD MANUFACTURING PRACTICES */}
+              Safebite 2.0
             </h1>
             {/* <p className="text-cyan-100 mb-4 text-sm font-bold">
               Test your knowledge of Good Manufacturing Practices through
@@ -1204,7 +1205,7 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
                   5 CASES
                 </h3>
                 <p className="text-orange-100 text-xs font-bold">
-                  Random GMP scenarios
+                  Random FSQM scenarios
                 </p>
               </div>
             </div>
@@ -1283,7 +1284,7 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
                   5 CASES
                 </h3>
                 <p className="text-orange-100 text-xs font-bold">
-                  Random GMP scenarios
+                  Random FSQM scenarios
                 </p>
               </div>
             </div>
