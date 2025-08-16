@@ -11,6 +11,7 @@ interface LevelCardProps {
 
 const LevelCard: React.FC<LevelCardProps> = ({ level }) => {
   const [isFlipped, setIsFlipped] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
   const [levelUnlocked, setLevelUnlocked] = useState<boolean | null>(null);
   const [isCheckingUnlock, setIsCheckingUnlock] = useState(true);
   const navigate = useNavigate();
@@ -81,17 +82,21 @@ const LevelCard: React.FC<LevelCardProps> = ({ level }) => {
 
   const handleStartLevel = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!isUnlocked) return;
-    if (Number(level.id) === 16) {
-      console.log("[LevelCard] Navigating to FSQM Simulation for level 16 (HL1)");
-      navigate("/fsqm-simulation/HL1");
-    } else if (Number(level.id) === 17) {
-      console.log("[LevelCard] Navigating to FSQM Simulation for level 17 (HL2)");
-      navigate("/fsqm-simulation/HL2");
-    } else {
-      console.log(`[LevelCard] Navigating to /game/${level.id}`);
-      navigate(`/game/${level.id}`);
-    }
+    if (!isUnlocked || isAnimating) return;
+    setIsAnimating(true);
+    setTimeout(() => {
+      if (Number(level.id) === 16) {
+        console.log("[LevelCard] Navigating to FSQM Simulation for level 16 (HL1)");
+        navigate("/fsqm-simulation/HL1");
+      } else if (Number(level.id) === 17) {
+        console.log("[LevelCard] Navigating to FSQM Simulation for level 17 (HL2)");
+        navigate("/fsqm-simulation/HL2");
+      } else {
+        console.log(`[LevelCard] Navigating to /game/${level.id}`);
+        navigate(`/game/${level.id}`);
+      }
+      setIsAnimating(false);
+    }, 600); // Animation duration
   };
 
   return (
@@ -104,7 +109,7 @@ const LevelCard: React.FC<LevelCardProps> = ({ level }) => {
     >
       <div
         className={`relative w-full h-full transition-all duration-500 
-          transform-style-preserve-3d ${isFlipped ? "rotate-y-180" : ""}`}
+          transform-style-preserve-3d ${isFlipped ? "rotate-y-180" : ""} ${isAnimating && isUnlocked ? "animate-slide-up" : ""}`}
       >
         {/* Front Side */}
         <div className="absolute inset-0 backface-visibility-hidden">
