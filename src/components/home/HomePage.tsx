@@ -14,6 +14,7 @@ import CircuitLines from "../ui/animations/CircuitLines";
 import GlowingTitle from "../ui/GlowingTitle";
 import MenuItem from "./MenuItem";
 import SocialMediaIcons from "../ui/SocialMediaIcons";
+import ProfileMenu from "../ui/ProfileMenu";
 import { checkGameLockStatus } from "../../lib/supabase";
 
 const HomePage: React.FC = () => {
@@ -156,8 +157,7 @@ const HomePage: React.FC = () => {
       lg:right-4 lg:top-10 lg:space-y-6 lg:mt-20 lg:p-4 lg:rounded-2xl lg:shadow-2xl">
         {/* ProfileMenu at top right */}
         <div>
-          {/* Import and use ProfileMenu if not already in TopBar */}
-          {/* <ProfileMenu /> */}
+          <ProfileMenu />
         </div>
         {/* Two icons below profile, aligned and spaced from profile */}
         <div className="flex flex-col items-center w-full">

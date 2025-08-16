@@ -115,17 +115,22 @@ const AppContent: React.FC = () => {
           pauseOnHover
           theme="dark"
         />
+
         {/* Routes - Reset password takes priority over authentication status */}
         <Routes>
           {/* Password reset route - always accessible */}
           <Route path="/reset-password" element={<ResetPasswordPage />} />
+          {/* Team registration route - accessible when authenticated */}
+          {/* {isAuthenticated && (
+            <Route path="/team-registration" element={<TeamRegistration />} />
+          )} */}
           {/* Authenticated routes */}
           {isAuthenticated ? (
             <>
               <Route path="/" element={
                 <>
                   <div className="fixed top-4 right-4 z-50">
-                    <ProfileMenu />
+                    {/* <ProfileMenu /> */}
                   </div>
                   <HomePage />
                 </>

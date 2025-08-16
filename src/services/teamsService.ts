@@ -46,7 +46,7 @@ export const createTeam = async (teamData: TeamData) => {
     // Strategy 1: Use provided userId if available
     if (teamData.userId) {
       console.log('🔍 Using provided userId:', teamData.userId);
-      
+
       // Create a mock user object for now - we'll verify permissions later
       user = { id: teamData.userId };
       console.log('✅ Using provided user ID');
@@ -55,9 +55,9 @@ export const createTeam = async (teamData: TeamData) => {
     // Strategy 2: Try to get from current session if no userId provided
     if (!user) {
       console.log('🔍 No userId provided, attempting to get from session...');
-      
+
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
+
       if (session?.user && !sessionError) {
         user = session.user;
         console.log('✅ Got user from session:', user.id);
@@ -69,9 +69,9 @@ export const createTeam = async (teamData: TeamData) => {
     // Strategy 3: Try getUser() as fallback
     if (!user) {
       console.log('🔍 Trying getUser() as fallback...');
-      
+
       const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
-      
+
       if (authUser && !authError) {
         user = authUser;
         console.log('✅ Got user from getUser():', user.id);
@@ -90,7 +90,7 @@ export const createTeam = async (teamData: TeamData) => {
     // Test database permissions before proceeding
     console.log('🔍 Testing database permissions...');
     try {
-      const { data: permTest, error: permError } = await supabase
+      const { error: permError } = await supabase
         .from('teams')
         .select('id')
         .eq('user_id', user.id)
@@ -202,7 +202,7 @@ export const createTeam = async (teamData: TeamData) => {
 export const joinTeam = async (teamData: TeamData, joinCode: string) => {
   try {
     console.log('🚀 Starting team join process...');
-    
+
     let user = null;
 
     // Try to get user (similar strategy as createTeam)
@@ -291,7 +291,7 @@ const generateJoinCode = (): string => {
 
 // Helper function to generate a session ID
 const generateSessionId = (): string => {
-  return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+  return 'session_' + Date.now() + '_' + Math.random().toString(36).substring(2, 11);
 };
 
 export const getTeamMembers = async (sessionId: string) => {
@@ -316,24 +316,298 @@ export const getTeamMembers = async (sessionId: string) => {
 
 export const getUserTeam = async (userId: string) => {
   try {
-    const { data: team, error } = await supabase
+    const { data: teams, error } = await supabase
       .from('teams')
       .select('*')
       .eq('user_id', userId)
-      .single();
+      .order('created_at', { ascending: false }); // Get most recent first
 
     if (error) {
-      if (error.code === 'PGRST116') {
-        // No team found
-        return null;
-      }
       console.error('Error fetching user team:', error);
       return null;
     }
 
-    return team;
+    if (!teams || teams.length === 0) {
+      // No team found
+      return null;
+    }
+
+    // If multiple teams exist (shouldn't happen but handle gracefully), return the most recent
+    if (teams.length > 1) {
+      console.warn(`User ${userId} has multiple team records (${teams.length}). Using most recent.`);
+    }
+
+    return teams[0];
   } catch (error) {
     console.error('Error in getUserTeam:', error);
     return null;
+  }
+};
+
+export const upsertUserTeam = async (userId: string, teamData: Partial<TeamData>) => {
+  try {
+    console.log('🔍 Checking if user exists in team table:', userId);
+
+    // Check if user already exists in team table
+    const existingTeam = await getUserTeam(userId);
+
+    if (existingTeam) {
+      console.log('✅ User found in team table, updating missing fields...');
+
+      // Prepare update data - only include fields that are provided and different
+      const updateData: Partial<Team> = {};
+
+      if (teamData.email && teamData.email !== existingTeam.email) {
+        updateData.email = teamData.email.trim();
+      }
+      if (teamData.phone && teamData.phone !== existingTeam.phone) {
+        updateData.phone = teamData.phone.trim();
+      }
+      if (teamData.fullName && teamData.fullName !== existingTeam.full_name) {
+        updateData.full_name = teamData.fullName.trim();
+      }
+      if (teamData.teamName && teamData.teamName !== existingTeam.team_name) {
+        updateData.team_name = teamData.teamName.trim();
+      }
+      if (teamData.collegeCode && teamData.collegeCode !== existingTeam.college_code) {
+        updateData.college_code = teamData.collegeCode.trim().toUpperCase();
+      }
+      if (teamData.isTeamLeader !== undefined && teamData.isTeamLeader !== existingTeam.is_team_leader) {
+        updateData.is_team_leader = teamData.isTeamLeader;
+      }
+
+      // Only update if there are changes
+      if (Object.keys(updateData).length === 0) {
+        console.log('ℹ️ No changes needed, team data is up to date');
+        return { team: existingTeam, action: 'no_change' };
+      }
+
+      console.log('📝 Updating team with data:', updateData);
+
+      const { data, error } = await supabase
+        .from('teams')
+        .update(updateData)
+        .eq('user_id', userId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('❌ Error updating team:', error);
+        throw new Error(`Failed to update team: ${error.message}`);
+      }
+
+      console.log('🎉 Team updated successfully:', data);
+      return { team: data, action: 'updated' };
+
+    } else {
+      console.log('❌ User not found in team table, inserting new record...');
+
+      // Validate required fields for insertion
+      if (!teamData.email || !teamData.phone || !teamData.fullName || !teamData.teamName || !teamData.collegeCode) {
+        throw new Error('Missing required fields for team creation. Required: email, phone, fullName, teamName, collegeCode');
+      }
+
+      // Generate unique join code and session ID for new team
+      let joinCode = generateJoinCode();
+      let codeAttempts = 0;
+      const maxCodeAttempts = 10;
+
+      while (codeAttempts < maxCodeAttempts) {
+        const existingCodeTeam = await getTeamByJoinCode(joinCode);
+        if (!existingCodeTeam) {
+          break; // Code is unique
+        }
+        joinCode = generateJoinCode();
+        codeAttempts++;
+      }
+
+      if (codeAttempts >= maxCodeAttempts) {
+        throw new Error('Failed to generate unique join code');
+      }
+
+      const sessionId = generateSessionId();
+
+      // Prepare team record for insertion with validated data
+      const teamRecord: Partial<Team> = {
+        user_id: userId,
+        email: teamData.email.trim(),
+        phone: teamData.phone.trim(),
+        full_name: teamData.fullName.trim(),
+        team_name: teamData.teamName.trim(),
+        college_code: teamData.collegeCode.trim().toUpperCase(),
+        is_team_leader: teamData.isTeamLeader ?? true,
+        join_code: joinCode,
+        session_id: sessionId,
+        created_at: new Date().toISOString(),
+      };
+
+      console.log('📝 Inserting new team record:', teamRecord);
+
+      const { data, error } = await supabase
+        .from('teams')
+        .insert(teamRecord)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('❌ Error inserting team:', error);
+        console.error('Error details:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
+        throw new Error(`Failed to insert team: ${error.message}`);
+      }
+
+      console.log('🎉 Team inserted successfully:', data);
+      return { team: data, action: 'inserted', joinCode };
+    }
+
+  } catch (error: any) {
+    console.error('❌ Error in upsertUserTeam:', error);
+    throw error;
+  }
+};
+
+export const updateUserTeamFields = async (userId: string, fieldsToUpdate: Partial<TeamData>) => {
+  try {
+    console.log('🔍 Updating specific fields for user:', userId);
+
+    // Check if user exists in team table
+    const existingTeam = await getUserTeam(userId);
+
+    if (!existingTeam) {
+      throw new Error('User not found in team table. Use upsertUserTeam to create a new record.');
+    }
+
+    // Prepare update data - only update provided fields
+    const updateData: Partial<Team> = {};
+
+    if (fieldsToUpdate.email !== undefined) {
+      updateData.email = fieldsToUpdate.email.trim();
+    }
+    if (fieldsToUpdate.phone !== undefined) {
+      updateData.phone = fieldsToUpdate.phone.trim();
+    }
+    if (fieldsToUpdate.fullName !== undefined) {
+      updateData.full_name = fieldsToUpdate.fullName.trim();
+    }
+    if (fieldsToUpdate.teamName !== undefined) {
+      updateData.team_name = fieldsToUpdate.teamName.trim();
+    }
+    if (fieldsToUpdate.collegeCode !== undefined) {
+      updateData.college_code = fieldsToUpdate.collegeCode.trim().toUpperCase();
+    }
+    if (fieldsToUpdate.isTeamLeader !== undefined) {
+      updateData.is_team_leader = fieldsToUpdate.isTeamLeader;
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      console.log('ℹ️ No fields provided for update');
+      return { team: existingTeam, action: 'no_change' };
+    }
+
+    console.log('📝 Updating team fields:', updateData);
+
+    const { data, error } = await supabase
+      .from('teams')
+      .update(updateData)
+      .eq('user_id', userId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('❌ Error updating team fields:', error);
+      throw new Error(`Failed to update team fields: ${error.message}`);
+    }
+
+    console.log('🎉 Team fields updated successfully:', data);
+    return { team: data, action: 'updated' };
+
+  } catch (error: any) {
+    console.error('❌ Error in updateUserTeamFields:', error);
+    throw error;
+  }
+};
+
+export const insertUserTeamIfNotExists = async (userId: string, teamData: TeamData) => {
+  try {
+    console.log('🔍 Checking if user exists in team table for insertion:', userId);
+
+    // Check if user already exists in team table
+    const existingTeam = await getUserTeam(userId);
+
+    if (existingTeam) {
+      console.log('ℹ️ User already exists in team table, no insertion needed');
+      return { team: existingTeam, action: 'already_exists' };
+    }
+
+    console.log('✅ User not found, proceeding with insertion...');
+
+    // Validate required fields
+    if (!teamData.email || !teamData.phone || !teamData.fullName || !teamData.teamName || !teamData.collegeCode) {
+      throw new Error('Missing required fields for team creation. Required: email, phone, fullName, teamName, collegeCode');
+    }
+
+    // Generate unique join code and session ID
+    let joinCode = generateJoinCode();
+    let codeAttempts = 0;
+    const maxCodeAttempts = 10;
+
+    while (codeAttempts < maxCodeAttempts) {
+      const existingCodeTeam = await getTeamByJoinCode(joinCode);
+      if (!existingCodeTeam) {
+        break; // Code is unique
+      }
+      joinCode = generateJoinCode();
+      codeAttempts++;
+    }
+
+    if (codeAttempts >= maxCodeAttempts) {
+      throw new Error('Failed to generate unique join code');
+    }
+
+    const sessionId = generateSessionId();
+
+    // Prepare team record for insertion
+    const teamRecord: Partial<Team> = {
+      user_id: userId,
+      email: teamData.email.trim(),
+      phone: teamData.phone.trim(),
+      full_name: teamData.fullName.trim(),
+      team_name: teamData.teamName.trim(),
+      college_code: teamData.collegeCode.trim().toUpperCase(),
+      is_team_leader: teamData.isTeamLeader ?? true,
+      join_code: joinCode,
+      session_id: sessionId,
+      created_at: new Date().toISOString(),
+    };
+
+    console.log('📝 Inserting team record:', teamRecord);
+
+    const { data, error } = await supabase
+      .from('teams')
+      .insert(teamRecord)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('❌ Error inserting team:', error);
+      console.error('Error details:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+      });
+      throw new Error(`Failed to insert team: ${error.message}`);
+    }
+
+    console.log('🎉 Team inserted successfully:', data);
+    return { team: data, action: 'inserted', joinCode };
+
+  } catch (error: any) {
+    console.error('❌ Error in insertUserTeamIfNotExists:', error);
+    throw error;
   }
 };
