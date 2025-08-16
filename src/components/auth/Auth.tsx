@@ -436,6 +436,7 @@ const Auth: React.FC = () => {
             setIsResetPassword(false);
             setIsLogin(true);
           }}
+          onShowResendEmail={() => {}} // Resend functionality is handled internally in AuthForm
         />
 
         {/* Rate Limit Message */}
