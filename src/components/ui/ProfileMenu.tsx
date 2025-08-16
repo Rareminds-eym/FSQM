@@ -1,6 +1,6 @@
 import { LogOut, User, ChevronDown, Mail, Users, Copy } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../home/AuthContext';
+import { createClient } from '@supabase/supabase-js';
 import { getUserTeam } from '../../services/teamsService';
 import { toast } from 'react-toastify';
 import { supabase } from '../../lib/supabase';
@@ -15,95 +15,84 @@ interface TeamInfo {
 }
 
 const ProfileMenu: React.FC = () => {
-  const { user, logout } = useAuth();
+  // const { user, logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
-  const [teamInfo, setTeamInfo] = useState<TeamInfo | null>(null);
+  const [teamInfo, setTeamInfo] = useState<TeamInfo & { email?: string } | null>(null);
+  const [editField, setEditField] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState<string>('');
+  const [saving, setSaving] = useState(false);
+  // Save edited field to DB
+  const handleSaveField = async (field: string) => {
+    if (!teamInfo) return;
+    setSaving(true);
+    try {
+      const { data, error } = await supabase
+        .from('teams')
+        .update({ [field]: editValue })
+        .eq('id', teamInfo.id)
+        .select()
+        .single();
+      if (data) {
+        setTeamInfo({ ...teamInfo, [field]: editValue });
+        setEditField(null);
+        setEditValue('');
+        toast.success('Updated successfully!');
+      } else {
+        toast.error('Update failed!');
+      }
+    } catch (e) {
+      toast.error('Update failed!');
+    } finally {
+      setSaving(false);
+    }
+  };
   const [loadingTeam, setLoadingTeam] = useState(false);
 
-  // Get user's display name with fix for incorrect "karthik" value
+  // Get user's display name from teamInfo only
   const getDisplayName = () => {
-    console.log('🔍 Getting display name...');
-    console.log('User metadata:', user?.user_metadata);
-    console.log('Team info:', teamInfo);
-    
-    // Priority 1: Try team data full_name (if not "karthik")
-    if (teamInfo?.full_name && 
-        teamInfo.full_name.trim() !== '' && 
-        teamInfo.full_name.toLowerCase() !== 'karthik') {
-      console.log('✅ Using team full_name:', teamInfo.full_name);
+    if (teamInfo?.full_name && teamInfo.full_name.trim() !== '' && teamInfo.full_name.toLowerCase() !== 'karthik') {
       return teamInfo.full_name;
     }
-    
-    // Priority 2: Try user metadata full_name (if not "karthik")
-    if (user?.user_metadata?.full_name && 
-        user.user_metadata.full_name.trim() !== '' &&
-        user.user_metadata.full_name.toLowerCase() !== 'karthik') {
-      console.log('✅ Using user_metadata.full_name:', user.user_metadata.full_name);
-      return user.user_metadata.full_name;
-    }
-    
-    // Priority 3: Use email username (properly formatted)
-    if (user?.email) {
-      const emailUsername = user.email.split('@')[0]; // "gokul"
-      const formattedName = emailUsername.charAt(0).toUpperCase() + emailUsername.slice(1); // "Gokul"
-      console.log('✅ Using formatted email username:', formattedName);
-      return formattedName;
-    }
-    
-    console.log('❌ Using fallback: Player');
     return 'Player';
   };
 
   // Debug function to check what's actually in the database
-  const debugTeamData = async () => {
-    if (user?.id) {
-      const { data, error } = await supabase
-        .from('teams')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
-      
-      console.log('🔍 Raw team data from database:', data);
-      console.log('�� Full name in database:', data?.full_name);
-      
-      if (data?.full_name) {
-        toast.info(`Database name: ${data.full_name}`);
-      } else {
-        toast.warning('No full_name found in teams table');
-      }
-    }
-  };
+  // (No longer needed, as all data comes from teams table)
 
-  // Load team information when component mounts
+  // Load team information when component mounts (fetch by current user from teams table)
   useEffect(() => {
     const loadTeamInfo = async () => {
-      if (user?.id && !teamInfo) {
-        setLoadingTeam(true);
-        try {
-          const team = await getUserTeam(user.id);
-          console.log('📋 Team data loaded:', team);
-          if (team) {
-            setTeamInfo({
-              id: team.id,
-              team_name: team.team_name,
-              join_code: team.join_code,
-              college_code: team.college_code,
-              is_team_leader: team.is_team_leader,
-              full_name: team.full_name || '' // Get the full name from team data
-            });
-          }
-        } catch (error) {
-          console.error('Error loading team info:', error);
-        } finally {
+      setLoadingTeam(true);
+      try {
+        // Get current user from Supabase auth
+        const {
+          data: { user },
+          error: userError
+        } = await supabase.auth.getUser();
+        if (userError || !user) {
+          setTeamInfo(null);
           setLoadingTeam(false);
+          return;
         }
+        // Fetch the team row for this user_id
+        const { data, error } = await supabase
+          .from('teams')
+          .select('*')
+          .eq('user_id', user.id)
+          .single();
+        if (data) {
+          setTeamInfo(data);
+        } else {
+          setTeamInfo(null);
+        }
+      } catch (error) {
+        console.error('Error loading team info:', error);
+      } finally {
+        setLoadingTeam(false);
       }
     };
-
-    if (user) {
-      loadTeamInfo();
-    }
-  }, [user, teamInfo]);
+    loadTeamInfo();
+  }, []);
 
   // Handle menu toggle - directly open/close detailed view
   const handleMenuClick = () => {
@@ -127,7 +116,7 @@ const ProfileMenu: React.FC = () => {
     }
   };
 
-  if (!user) return null;
+  if (!teamInfo) return null;
 
   return (
     <div className="relative">
@@ -162,22 +151,57 @@ const ProfileMenu: React.FC = () => {
             <h3 className="text-yellow-900 font-bold text-lg">Profile Information</h3>
           </div>
 
+
           {/* Display Name */}
           <div className="px-4 py-3 border-b border-yellow-400/30">
             <div className="flex items-center gap-2 mb-1">
               <User className="w-4 h-4 text-yellow-800" />
               <span className="text-yellow-800 text-sm font-semibold">Name</span>
+              {(!teamInfo.full_name || teamInfo.full_name.trim() === '') && editField !== 'full_name' && (
+                <button className="ml-2 text-blue-600 underline text-xs" onClick={() => { setEditField('full_name'); setEditValue(''); }}>Edit</button>
+              )}
             </div>
-            <p className="text-yellow-900 text-sm font-medium">{getDisplayName()}</p>
+            {editField === 'full_name' ? (
+              <div className="flex gap-2 mt-1">
+                <input
+                  className="border px-2 py-1 rounded text-sm"
+                  value={editValue}
+                  onChange={e => setEditValue(e.target.value)}
+                  placeholder="Enter your name"
+                  disabled={saving}
+                />
+                <button className="text-green-700 font-bold" disabled={saving} onClick={() => handleSaveField('full_name')}>Save</button>
+                <button className="text-gray-500" disabled={saving} onClick={() => setEditField(null)}>Cancel</button>
+              </div>
+            ) : (
+              <p className="text-yellow-900 text-sm font-medium">{getDisplayName()}</p>
+            )}
           </div>
 
-          {/* Email */}
+          {/* Email (from teams table) */}
           <div className="px-4 py-3 border-b border-yellow-400/30">
             <div className="flex items-center gap-2 mb-1">
               <Mail className="w-4 h-4 text-yellow-800" />
               <span className="text-yellow-800 text-sm font-semibold">Email</span>
+              {(!teamInfo.email || teamInfo.email.trim() === '') && editField !== 'email' && (
+                <button className="ml-2 text-blue-600 underline text-xs" onClick={() => { setEditField('email'); setEditValue(''); }}>Edit</button>
+              )}
             </div>
-            <p className="text-yellow-900 text-sm break-all font-medium">{user.email}</p>
+            {editField === 'email' ? (
+              <div className="flex gap-2 mt-1">
+                <input
+                  className="border px-2 py-1 rounded text-sm"
+                  value={editValue}
+                  onChange={e => setEditValue(e.target.value)}
+                  placeholder="Enter your email"
+                  disabled={saving}
+                />
+                <button className="text-green-700 font-bold" disabled={saving} onClick={() => handleSaveField('email')}>Save</button>
+                <button className="text-gray-500" disabled={saving} onClick={() => setEditField(null)}>Cancel</button>
+              </div>
+            ) : (
+              <p className="text-yellow-900 text-sm break-all font-medium">{teamInfo.email || 'N/A'}</p>
+            )}
           </div>
 
           {/* Team Information */}
@@ -190,16 +214,66 @@ const ProfileMenu: React.FC = () => {
             </div>
           ) : teamInfo ? (
             <>
-              {/* Team Name */}
+
+
+              {/* Team Name (separate section) */}
               <div className="px-4 py-3 border-b border-yellow-400/30">
                 <div className="flex items-center gap-2 mb-1">
                   <Users className="w-4 h-4 text-yellow-800" />
-                  <span className="text-yellow-800 text-sm font-semibold">Team</span>
+                  <span className="text-yellow-800 text-sm font-semibold">Team Name</span>
+                  {(!teamInfo.team_name || teamInfo.team_name.trim() === '') && editField !== 'team_name' && (
+                    <button className="ml-2 text-blue-600 underline text-xs" onClick={() => { setEditField('team_name'); setEditValue(''); }}>Edit</button>
+                  )}
                 </div>
-                <p className="text-yellow-900 text-sm font-medium">{teamInfo.team_name}</p>
-                <p className="text-yellow-700 text-xs font-medium">
-                  {teamInfo.is_team_leader ? 'Team Leader' : 'Team Member'} • {teamInfo.college_code}
+                {editField === 'team_name' ? (
+                  <div className="flex gap-2 mt-1">
+                    <input
+                      className="border px-2 py-1 rounded text-sm"
+                      value={editValue}
+                      onChange={e => setEditValue(e.target.value)}
+                      placeholder="Enter team name"
+                      disabled={saving}
+                    />
+                    <button className="text-green-700 font-bold" disabled={saving} onClick={() => handleSaveField('team_name')}>Save</button>
+                    <button className="text-gray-500" disabled={saving} onClick={() => setEditField(null)}>Cancel</button>
+                  </div>
+                ) : (
+                  <p className="text-yellow-900 text-sm font-medium">{teamInfo.team_name}</p>
+                )}
+              </div>
+
+              {/* Team Role */}
+              <div className="px-4 py-3 border-b border-yellow-400/30">
+                <span className="text-yellow-800 text-sm font-semibold">Role</span>
+                <p className="text-yellow-700 text-sm font-medium">
+                  {teamInfo.is_team_leader ? 'Team Leader' : 'Team Member'}
                 </p>
+              </div>
+
+
+              {/* College Code */}
+              <div className="px-4 py-3 border-b border-yellow-400/30">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-yellow-800 text-sm font-semibold">College Code</span>
+                  {(!teamInfo.college_code || teamInfo.college_code.trim() === '') && editField !== 'college_code' && (
+                    <button className="ml-2 text-blue-600 underline text-xs" onClick={() => { setEditField('college_code'); setEditValue(''); }}>Edit</button>
+                  )}
+                </div>
+                {editField === 'college_code' ? (
+                  <div className="flex gap-2 mt-1">
+                    <input
+                      className="border px-2 py-1 rounded text-sm"
+                      value={editValue}
+                      onChange={e => setEditValue(e.target.value)}
+                      placeholder="Enter college code"
+                      disabled={saving}
+                    />
+                    <button className="text-green-700 font-bold" disabled={saving} onClick={() => handleSaveField('college_code')}>Save</button>
+                    <button className="text-gray-500" disabled={saving} onClick={() => setEditField(null)}>Cancel</button>
+                  </div>
+                ) : (
+                  <p className="text-yellow-900 text-sm font-medium">{teamInfo.college_code}</p>
+                )}
               </div>
 
               {/* Join Code */}
@@ -253,15 +327,11 @@ const ProfileMenu: React.FC = () => {
             </div>
           </div> */}
 
-          {/* Logout Button */}
+          {/* Logout Button (disabled, since no auth context) */}
           <button
-            onClick={() => {
-              setIsOpen(false);
-              logout();
-            }}
+            disabled
             className="w-full flex items-center gap-2 px-4 py-3
-              text-red-800 hover:text-white hover:bg-red-500/80
-              transition-all duration-200 bg-gradient-to-r from-red-400 to-red-500 font-semibold
+              text-red-800 bg-red-200 cursor-not-allowed
               border-t-2 border-red-300"
           >
             <LogOut className="w-4 h-4" />
