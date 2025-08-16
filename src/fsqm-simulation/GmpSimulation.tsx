@@ -72,11 +72,11 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
   };
   
   // Walkthrough video handler
-  const showWalkthroughVideo = () => {
-    // You can replace this URL with the actual walkthrough video URL
-    const videoUrl = "https://www.youtube.com/watch?v=your-walkthrough-video-id";
-    window.open(videoUrl, '_blank');
-  };
+    const showWalkthroughVideo = () => {
+      // Updated walkthrough video URL
+      const videoUrl = "https://youtu.be/QJ9wAXFrncY?feature=shared";
+      window.open(videoUrl, '_blank');
+    };
 
   // Save team attempt to backend
   const saveTeamAttempt = async (module_number: number) => {
