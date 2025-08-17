@@ -19,7 +19,6 @@ import ProfileMenu from "./components/ui/ProfileMenu";
 import { InstallPrompt, OfflineIndicator } from "./PWA";
 // Direct service worker registration
 
-
 import { fetchAllLevels } from "./composables/fetchLevel";
 import { supabase, fetchWithFallback } from "./lib/supabaseClient";
 import { AuthProvider, useAuth } from "./components/home/AuthContext";
@@ -28,7 +27,6 @@ import { EnhancedGameProgressProvider } from "./context/EnhancedGameProgressCont
 import { SettingsProvider } from "./context/SettingsContext";
 import { gameScenarios } from "./data/recoilState";
 import Offline from "./Oflline";
-
 
 const AppContent: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -40,16 +38,21 @@ const AppContent: React.FC = () => {
   useEffect(() => {
     async function loadScenarios() {
       const fetchFromSupabase = async () => {
-        const { data, error } = await supabase.from('scenarios').select('*');
+        const { data, error } = await supabase.from("scenarios").select("*");
         if (error) throw error;
         return data;
       };
       const fetchFromLocal = async () => {
-  // Replace with your local fallback logic, e.g., import('./data/localScenarios')
-  console.warn("[FSQM] Using local fallback for scenarios (Supabase fetch failed)");
-  return [];
+        // Replace with your local fallback logic, e.g., import('./data/localScenarios')
+        console.warn(
+          "[FSQM] Using local fallback for scenarios (Supabase fetch failed)"
+        );
+        return [];
       };
-      const scenarios = await fetchWithFallback(fetchFromSupabase, fetchFromLocal);
+      const scenarios = await fetchWithFallback(
+        fetchFromSupabase,
+        fetchFromLocal
+      );
       _setGameScenarios(scenarios);
     }
     loadScenarios();
@@ -61,25 +64,38 @@ const AppContent: React.FC = () => {
     window.addEventListener("offline", handleOffline);
 
     // Register service worker directly
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker
+          .register("/sw.js")
           .then((registration) => {
-            console.log('SW registered: ', registration);
+            console.log("SW registered: ", registration);
 
             // Debug PWA installability
-            console.log('PWA Debug Info:');
-            console.log('- Service Worker registered:', !!registration);
-            console.log('- Manifest linked:', !!document.querySelector('link[rel="manifest"]'));
-            console.log('- HTTPS or localhost:', location.protocol === 'https:' || location.hostname === 'localhost');
-            console.log('- Display mode:', window.matchMedia('(display-mode: standalone)').matches ? 'standalone' : 'browser');
+            console.log("PWA Debug Info:");
+            console.log("- Service Worker registered:", !!registration);
+            console.log(
+              "- Manifest linked:",
+              !!document.querySelector('link[rel="manifest"]')
+            );
+            console.log(
+              "- HTTPS or localhost:",
+              location.protocol === "https:" ||
+                location.hostname === "localhost"
+            );
+            console.log(
+              "- Display mode:",
+              window.matchMedia("(display-mode: standalone)").matches
+                ? "standalone"
+                : "browser"
+            );
           })
           .catch((error) => {
-            console.error('SW registration failed: ', error);
+            console.error("SW registration failed: ", error);
           });
       });
     } else {
-      console.warn('Service Worker not supported');
+      console.warn("Service Worker not supported");
     }
 
     return () => {
@@ -144,62 +160,83 @@ const AppContent: React.FC = () => {
           {/* Authenticated routes */}
           {isAuthenticated ? (
             <>
-              <Route path="/" element={
-                <>
-                  <div className="fixed top-4 right-4 z-50">
-                    {/* <ProfileMenu /> */}
-                  </div>
-                  <HomePage />
-                </>
-              } />
-              <Route path="/levels" element={
-                <>
-                  <div className="fixed top-4 right-4 z-50">
-                    <ProfileMenu />
-                  </div>
-                  <LevelsPage />
-                </>
-              } />
-              <Route path="/game/:levelId" element={
-                <>
-                  {/* <div className="fixed top-4 right-4 z-50">
+              <Route
+                path="/"
+                element={
+                  <>
+                    <div className="fixed top-4 right-4 z-50">
+                      {/* <ProfileMenu /> */}
+                    </div>
+                    <HomePage />
+                  </>
+                }
+              />
+              <Route
+                path="/levels"
+                element={
+                  <>
+                    <div className="fixed top-4 right-4 z-50">
+                      <ProfileMenu />
+                    </div>
+                    <LevelsPage />
+                  </>
+                }
+              />
+              <Route
+                path="/game/:levelId"
+                element={
+                  <>
+                    {/* <div className="fixed top-4 right-4 z-50">
                     <ProfileMenu />
                   </div> */}
-                  <GamePage />
-                </>
-              } />
-              <Route path="/fsqm-simulation/:levelId" element={
-                <>
-                  {/* <div className="fixed top-4 right-4 z-50">
+                    <GamePage />
+                  </>
+                }
+              />
+              <Route
+                path="/fsqm-simulation/:levelId"
+                element={
+                  <>
+                    {/* <div className="fixed top-4 right-4 z-50">
                     <ProfileMenu />
                   </div> */}
-                  <GameEngine />
-                </>
-              } />
-              <Route path="/instructions" element={
-                <>
-                  <div className="fixed top-4 right-4 z-50">
-                    <ProfileMenu />
-                  </div>
-                  <InstructionsPage />
-                </>
-              } />
-              <Route path="/settings" element={
-                <>
-                  <div className="fixed top-4 right-4 z-50">
-                    <ProfileMenu />
-                  </div>
-                  <SettingsPage />
-                </>
-              } />
-              <Route path="/scores" element={
-                <>
-                  <div className="fixed top-4 right-4 z-50">
-                    <ProfileMenu />
-                  </div>
-                  <ScoresPage />
-                </>
-              } />
+                    <GameEngine />
+                  </>
+                }
+              />
+              <Route
+                path="/instructions"
+                element={
+                  <>
+                    <div className="fixed top-4 right-4 z-50">
+                      <ProfileMenu />
+                    </div>
+                    <InstructionsPage />
+                  </>
+                }
+              />
+              <Route
+                path="/settings"
+                element={
+                  <>
+                    <div className="fixed top-4 right-4 z-50">
+                      <ProfileMenu />
+                    </div>
+                    <SettingsPage />
+                  </>
+                }
+              />
+              <Route
+                path="/scores"
+                element={
+                  <>
+                    <div className="fixed top-4 right-4 z-50">
+                      <ProfileMenu />
+                    </div>
+                    <ScoresPage />
+                  </>
+                }
+              />
               <Route path="*" element={<NotFoundPage />} />
             </>
           ) : (
@@ -211,7 +248,6 @@ const AppContent: React.FC = () => {
       <div className="bg-yelloww py-5 text-yellow-100 font-semibold flex justify-center w-full">
         Copyright © 2025 Rareminds.
       </div>
-
     </div>
   );
 };
