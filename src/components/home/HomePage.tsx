@@ -1,4 +1,11 @@
-import { BookOpen, FastForward, Play, Settings, Trophy, Lock } from "lucide-react";
+import {
+  BookOpen,
+  FastForward,
+  Play,
+  Settings,
+  Trophy,
+  Lock,
+} from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -123,7 +130,7 @@ const HomePage: React.FC = () => {
   useEffect(() => {
     const fetchGameLockStatus = async () => {
       const isLocked = await checkGameLockStatus();
-      console.log('🔒 Game lock status:', isLocked);
+      console.log("🔒 Game lock status:", isLocked);
       setIsGameLocked(isLocked);
     };
 
@@ -148,42 +155,62 @@ const HomePage: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 p-8 relative overflow-hidden bg-yelloww flex items-center bg-cover bg-center bg-no-repeat" style={{backgroundImage: 'url("/images/background-4.png")'}}>
+    <div
+      className="flex-1 p-8 relative overflow-hidden bg-yelloww flex items-center bg-cover bg-center bg-no-repeat"
+      style={{ backgroundImage: 'url("/images/background-4.png")' }}
+    >
       <CircuitLines />
       <SocialMediaIcons />
 
-      {/* Right side fixed profile and icons (desktop only) */}
-    <div className="flex flex-col items-center fixed right-2 top-4 z-50 space-y-3 mt-8 p-2  rounded-xl 
-      lg:right-4 lg:top-10 lg:space-y-6 lg:mt-20 lg:p-4 lg:rounded-2xl lg:shadow-2xl">
-        {/* ProfileMenu at top right */}
-        <div>
+      {/* Right side fixed profile and icons (robust, professional, all resolutions) */}
+      <div
+        className="pointer-events-none !w-max fixed z-50 flex flex-col items-end top-0 right-0 min-w-[3.5rem] px-1 pt-2 space-y-2
+         md:min-w-[5.5rem] md:px-3 md:pt-8 md:space-y-4
+         sm:min-w-[4.5rem] sm:px-2 sm:pt-4 sm:space-y-3
+         lg:min-w-[6.5rem] lg:px-4 lg:pt-10 lg:space-y-6"
+        style={{ minHeight: "auto", alignItems: "flex-end" }}
+      >
+        <div
+          className="pointer-events-auto w-full flex justify-center bg-white/80 rounded-xl shadow-md border border-yellow-300
+          lg:rounded-2xl lg:shadow-2xl"
+        >
           <ProfileMenu />
         </div>
-        {/* Two icons below profile, aligned and spaced from profile */}
-        <div className="flex flex-col items-center w-full">
+        <div className="pointer-events-auto flex flex-col items-end w-full">
           <a
             href="https://us06web.zoom.us/j/86412214284?pwd=I8U47ItobcPBHvKgzmwsDAckIPBFYY.1"
             target="_blank"
             rel="noopener noreferrer"
-            className="bg-white/80 rounded-xl p-2 shadow-lg border-2 border-yellow-400 hover:scale-105 transition-all mt-6
-            lg:rounded-2xl lg:p-4 lg:shadow-xl lg:hover:scale-110 lg:mt-8"
+            className="bg-white/90 rounded-xl p-1 shadow-lg border-2 border-yellow-400 hover:scale-105 transition-all mt-2
+            sm:p-2 sm:mt-3
+            md:p-3 md:mt-5
+            lg:rounded-2xl lg:p-4 lg:shadow-xl lg:hover:scale-110 lg:mt-6"
           >
-            <img src="/icons/helpdesk.png" alt="Help Desk" className="w-10 h-10 object-contain lg:w-16 lg:h-12" />
+            <img
+              src="/icons/helpdesk.png"
+              alt="Help Desk"
+              className="w-8 h-8 object-contain sm:w-10 sm:h-10 md:w-12 md:h-12 lg:w-16 lg:h-12"
+            />
           </a>
           <a
             href="https://naanmudhalvan.tn.gov.in/"
             target="_blank"
             rel="noopener noreferrer"
-            className="bg-white/80 rounded-xl p-2 shadow-lg border-2 border-yellow-400 hover:scale-105 transition-all mt-3
-            lg:rounded-2xl lg:p-4 lg:shadow-xl lg:hover:scale-110 lg:mt-5"
+            className="bg-white/90 rounded-xl p-1 shadow-lg border-2 border-yellow-400 hover:scale-105 transition-all mt-2
+            sm:p-2 sm:mt-2
+            md:p-3 md:mt-3
+            lg:rounded-2xl lg:p-4 lg:shadow-xl lg:hover:scale-110 lg:mt-4"
           >
-            <img src="/icons/nmlogo.png" alt="Info" className="w-10 h-10 object-contain lg:w-16 lg:h-12" />
+            <img
+              src="/icons/nmlogo.png"
+              alt="Info"
+              className="w-8 h-8 object-contain sm:w-10 sm:h-10 md:w-12 md:h-12 lg:w-16 lg:h-12"
+            />
           </a>
         </div>
       </div>
 
       <div className="max-w-md mx-auto relative z-10">
-        
         <div className="flex flex-col lg:flex-row  items-center space-x-2 -mt-20 md:mb-[10%]">
           {/* Show AnimatedLogo only on desktop */}
           <span className="hidden lg:block">
@@ -194,20 +221,22 @@ const HomePage: React.FC = () => {
               className="text-yellow-400 font-black text-3xl md:text-5xl text-center mt-8 md:mt-8 lg:mt-16 block"
               style={{
                 textShadow:
-                  '0 2px 4px #000, 0 6px 20px rgba(0,0,0,0.19), 2px 2px 0 #e11d48, 4px 4px 0 #fbbf24',
+                  "0 2px 4px #000, 0 6px 20px rgba(0,0,0,0.19), 2px 2px 0 #e11d48, 4px 4px 0 #fbbf24",
               }}
             >
               {/* Single line for all screens */}
               <span className="block">Safe Bite 2.0</span>
               {/* Show Hackathon only on desktop (md and up) */}
-              <span className="hidden md:block text-2xl md:text-3xl mt-1">Hackathon</span>
+              <span className="hidden md:block text-2xl md:text-3xl mt-1">
+                Hackathon
+              </span>
               {/* <span className="md:hidden">Food Safety and Quality Management</span> */}
             </span>
           </GlowingTitle>
         </div>
 
-{/* Logo above menu items */}
-{/* <div className="flex justify-center mb-4 sm:mb-6 md:mb-8 pt-2 sm:pt-4">
+        {/* Logo above menu items */}
+        {/* <div className="flex justify-center mb-4 sm:mb-6 md:mb-8 pt-2 sm:pt-4">
           <img 
             src="/images/logo_home.png" 
             alt="Home Logo" 
@@ -226,11 +255,21 @@ const HomePage: React.FC = () => {
                 title={item.title}
                 onClick={item.onClick}
                 disabled={item.disabled}
-                bg={index === 0 && 'bg-gradient-to-b  from-red-300 via-red-400 to-red-500 z-0  shadow-lg shadow-red-300 rounded-[1.3rem] border-2 border-red-600' }
-                text = {index === 0 && 'text-white text-xl font-semibold mt-1 animate-pulse '}
-                iconColor = {index === 0 && ' bg-red-100 rounded-full  animate-pulse'}
-                border = {index === 0 && 'absolute border-red-100 border-[0.4rem] '}
-                animate={index === 0 && ''}
+                bg={
+                  index === 0 &&
+                  "bg-gradient-to-b  from-red-300 via-red-400 to-red-500 z-0  shadow-lg shadow-red-300 rounded-[1.3rem] border-2 border-red-600"
+                }
+                text={
+                  index === 0 &&
+                  "text-white text-xl font-semibold mt-1 animate-pulse "
+                }
+                iconColor={
+                  index === 0 && " bg-red-100 rounded-full  animate-pulse"
+                }
+                border={
+                  index === 0 && "absolute border-red-100 border-[0.4rem] "
+                }
+                animate={index === 0 && ""}
               />
             ))}
         </div>
