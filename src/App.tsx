@@ -159,14 +159,6 @@ const AppContent: React.FC = () => {
                   <GameEngine />
                 </>
               } />
-              <Route path="/fsqm-simulation" element={
-                <>
-                  {/* <div className="fixed top-4 right-4 z-50">
-                    <ProfileMenu />
-                  </div> */}
-                  <GameEngine />
-                </>
-              } />
               <Route path="/instructions" element={
                 <>
                   <div className="fixed top-4 right-4 z-50">

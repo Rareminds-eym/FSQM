@@ -1,7 +1,16 @@
-import { AlertTriangle, ArrowLeft, Clock, Download, Eye, Factory, Play, Trophy } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowLeft,
+  Clock,
+  Download,
+  Eye,
+  Factory,
+  Play,
+  Trophy,
+} from "lucide-react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import jsPDF from 'jspdf';
+import jsPDF from "jspdf";
 import { useDeviceLayout } from "../hooks/useOrientation";
 import { supabase } from "../lib/supabase";
 import type { Question } from "./HackathonData";
@@ -12,8 +21,6 @@ import CautionModal from "./CautionModal";
 import { QuestionCard } from "./QuestionCard";
 import { Results } from "./Results";
 import { Timer } from "./Timer";
-
-
 
 export interface GameState {
   currentLevel: 1 | 2;
@@ -37,7 +44,6 @@ interface GmpSimulationProps {
   onProceedToLevel2?: () => void;
 }
 
-
 const GameEngine: React.FC<GmpSimulationProps> = ({
   mode,
   onProceedToLevel2,
@@ -58,7 +64,10 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
   // Utility function to ensure valid session before API calls
   const ensureValidSession = async () => {
     try {
-      const { data: { session }, error } = await supabase.auth.getSession();
+      const {
+        data: { session },
+        error,
+      } = await supabase.auth.getSession();
 
       if (error || !session) {
         // Try to refresh the session
@@ -80,12 +89,12 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
   const showWalkthroughVideo = () => {
     // Updated walkthrough video URL
     const videoUrl = "https://youtu.be/QJ9wAXFrncY?feature=shared";
-    window.open(videoUrl, '_blank');
+    window.open(videoUrl, "_blank");
   };
 
   // Back button handler
   const handleBackClick = () => {
-    navigate('/levels');
+    navigate("/levels");
   };
 
   // PDF download handler
@@ -93,9 +102,9 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
     // Create scenarios array from current game state
     const scenarios = gameState.questions.map((question, index) => ({
       caseFile: question.caseFile || `Case ${index + 1}`,
-      violation: gameState.answers[index]?.violation || '',
-      rootCause: gameState.answers[index]?.rootCause || '',
-      solution: gameState.answers[index]?.solution || ''
+      violation: gameState.answers[index]?.violation || "",
+      rootCause: gameState.answers[index]?.rootCause || "",
+      solution: gameState.answers[index]?.solution || "",
     }));
 
     const doc = new jsPDF();
@@ -114,11 +123,14 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
       doc.setFontSize(12);
       doc.text(`${idx + 1}.`, margin, y);
       doc.setFontSize(11);
-      doc.text('Case:', margin + 12, y);
-      const normalizedCase = sc.caseFile.replace(/[‐-―−­‑‒–—―﹘﹣－]/g, '-');
+      doc.text("Case:", margin + 12, y);
+      const normalizedCase = sc.caseFile.replace(/[‐-―−­‑‒–—―﹘﹣－]/g, "-");
       const caseLines = doc.splitTextToSize(normalizedCase, usableWidth - 32);
       caseLines.forEach((line: string, i: number) => {
-        doc.text(line, margin + 32, y + i * 8, { maxWidth: usableWidth - 32, align: 'justify' });
+        doc.text(line, margin + 32, y + i * 8, {
+          maxWidth: usableWidth - 32,
+          align: "justify",
+        });
       });
       y += 8 * caseLines.length + 16;
       if (y > margin + usableHeight - 10) {
@@ -157,7 +169,9 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
         error.details
       );
       if (error.message.includes("JWT") || error.message.includes("expired")) {
-        setTeamInfoError("Session expired while loading team data. Please log in again.");
+        setTeamInfoError(
+          "Session expired while loading team data. Please log in again."
+        );
       }
       return;
     }
@@ -166,39 +180,44 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
       return;
     }
     // Calculate average score, top scorer, and average time
-    const scores = attempts.map(a => a.score || 0);
+    const scores = attempts.map((a) => a.score || 0);
     const totalScore = scores.reduce((sum, s) => sum + s, 0);
     const avgScore = scores.length > 0 ? totalScore / scores.length : 0;
     const topScore = scores.length > 0 ? Math.max(...scores) : 0;
     const weightedAvgScore = (0.7 * avgScore + 0.3 * topScore).toFixed(2);
     const avgTimeSec = Math.round(
       attempts.reduce((sum, a) => sum + (a.completion_time_sec || 0), 0) /
-      attempts.length
+        attempts.length
     );
     // Debug logs
     console.log("[TEAM SCORING] Individual scores:", scores);
-    console.log(`[TEAM SCORING] Avg score: ${avgScore}, Top score: ${topScore}, Weighted team score: ${weightedAvgScore}`);
+    console.log(
+      `[TEAM SCORING] Avg score: ${avgScore}, Top score: ${topScore}, Weighted team score: ${weightedAvgScore}`
+    );
     console.log(`[TEAM SCORING] Avg time (sec): ${avgTimeSec}`);
     // Insert into team_attempts
-    const { error: insertError } = await supabase
-      .from("team_attempts")
-      .insert([
-        {
-          session_id: session_id,
-          module_number,
-          weighted_avg_score: weightedAvgScore,
-          avg_time_sec: avgTimeSec,
-          unlocked_next_module: false,
-        },
-      ]);
+    const { error: insertError } = await supabase.from("team_attempts").insert([
+      {
+        session_id: session_id,
+        module_number,
+        weighted_avg_score: weightedAvgScore,
+        avg_time_sec: avgTimeSec,
+        unlocked_next_module: false,
+      },
+    ]);
     if (insertError) {
       console.error(
         "Supabase insert error (team_attempts):",
         insertError.message,
         insertError.details
       );
-      if (insertError.message.includes("JWT") || insertError.message.includes("expired")) {
-        setTeamInfoError("Session expired while saving team data. Please log in again.");
+      if (
+        insertError.message.includes("JWT") ||
+        insertError.message.includes("expired")
+      ) {
+        setTeamInfoError(
+          "Session expired while saving team data. Please log in again."
+        );
       }
     }
   };
@@ -250,7 +269,8 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
   const loadingIds = !session_id || !email || isLoadingProgress;
 
   // Periodic timer save interval
-  const [timerSaveInterval, setTimerSaveInterval] = useState<NodeJS.Timeout | null>(null);
+  const [timerSaveInterval, setTimerSaveInterval] =
+    useState<NodeJS.Timeout | null>(null);
 
   // Timer save status indicator
   const [showSaveIndicator, setShowSaveIndicator] = useState(false);
@@ -265,8 +285,6 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
     gameStateRef.current = gameState;
     sessionIdRef.current = session_id;
     emailRef.current = email;
-
-
   }, [gameState, session_id, email]);
 
   // Check completion status for both levels
@@ -321,7 +339,10 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
 
         if (authError) {
           console.error("Auth error:", authError);
-          if (authError.message.includes("JWT") || authError.message.includes("expired")) {
+          if (
+            authError.message.includes("JWT") ||
+            authError.message.includes("expired")
+          ) {
             setTeamInfoError("Session expired. Please log in again.");
           } else {
             setTeamInfoError("Authentication error. Please log in.");
@@ -345,10 +366,17 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
 
         if (error) {
           console.error("Database error:", error);
-          if (error.message.includes("JWT") || error.message.includes("expired")) {
+          if (
+            error.message.includes("JWT") ||
+            error.message.includes("expired")
+          ) {
             setTeamInfoError("Session expired. Please log in again.");
+          } else if (error.message.includes("JSON object requested, multiple (or no) rows returned")) {
+            setTeamInfoError("Please complete your Profile Information.");
           } else {
-            setTeamInfoError("Could not load team info. " + (error.message || "Unknown error."));
+            setTeamInfoError(
+              "Could not load team info. " + (error.message || "Unknown error.")
+            );
           }
         } else if (!data) {
           setTeamInfoError("No team info found for this user.");
@@ -399,11 +427,11 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
             attemptDetailsLength: attemptDetails.length,
             moduleNumber,
             initialLevel,
-            attemptDetails: attemptDetails.map(d => ({
+            attemptDetails: attemptDetails.map((d) => ({
               question_index: d.question_index,
               hasQuestion: !!d.question,
-              hasAnswer: !!d.answer
-            }))
+              hasAnswer: !!d.answer,
+            })),
           });
 
           // Always restore game state if there are saved attempt details,
@@ -414,18 +442,22 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
             // We need to reconstruct the full game state properly
 
             // First, get the questions that were saved
-            const savedQuestionData = attemptDetails.map(detail => ({
-              index: detail.question_index,
-              question: detail.question,
-              answer: detail.answer
-            })).sort((a, b) => a.index - b.index);
+            const savedQuestionData = attemptDetails
+              .map((detail) => ({
+                index: detail.question_index,
+                question: detail.question,
+                answer: detail.answer,
+              }))
+              .sort((a, b) => a.index - b.index);
 
             console.log("Saved question data:", savedQuestionData);
 
             // If we don't have a complete set, we need to generate the missing questions
             // This happens when user didn't reach all questions before saving
             if (savedQuestionData.length < 5) {
-              console.log("Incomplete saved data, generating missing questions...");
+              console.log(
+                "Incomplete saved data, generating missing questions..."
+              );
 
               // Generate a fresh set of 5 questions
               const allQuestions = selectRandomQuestions();
@@ -439,7 +471,11 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
               savedQuestionData.forEach(({ index, question, answer }) => {
                 if (index < 5 && question) {
                   allQuestions[index] = question;
-                  allAnswers[index] = answer || { violation: "", rootCause: "", solution: "" };
+                  allAnswers[index] = answer || {
+                    violation: "",
+                    rootCause: "",
+                    solution: "",
+                  };
                 }
               });
 
@@ -447,18 +483,33 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
               var finalQuestions = allQuestions;
               var finalAnswers = allAnswers;
             } else {
-              console.log("Complete saved data found, using saved questions...");
+              console.log(
+                "Complete saved data found, using saved questions..."
+              );
               // We have all 5 questions saved
-              var finalQuestions = savedQuestionData.map(item => item.question).filter(q => q) as Question[];
-              var finalAnswers = savedQuestionData.map(item => item.answer || { violation: "", rootCause: "", solution: "" }) as { violation: string; rootCause: string; solution: string; }[];
+              var finalQuestions = savedQuestionData
+                .map((item) => item.question)
+                .filter((q) => q) as Question[];
+              var finalAnswers = savedQuestionData.map(
+                (item) =>
+                  item.answer || { violation: "", rootCause: "", solution: "" }
+              ) as { violation: string; rootCause: string; solution: string }[];
 
               // Ensure we still have 5 questions even if some were null
               if (finalQuestions.length < 5) {
-                console.warn("Some saved questions were null, filling with random questions...");
+                console.warn(
+                  "Some saved questions were null, filling with random questions..."
+                );
                 const additionalQuestions = selectRandomQuestions();
                 while (finalQuestions.length < 5) {
-                  finalQuestions.push(additionalQuestions[finalQuestions.length]);
-                  finalAnswers.push({ violation: "", rootCause: "", solution: "" });
+                  finalQuestions.push(
+                    additionalQuestions[finalQuestions.length]
+                  );
+                  finalAnswers.push({
+                    violation: "",
+                    rootCause: "",
+                    solution: "",
+                  });
                 }
               }
             }
@@ -466,7 +517,7 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
             console.log("Final questions and answers:", {
               questionsLength: finalQuestions.length,
               answersLength: finalAnswers.length,
-              questions: finalQuestions.map(q => q?.id || 'null')
+              questions: finalQuestions.map((q) => q?.id || "null"),
             });
 
             // Find the furthest question the user has navigated to
@@ -478,18 +529,29 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
 
             // The furthest question is the highest question_index in the saved data
             // This represents the last question the user navigated to (via Proceed button)
-            attemptDetails.forEach(detail => {
+            attemptDetails.forEach((detail) => {
               if (detail.question_index > furthestQuestionIndex) {
                 furthestQuestionIndex = detail.question_index;
                 // Get the timer state from the furthest question reached
-                if (detail.time_remaining && typeof detail.time_remaining === 'number' && !isNaN(detail.time_remaining)) {
-                  savedTimeRemaining = Math.max(0, Math.min(detail.time_remaining, 5400)); // Ensure valid range
+                if (
+                  detail.time_remaining &&
+                  typeof detail.time_remaining === "number" &&
+                  !isNaN(detail.time_remaining)
+                ) {
+                  savedTimeRemaining = Math.max(
+                    0,
+                    Math.min(detail.time_remaining, 5400)
+                  ); // Ensure valid range
                 }
               }
             });
 
             // Validate savedTimeRemaining before using it
-            if (isNaN(savedTimeRemaining) || savedTimeRemaining < 0 || savedTimeRemaining > 5400) {
+            if (
+              isNaN(savedTimeRemaining) ||
+              savedTimeRemaining < 0 ||
+              savedTimeRemaining > 5400
+            ) {
               savedTimeRemaining = 5400;
             }
 
@@ -499,10 +561,16 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
               if (answer) {
                 let isComplete = false;
                 if (initialLevel === 1) {
-                  isComplete = !!(answer.violation && answer.violation.trim() !== "" &&
-                    answer.rootCause && answer.rootCause.trim() !== "");
+                  isComplete = !!(
+                    answer.violation &&
+                    answer.violation.trim() !== "" &&
+                    answer.rootCause &&
+                    answer.rootCause.trim() !== ""
+                  );
                 } else {
-                  isComplete = !!(answer.solution && answer.solution.trim() !== "");
+                  isComplete = !!(
+                    answer.solution && answer.solution.trim() !== ""
+                  );
                 }
                 if (isComplete) completeCount++;
               }
@@ -524,10 +592,18 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
             });
 
             // Ensure currentQuestion is within valid bounds
-            currentQuestionIndex = Math.max(0, Math.min(currentQuestionIndex, finalQuestions.length - 1));
+            currentQuestionIndex = Math.max(
+              0,
+              Math.min(currentQuestionIndex, finalQuestions.length - 1)
+            );
 
             // Final validation of savedTimeRemaining before setting state
-            const finalTimeRemaining = (isNaN(savedTimeRemaining) || savedTimeRemaining < 0 || savedTimeRemaining > 5400) ? 5400 : savedTimeRemaining;
+            const finalTimeRemaining =
+              isNaN(savedTimeRemaining) ||
+              savedTimeRemaining < 0 ||
+              savedTimeRemaining > 5400
+                ? 5400
+                : savedTimeRemaining;
 
             // Check if all cases are completed during restoration
             const allCasesCompleted = completeCount >= finalQuestions.length;
@@ -545,7 +621,7 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
                 saveTeamAttempt(5); // Save team summary for module 5
 
                 // Restore game state with level modal shown
-                setGameState(prev => ({
+                setGameState((prev) => ({
                   ...prev,
                   questions: finalQuestions,
                   answers: finalAnswers,
@@ -564,7 +640,7 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
                 saveTeamAttempt(6); // Save team summary for module 6
 
                 // Restore game state as completed
-                setGameState(prev => ({
+                setGameState((prev) => ({
                   ...prev,
                   questions: finalQuestions,
                   answers: finalAnswers,
@@ -582,10 +658,10 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
                 questionsLength: finalQuestions.length,
                 answersLength: finalAnswers.length,
                 currentQuestionIndex,
-                finalTimeRemaining
+                finalTimeRemaining,
               });
 
-              setGameState(prev => ({
+              setGameState((prev) => ({
                 ...prev,
                 questions: finalQuestions,
                 answers: finalAnswers,
@@ -595,8 +671,6 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
                 timeRemaining: finalTimeRemaining, // Restore timer state with validation
               }));
             }
-
-
           }
         } else {
           console.log("No saved attempt details found");
@@ -650,14 +724,24 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
 
   // Auto-show case brief for Level 1 in mobile horizontal mode when game starts
   useEffect(() => {
-    if (gameState.gameStarted && gameState.currentLevel === 1 && isMobileHorizontal) {
+    if (
+      gameState.gameStarted &&
+      gameState.currentLevel === 1 &&
+      isMobileHorizontal
+    ) {
       setTimeout(() => setShowCaseBrief(true), 100);
     }
   }, [gameState.gameStarted, gameState.currentLevel, isMobileHorizontal]);
 
   // Periodic timer save - save timer every 30 seconds during active gameplay
   useEffect(() => {
-    if (!gameState.gameStarted || gameState.gameCompleted || gameState.showLevelModal || !session_id || !email) {
+    if (
+      !gameState.gameStarted ||
+      gameState.gameCompleted ||
+      gameState.showLevelModal ||
+      !session_id ||
+      !email
+    ) {
       // Clear any existing interval if game is not active or level modal is shown
       if (timerSaveInterval) {
         clearInterval(timerSaveInterval);
@@ -675,12 +759,19 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
           const currentEmailValue = emailRef.current;
 
           // Skip if game is no longer active or level modal is shown
-          if (!currentState.gameStarted || currentState.gameCompleted || currentState.showLevelModal || !currentSession || !currentEmailValue) {
+          if (
+            !currentState.gameStarted ||
+            currentState.gameCompleted ||
+            currentState.showLevelModal ||
+            !currentSession ||
+            !currentEmailValue
+          ) {
             return;
           }
 
           // Only save if we have meaningful progress (timer has been running for at least 10 seconds)
-          if (currentState.timeRemaining < 5390) { // 5400 - 10 seconds
+          if (currentState.timeRemaining < 5390) {
+            // 5400 - 10 seconds
             // Ensure valid session before saving
             const sessionValid = await ensureValidSession();
             if (!sessionValid) {
@@ -694,8 +785,12 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
                   session_id: currentSession,
                   module_number: currentState.currentLevel === 1 ? 5 : 6,
                   question_index: currentState.currentQuestion,
-                  question: currentState.questions[currentState.currentQuestion] || null,
-                  answer: currentState.answers[currentState.currentQuestion] || { violation: "", rootCause: "", solution: "" },
+                  question:
+                    currentState.questions[currentState.currentQuestion] ||
+                    null,
+                  answer: currentState.answers[
+                    currentState.currentQuestion
+                  ] || { violation: "", rootCause: "", solution: "" },
                   time_remaining: currentState.timeRemaining,
                 },
               ],
@@ -711,8 +806,11 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
             }, 2000);
           }
         } catch (err) {
-          console.error('Periodic timer save error:', err);
-          if (err instanceof Error && (err.message.includes("JWT") || err.message.includes("expired"))) {
+          console.error("Periodic timer save error:", err);
+          if (
+            err instanceof Error &&
+            (err.message.includes("JWT") || err.message.includes("expired"))
+          ) {
             console.warn("Session expired during periodic timer save");
           }
         }
@@ -720,7 +818,14 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
 
       setTimerSaveInterval(interval);
     }
-  }, [gameState.gameStarted, gameState.gameCompleted, gameState.showLevelModal, session_id, email, timerSaveInterval]);
+  }, [
+    gameState.gameStarted,
+    gameState.gameCompleted,
+    gameState.showLevelModal,
+    session_id,
+    email,
+    timerSaveInterval,
+  ]);
 
   // Save individual attempt to backend
   const saveIndividualAttempt = async (
@@ -736,9 +841,8 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
     }
 
     // Use upsert to handle duplicate email constraint
-    const { error } = await supabase
-      .from("individual_attempts")
-      .upsert([
+    const { error } = await supabase.from("individual_attempts").upsert(
+      [
         {
           email: email,
           session_id: session_id,
@@ -746,9 +850,11 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
           score,
           completion_time_sec,
         },
-      ], {
-        onConflict: 'email'
-      });
+      ],
+      {
+        onConflict: "email",
+      }
+    );
 
     if (error) {
       console.error("Supabase upsert error:", error.message, error.details);
@@ -788,8 +894,6 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
         .eq("email", email)
         .eq("session_id", session_id)
         .eq("module_number", moduleNumber);
-
-
     } catch (err) {
       console.error("Error clearing saved progress:", err);
     }
@@ -837,7 +941,7 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
   const continueGame = () => {
     // Game state should already be restored from saved progress
     // Just ensure the game is marked as started
-    setGameState(prev => {
+    setGameState((prev) => {
       // Debug logging to understand the issue
       console.log("Continue Game Debug:", {
         questionsLength: prev.questions.length,
@@ -845,12 +949,14 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
         currentQuestion: prev.currentQuestion,
         hasSavedProgress,
         progressLoaded,
-        gameStarted: prev.gameStarted
+        gameStarted: prev.gameStarted,
       });
 
       // Validate game state before continuing
       if (prev.questions.length === 0) {
-        console.error("No questions found in game state. Attempting to restore from saved progress...");
+        console.error(
+          "No questions found in game state. Attempting to restore from saved progress..."
+        );
 
         // If we have saved progress but questions weren't loaded, try to generate them
         if (hasSavedProgress) {
@@ -952,7 +1058,10 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
           setTimeout(() => setShowSaveIndicator(false), 2000);
         } catch (err) {
           console.error("Auto-save error:", err);
-          if (err instanceof Error && (err.message.includes("JWT") || err.message.includes("expired"))) {
+          if (
+            err instanceof Error &&
+            (err.message.includes("JWT") || err.message.includes("expired"))
+          ) {
             console.warn("Session expired during auto-save");
             // Don't show error to user for auto-save failures, just log it
           }
@@ -983,7 +1092,11 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
             module_number: initialLevel === 1 ? 5 : 6,
             question_index: questionIndex,
             question: gameState.questions[questionIndex] || null,
-            answer: gameState.answers[questionIndex] || { violation: "", rootCause: "", solution: "" },
+            answer: gameState.answers[questionIndex] || {
+              violation: "",
+              rootCause: "",
+              solution: "",
+            },
             time_remaining: gameState.timeRemaining, // Save current timer state
           },
         ],
@@ -1124,7 +1237,10 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
 
   const handleTimeUp = useCallback(() => {
     const currentGameState = gameStateRef.current;
-    const finalScore = calculateScore(currentGameState.answers, currentGameState.questions);
+    const finalScore = calculateScore(
+      currentGameState.answers,
+      currentGameState.questions
+    );
     setGameState((prev) => ({
       ...prev,
       gameCompleted: true,
@@ -1133,27 +1249,30 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
     }));
   }, []); // Empty dependency array - use ref for current values
 
-  const handleSetTimeRemaining = useCallback((timeOrUpdater: number | ((prev: number) => number)) => {
-    if (typeof timeOrUpdater === 'function') {
-      // Handle functional update
-      setGameState((prev) => {
-        const newTime = timeOrUpdater(prev.timeRemaining);
-        // Validate the result
-        if (isNaN(newTime) || newTime < 0) {
-          return prev;
+  const handleSetTimeRemaining = useCallback(
+    (timeOrUpdater: number | ((prev: number) => number)) => {
+      if (typeof timeOrUpdater === "function") {
+        // Handle functional update
+        setGameState((prev) => {
+          const newTime = timeOrUpdater(prev.timeRemaining);
+          // Validate the result
+          if (isNaN(newTime) || newTime < 0) {
+            return prev;
+          }
+          const validTime = Math.max(0, Math.min(newTime, 5400));
+          return { ...prev, timeRemaining: validTime };
+        });
+      } else {
+        // Handle direct value
+        if (isNaN(timeOrUpdater) || timeOrUpdater < 0) {
+          return;
         }
-        const validTime = Math.max(0, Math.min(newTime, 5400));
-        return { ...prev, timeRemaining: validTime };
-      });
-    } else {
-      // Handle direct value
-      if (isNaN(timeOrUpdater) || timeOrUpdater < 0) {
-        return;
+        const validTime = Math.max(0, Math.min(timeOrUpdater, 5400));
+        setGameState((prev) => ({ ...prev, timeRemaining: validTime }));
       }
-      const validTime = Math.max(0, Math.min(timeOrUpdater, 5400));
-      setGameState((prev) => ({ ...prev, timeRemaining: validTime }));
-    }
-  }, []);
+    },
+    []
+  );
 
   // Reset game state when mode changes (e.g., after navigation to HL2)
   React.useEffect(() => {
@@ -1181,10 +1300,10 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
             prev.answers.length === 5
               ? newAnswers
               : selectRandomQuestions().map(() => ({
-                violation: "",
-                rootCause: "",
-                solution: "",
-              })),
+                  violation: "",
+                  rootCause: "",
+                  solution: "",
+                })),
           gameStarted: true,
           gameCompleted: false,
           showLevelModal: false,
@@ -1210,15 +1329,18 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
             </h2>
             {teamInfoError ? (
               <>
-                <p className="text-red-300 mb-4 font-bold text-sm">{teamInfoError}</p>
+                <p className="text-red-300 mb-4 font-bold text-sm">
+                  {teamInfoError}
+                </p>
                 <div className="flex flex-col gap-2">
-                  {teamInfoError.includes("expired") || teamInfoError.includes("JWT") ? (
+                  {teamInfoError.includes("expired") ||
+                  teamInfoError.includes("JWT") ? (
                     <>
                       <button
                         className="pixel-border bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white font-black py-2 px-4 pixel-text transition-all text-sm"
                         onClick={() => {
                           // Redirect to login page
-                          window.location.href = '/login'; // Adjust this path as needed
+                          window.location.href = "/login"; // Adjust this path as needed
                         }}
                       >
                         GO TO LOGIN
@@ -1240,22 +1362,34 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
                       </button>
                     </>
                   ) : (
-                    <button
-                      className="pixel-border bg-gradient-to-r from-green-500 to-green-600 hover:from-green-400 hover:to-green-500 text-white font-black py-1 px-3 pixel-text transition-all text-sm"
-                      onClick={() => {
-                        setTeamInfoError(null);
-                        window.location.reload();
-                      }}
-                    >
-                      RETRY
-                    </button>
+                    teamInfoError === "Please complete your Profile Information." ? (
+                      <button
+                        className="pixel-border bg-gradient-to-r from-green-500 to-green-600 hover:from-green-400 hover:to-green-500 text-white font-black py-1 px-3 pixel-text transition-all text-sm"
+                        onClick={() => {
+                          navigate("/");
+                        }}
+                      >
+                        GO BACK TO HOME
+                      </button>
+                    ) : (
+                      <button
+                        className="pixel-border bg-gradient-to-r from-green-500 to-green-600 hover:from-green-400 hover:to-green-500 text-white font-black py-1 px-3 pixel-text transition-all text-sm"
+                        onClick={() => {
+                          setTeamInfoError(null);
+                          window.location.reload();
+                        }}
+                      >
+                        RETRY
+                      </button>
+                    )
                   )}
                 </div>
               </>
             ) : (
               <>
                 <p className="text-cyan-100 mb-4 text-sm font-bold">
-                  Please wait while we load your team session and check for saved progress.
+                  Please wait while we load your team session and check for
+                  saved progress.
                 </p>
                 <div className="animate-pulse text-cyan-300 font-black pixel-text text-sm">
                   {isLoadingProgress ? "LOADING PROGRESS..." : "LOADING..."}
@@ -1278,13 +1412,15 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
             <div className="flex justify-between mb-4">
               <button
                 onClick={handleBackClick}
-                className="pixel-border bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white font-black py-2 px-4 pixel-text transition-all transform hover:scale-105 text-sm flex items-center gap-2">
+                className="pixel-border bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white font-black py-2 px-4 pixel-text transition-all transform hover:scale-105 text-sm flex items-center gap-2"
+              >
                 <ArrowLeft className="w-4 h-4" />
                 Back
               </button>
               <button
                 onClick={handleDownloadPDF}
-                className="pixel-border bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white font-black py-2 px-4 pixel-text transition-all transform hover:scale-105 text-sm flex items-center gap-2">
+                className="pixel-border bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white font-black py-2 px-4 pixel-text transition-all transform hover:scale-105 text-sm flex items-center gap-2"
+              >
                 <Download className="w-4 h-4" />
                 Download
               </button>
@@ -1342,11 +1478,16 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
                 <div className="flex flex-col items-center gap-2">
                   <button
                     onClick={continueGame}
-                    disabled={(initialLevel === 1 && isLevel1Completed) || (initialLevel === 2 && isLevel2Completed)}
-                    className={`pixel-border ${(initialLevel === 1 && isLevel1Completed) || (initialLevel === 2 && isLevel2Completed)
+                    disabled={
+                      (initialLevel === 1 && isLevel1Completed) ||
+                      (initialLevel === 2 && isLevel2Completed)
+                    }
+                    className={`pixel-border ${
+                      (initialLevel === 1 && isLevel1Completed) ||
+                      (initialLevel === 2 && isLevel2Completed)
                         ? "bg-gradient-to-r from-gray-500 to-gray-600 cursor-not-allowed"
                         : "bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-400 hover:to-yellow-500"
-                      } text-white font-black py-2 px-4 pixel-text transition-all transform hover:scale-105 text-sm`}
+                    } text-white font-black py-2 px-4 pixel-text transition-all transform hover:scale-105 text-sm`}
                   >
                     {getButtonText()}
                   </button>
@@ -1425,11 +1566,16 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
                 <div className="flex flex-col items-center gap-2">
                   <button
                     onClick={continueGame}
-                    disabled={(initialLevel === 1 && isLevel1Completed) || (initialLevel === 2 && isLevel2Completed)}
-                    className={`pixel-border ${(initialLevel === 1 && isLevel1Completed) || (initialLevel === 2 && isLevel2Completed)
+                    disabled={
+                      (initialLevel === 1 && isLevel1Completed) ||
+                      (initialLevel === 2 && isLevel2Completed)
+                    }
+                    className={`pixel-border ${
+                      (initialLevel === 1 && isLevel1Completed) ||
+                      (initialLevel === 2 && isLevel2Completed)
                         ? "bg-gradient-to-r from-gray-500 to-gray-600 cursor-not-allowed"
                         : "bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-400 hover:to-yellow-500"
-                      } text-white font-black py-2 px-4 pixel-text transition-all transform hover:scale-105 text-sm`}
+                    } text-white font-black py-2 px-4 pixel-text transition-all transform hover:scale-105 text-sm`}
                   >
                     {getButtonText()}
                   </button>
@@ -1495,8 +1641,6 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
   const currentQuestion = gameState.questions[gameState.currentQuestion];
   const progress = ((gameState.currentQuestion + 1) / 5) * 100;
 
-
-
   return (
     <div className="h-screen bg-gray-800 flex flex-col overflow-hidden relative">
       {/* Background Pattern */}
@@ -1552,7 +1696,11 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
                   onTimeUp={handleTimeUp}
                   setTimeRemaining={handleSetTimeRemaining}
                   initialTime={5400}
-                  isActive={gameState.gameStarted && !gameState.gameCompleted && !gameState.showLevelModal}
+                  isActive={
+                    gameState.gameStarted &&
+                    !gameState.gameCompleted &&
+                    !gameState.showLevelModal
+                  }
                 />
 
                 {/* Auto-save indicator */}
@@ -1580,8 +1728,6 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
                   </span>
                 </div>
               </div>
-
-
             </div>
           </div>
         </div>
@@ -1590,7 +1736,9 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
       {/* Main Content Area */}
       <div className="flex-1 container mx-auto px-1 min-h-0">
         {/* Question Card */}
-        {currentQuestion && gameState.questions.length > 0 && gameState.currentQuestion < gameState.questions.length ? (
+        {currentQuestion &&
+        gameState.questions.length > 0 &&
+        gameState.currentQuestion < gameState.questions.length ? (
           <QuestionCard
             question={currentQuestion}
             level={gameState.currentLevel}
@@ -1600,53 +1748,58 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
             session_id={session_id}
             email={email}
           />
-        ) : gameState.gameStarted && (
-          <div className="flex items-center justify-center h-full">
-            <div className="pixel-border bg-gradient-to-r from-red-600 to-red-700 p-6 text-center max-w-md">
-              <h3 className="text-white font-black pixel-text mb-4 text-lg">GAME STATE ERROR</h3>
-              <div className="text-red-100 text-sm space-y-2">
-                <p>Question {gameState.currentQuestion + 1} not found.</p>
-                <p>Questions available: {gameState.questions.length}</p>
-                <p>Current index: {gameState.currentQuestion}</p>
-                <p>Game started: {gameState.gameStarted ? "Yes" : "No"}</p>
-              </div>
-              <div className="flex gap-2 mt-4 justify-center">
-                <button
-                  onClick={() => {
-                    setGameState(prev => ({
-                      ...prev,
-                      currentQuestion: 0,
-                      gameStarted: false
-                    }));
-                  }}
-                  className="pixel-border bg-yellow-600 hover:bg-yellow-500 text-white px-3 py-2 text-xs font-bold"
-                >
-                  RESET TO START
-                </button>
-                <button
-                  onClick={() => window.location.reload()}
-                  className="pixel-border bg-red-500 hover:bg-red-400 text-white px-3 py-2 text-xs font-bold"
-                >
-                  RELOAD GAME
-                </button>
+        ) : (
+          gameState.gameStarted && (
+            <div className="flex items-center justify-center h-full">
+              <div className="pixel-border bg-gradient-to-r from-red-600 to-red-700 p-6 text-center max-w-md">
+                <h3 className="text-white font-black pixel-text mb-4 text-lg">
+                  GAME STATE ERROR
+                </h3>
+                <div className="text-red-100 text-sm space-y-2">
+                  <p>Question {gameState.currentQuestion + 1} not found.</p>
+                  <p>Questions available: {gameState.questions.length}</p>
+                  <p>Current index: {gameState.currentQuestion}</p>
+                  <p>Game started: {gameState.gameStarted ? "Yes" : "No"}</p>
+                </div>
+                <div className="flex gap-2 mt-4 justify-center">
+                  <button
+                    onClick={() => {
+                      setGameState((prev) => ({
+                        ...prev,
+                        currentQuestion: 0,
+                        gameStarted: false,
+                      }));
+                    }}
+                    className="pixel-border bg-yellow-600 hover:bg-yellow-500 text-white px-3 py-2 text-xs font-bold"
+                  >
+                    RESET TO START
+                  </button>
+                  <button
+                    onClick={() => window.location.reload()}
+                    className="pixel-border bg-red-500 hover:bg-red-400 text-white px-3 py-2 text-xs font-bold"
+                  >
+                    RELOAD GAME
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
+          )
         )}
 
         {/* Level Complete Modal */}
-        {gameState.showLevelModal && (mode === "violation-root-cause" || mode === undefined) && (
-          <ModuleCompleteModal
-            level1CompletionTime={gameState.level1CompletionTime}
-            onProceed={proceedToLevel2}
-            scenarios={gameState.questions.map((q, i) => ({
-              caseFile: q.caseFile,
-              violation: gameState.answers[i]?.violation || "",
-              rootCause: gameState.answers[i]?.rootCause || "",
-              solution: gameState.answers[i]?.solution || "",
-            }))}
-          />
-        )}
+        {gameState.showLevelModal &&
+          (mode === "violation-root-cause" || mode === undefined) && (
+            <ModuleCompleteModal
+              level1CompletionTime={gameState.level1CompletionTime}
+              onProceed={proceedToLevel2}
+              scenarios={gameState.questions.map((q, i) => ({
+                caseFile: q.caseFile,
+                violation: gameState.answers[i]?.violation || "",
+                rootCause: gameState.answers[i]?.rootCause || "",
+                solution: gameState.answers[i]?.solution || "",
+              }))}
+            />
+          )}
 
         {/* Caution Modal for Level 1 */}
         <CautionModal
@@ -1680,10 +1833,10 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
                       prev.answers.length === 5
                         ? newAnswers
                         : selectRandomQuestions().map(() => ({
-                          violation: "",
-                          rootCause: "",
-                          solution: "",
-                        })),
+                            violation: "",
+                            rootCause: "",
+                            solution: "",
+                          })),
                     gameStarted: true,
                     gameCompleted: false,
                     showLevelModal: false,
@@ -1737,9 +1890,9 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
                   <div className="flex items-start space-x-2">
                     <div className="w-2 h-2 bg-red-500 pixel-border mt-1 animate-pulse flex-shrink-0"></div>
                     <p className="text-gray-100 text-sm leading-relaxed font-bold">
-                      {currentQuestion.caseFile} Read the scenario carefully, spot
-                      the violation and its root cause, and place them in the
-                      right category containers.
+                      {currentQuestion.caseFile} Read the scenario carefully,
+                      spot the violation and its root cause, and place them in
+                      the right category containers.
                     </p>
                   </div>
                 </div>
