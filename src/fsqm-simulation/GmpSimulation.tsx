@@ -1,5 +1,7 @@
-import { AlertTriangle, Clock, Eye, Factory, Play, Trophy } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Clock, Download, Eye, Factory, Play, Trophy } from "lucide-react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import jsPDF from 'jspdf';
 import { useDeviceLayout } from "../hooks/useOrientation";
 import { supabase } from "../lib/supabase";
 import type { Question } from "./HackathonData";
@@ -40,6 +42,9 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
   mode,
   onProceedToLevel2,
 }) => {
+  // Navigation hook
+  const navigate = useNavigate();
+
   // Caution modal state (must be inside component)
   const [showCautionModal, setShowCautionModal] = useState(false);
   const [pendingNext, setPendingNext] = useState(false);
@@ -70,13 +75,60 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
       return false;
     }
   };
-  
+
   // Walkthrough video handler
-    const showWalkthroughVideo = () => {
-      // Updated walkthrough video URL
-      const videoUrl = "https://youtu.be/QJ9wAXFrncY?feature=shared";
-      window.open(videoUrl, '_blank');
-    };
+  const showWalkthroughVideo = () => {
+    // Updated walkthrough video URL
+    const videoUrl = "https://youtu.be/QJ9wAXFrncY?feature=shared";
+    window.open(videoUrl, '_blank');
+  };
+
+  // Back button handler
+  const handleBackClick = () => {
+    navigate('/levels');
+  };
+
+  // PDF download handler
+  const handleDownloadPDF = () => {
+    // Create scenarios array from current game state
+    const scenarios = gameState.questions.map((question, index) => ({
+      caseFile: question.caseFile || `Case ${index + 1}`,
+      violation: gameState.answers[index]?.violation || '',
+      rootCause: gameState.answers[index]?.rootCause || '',
+      solution: gameState.answers[index]?.solution || ''
+    }));
+
+    const doc = new jsPDF();
+    doc.setFontSize(16);
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 28;
+    const usableWidth = pageWidth - margin * 2;
+    const usableHeight = pageHeight - margin * 2;
+    const title = `Level ${gameState.currentLevel}: Attempted Scenarios`;
+    const titleWidth = doc.getTextWidth(title);
+    doc.text(title, (pageWidth - titleWidth) / 2, margin);
+    let y = margin + 20;
+
+    scenarios.forEach((sc, idx) => {
+      doc.setFontSize(12);
+      doc.text(`${idx + 1}.`, margin, y);
+      doc.setFontSize(11);
+      doc.text('Case:', margin + 12, y);
+      const normalizedCase = sc.caseFile.replace(/[‐-―−­‑‒–—―﹘﹣－]/g, '-');
+      const caseLines = doc.splitTextToSize(normalizedCase, usableWidth - 32);
+      caseLines.forEach((line: string, i: number) => {
+        doc.text(line, margin + 32, y + i * 8, { maxWidth: usableWidth - 32, align: 'justify' });
+      });
+      y += 8 * caseLines.length + 16;
+      if (y > margin + usableHeight - 10) {
+        doc.addPage();
+        y = margin + 8;
+      }
+    });
+
+    doc.save(`Level${gameState.currentLevel}_Scenarios.pdf`);
+  };
 
   // Save team attempt to backend
   const saveTeamAttempt = async (module_number: number) => {
@@ -121,7 +173,7 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
     const weightedAvgScore = (0.7 * avgScore + 0.3 * topScore).toFixed(2);
     const avgTimeSec = Math.round(
       attempts.reduce((sum, a) => sum + (a.completion_time_sec || 0), 0) /
-        attempts.length
+      attempts.length
     );
     // Debug logs
     console.log("[TEAM SCORING] Individual scores:", scores);
@@ -179,6 +231,10 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
   const [session_id, setSessionId] = useState<string | null>(null);
   const [email, setEmail] = useState<string | null>(null);
 
+  // Completion status tracking
+  const [isLevel1Completed, setIsLevel1Completed] = useState(false);
+  const [isLevel2Completed, setIsLevel2Completed] = useState(false);
+
   // Progress loading state
   const [isLoadingProgress, setIsLoadingProgress] = useState(false);
   const [progressLoaded, setProgressLoaded] = useState(false);
@@ -212,6 +268,39 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
 
 
   }, [gameState, session_id, email]);
+
+  // Check completion status for both levels
+  const checkCompletionStatus = async (userEmail: string) => {
+    if (!userEmail) return;
+
+    try {
+      // Check if user has completed Level 1 (Module 5)
+      const { data: level1Data, error: level1Error } = await supabase
+        .from("individual_attempts")
+        .select("id")
+        .eq("email", userEmail)
+        .eq("module_number", 5)
+        .single();
+
+      if (!level1Error && level1Data) {
+        setIsLevel1Completed(true);
+      }
+
+      // Check if user has completed Level 2 (Module 6)
+      const { data: level2Data, error: level2Error } = await supabase
+        .from("individual_attempts")
+        .select("id")
+        .eq("email", userEmail)
+        .eq("module_number", 6)
+        .single();
+
+      if (!level2Error && level2Data) {
+        setIsLevel2Completed(true);
+      }
+    } catch (err) {
+      console.error("Error checking completion status:", err);
+    }
+  };
 
   // Enhanced auth handling with JWT refresh
   useEffect(() => {
@@ -266,6 +355,8 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
         } else {
           setSessionId(data.session_id);
           setEmail(userEmail);
+          // Check completion status after setting email
+          await checkCompletionStatus(userEmail);
         }
       } catch (err) {
         console.error("Unexpected error:", err);
@@ -409,7 +500,7 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
                 let isComplete = false;
                 if (initialLevel === 1) {
                   isComplete = !!(answer.violation && answer.violation.trim() !== "" &&
-                             answer.rootCause && answer.rootCause.trim() !== "");
+                    answer.rootCause && answer.rootCause.trim() !== "");
                 } else {
                   isComplete = !!(answer.solution && answer.solution.trim() !== "");
                 }
@@ -644,22 +735,44 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
       return;
     }
 
-    const { error } = await supabase.from("individual_attempts").insert([
-      {
-        email: email,
-        session_id: session_id,
-        module_number,
-        score,
-        completion_time_sec,
-      },
-    ]);
+    // Use upsert to handle duplicate email constraint
+    const { error } = await supabase
+      .from("individual_attempts")
+      .upsert([
+        {
+          email: email,
+          session_id: session_id,
+          module_number,
+          score,
+          completion_time_sec,
+        },
+      ], {
+        onConflict: 'email'
+      });
+
     if (error) {
-      console.error("Supabase insert error:", error.message, error.details);
+      console.error("Supabase upsert error:", error.message, error.details);
       if (error.message.includes("JWT") || error.message.includes("expired")) {
         setTeamInfoError("Session expired while saving. Please log in again.");
       } else {
         alert("Error saving attempt: " + error.message);
       }
+    } else {
+      // Update completion status after successful save
+      if (module_number === 5) {
+        setIsLevel1Completed(true);
+      } else if (module_number === 6) {
+        setIsLevel2Completed(true);
+      }
+    }
+  };
+
+  // Get button text based on completion status
+  const getButtonText = () => {
+    if (initialLevel === 1) {
+      return isLevel1Completed ? "HL-1 COMPLETED" : "CONTINUE GAME";
+    } else {
+      return isLevel2Completed ? "HL-2 COMPLETED" : "CONTINUE GAME";
     }
   };
 
@@ -1068,10 +1181,10 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
             prev.answers.length === 5
               ? newAnswers
               : selectRandomQuestions().map(() => ({
-                  violation: "",
-                  rootCause: "",
-                  solution: "",
-                })),
+                violation: "",
+                rootCause: "",
+                solution: "",
+              })),
           gameStarted: true,
           gameCompleted: false,
           showLevelModal: false,
@@ -1090,7 +1203,7 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
           {/* Background Pattern */}
           <div className="absolute inset-0 bg-pixel-pattern opacity-10"></div>
           <div className="absolute inset-0 bg-scan-lines opacity-20"></div>
-          
+
           <div className="pixel-border bg-gradient-to-r from-cyan-600 to-blue-600 p-4 max-w-md w-full text-center relative z-10">
             <h2 className="text-lg font-black mb-3 text-cyan-100 pixel-text">
               LOADING TEAM INFO...
@@ -1159,8 +1272,23 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
           {/* Background Pattern */}
           <div className="absolute inset-0 bg-pixel-pattern opacity-10"></div>
           <div className="absolute inset-0 bg-scan-lines opacity-20"></div>
-          
+
           <div className="pixel-border-thick bg-gradient-to-r from-cyan-600 to-blue-600 p-4 max-w-xl w-full text-center relative z-10">
+            {/* Back and Download buttons */}
+            <div className="flex justify-between mb-4">
+              <button
+                onClick={handleBackClick}
+                className="pixel-border bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white font-black py-2 px-4 pixel-text transition-all transform hover:scale-105 text-sm flex items-center gap-2">
+                <ArrowLeft className="w-4 h-4" />
+                Back
+              </button>
+              <button
+                onClick={handleDownloadPDF}
+                className="pixel-border bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white font-black py-2 px-4 pixel-text transition-all transform hover:scale-105 text-sm flex items-center gap-2">
+                <Download className="w-4 h-4" />
+                Download
+              </button>
+            </div>
             <div className="flex justify-center mb-4">
               <div className="w-12 h-12 bg-cyan-500 pixel-border flex items-center justify-center">
                 <Factory className="w-6 h-6 text-cyan-900" />
@@ -1214,9 +1342,13 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
                 <div className="flex flex-col items-center gap-2">
                   <button
                     onClick={continueGame}
-                    className="pixel-border bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-400 hover:to-yellow-500 text-white font-black py-2 px-4 pixel-text transition-all transform hover:scale-105 text-sm"
+                    disabled={(initialLevel === 1 && isLevel1Completed) || (initialLevel === 2 && isLevel2Completed)}
+                    className={`pixel-border ${(initialLevel === 1 && isLevel1Completed) || (initialLevel === 2 && isLevel2Completed)
+                        ? "bg-gradient-to-r from-gray-500 to-gray-600 cursor-not-allowed"
+                        : "bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-400 hover:to-yellow-500"
+                      } text-white font-black py-2 px-4 pixel-text transition-all transform hover:scale-105 text-sm`}
                   >
-                    CONTINUE GAME
+                    {getButtonText()}
                   </button>
                   {/* {savedProgressInfo && (
                     <div className="text-xs text-cyan-200 font-bold space-y-1">
@@ -1251,7 +1383,7 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
           {/* Background Pattern */}
           <div className="absolute inset-0 bg-pixel-pattern opacity-10"></div>
           <div className="absolute inset-0 bg-scan-lines opacity-20"></div>
-          
+
           <div className="pixel-border-thick bg-gradient-to-r from-purple-600 to-purple-700 p-4 max-w-xl w-full text-center relative z-10">
             <div className="flex justify-center mb-4">
               <div className="w-12 h-12 bg-purple-500 pixel-border flex items-center justify-center">
@@ -1293,9 +1425,13 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
                 <div className="flex flex-col items-center gap-2">
                   <button
                     onClick={continueGame}
-                    className="pixel-border bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-400 hover:to-yellow-500 text-white font-black py-2 px-4 pixel-text transition-all transform hover:scale-105 text-sm"
+                    disabled={(initialLevel === 1 && isLevel1Completed) || (initialLevel === 2 && isLevel2Completed)}
+                    className={`pixel-border ${(initialLevel === 1 && isLevel1Completed) || (initialLevel === 2 && isLevel2Completed)
+                        ? "bg-gradient-to-r from-gray-500 to-gray-600 cursor-not-allowed"
+                        : "bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-400 hover:to-yellow-500"
+                      } text-white font-black py-2 px-4 pixel-text transition-all transform hover:scale-105 text-sm`}
                   >
-                    CONTINUE GAME
+                    {getButtonText()}
                   </button>
                   {/* {savedProgressInfo && (
                     <div className="text-xs text-purple-200 font-bold space-y-1">
@@ -1334,7 +1470,7 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
           {/* Background Pattern */}
           <div className="absolute inset-0 bg-pixel-pattern opacity-10"></div>
           <div className="absolute inset-0 bg-scan-lines opacity-20"></div>
-          
+
           <div className="pixel-border bg-gradient-to-r from-cyan-600 to-blue-600 p-4 max-w-md w-full text-center relative z-10">
             <h2 className="text-lg font-black mb-3 text-cyan-100 pixel-text">
               AWAITING TEAM EVALUATION
@@ -1544,10 +1680,10 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
                       prev.answers.length === 5
                         ? newAnswers
                         : selectRandomQuestions().map(() => ({
-                            violation: "",
-                            rootCause: "",
-                            solution: "",
-                          })),
+                          violation: "",
+                          rootCause: "",
+                          solution: "",
+                        })),
                     gameStarted: true,
                     gameCompleted: false,
                     showLevelModal: false,
@@ -1574,7 +1710,7 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
               {/* Background Pattern */}
               <div className="absolute inset-0 bg-pixel-pattern opacity-10"></div>
               <div className="absolute inset-0 bg-scan-lines opacity-20"></div>
-              
+
               <div className="relative z-10">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center space-x-2">
