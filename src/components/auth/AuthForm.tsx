@@ -111,7 +111,7 @@ const AuthForm: React.FC<AuthFormProps> = ({
         />
 
         <AuthButton type="submit" isLogin={false} disabled={loading}>
-          {loading ? "Sending..." : "Send Reset Email"}
+            {loading ? "Sending..." : "Send Reset Link"}
         </AuthButton>
 
         <div className="space-y-2">
