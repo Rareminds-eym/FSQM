@@ -30,6 +30,7 @@ const Auth: React.FC = () => {
     isTeamLeader: null,
     joinCode: "",
   });
+  const [hasSignedUp, setHasSignedUp] = useState(false); // Track if user has signed up
   const { signIn, signUp, resetPassword, updatePassword, loading } = useAuth();
 
   const handleRateLimitExpired = () => {
@@ -131,7 +132,7 @@ const Auth: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      if (isResetPassword) {
+  if (isResetPassword) {
         // Handle password reset
         if (!formData.email) {
           toast.error("Please enter your email address");
@@ -146,7 +147,7 @@ const Auth: React.FC = () => {
         toast.success("Password reset email sent! Check your inbox.");
         setIsResetPassword(false);
         setIsLogin(true);
-      } else if (isLogin) {
+  } else if (isLogin) {
         // Handle login
         const { error } = await signIn(formData.email, formData.password);
         if (error) {
@@ -178,6 +179,19 @@ const Auth: React.FC = () => {
 
         if (!formData.isTeamLeader && !formData.joinCode) {
           toast.error("Team members must provide a join code");
+          return;
+        }
+
+        // Check if account already exists
+        const { data: existing, error: existingError } = await supabase
+          .from('teams')
+          .select('email')
+          .eq('email', formData.email)
+          .maybeSingle();
+
+        if (existing) {
+          toast.error("An account with this email already exists. Please log in or use password reset.");
+          setIsLogin(true);
           return;
         }
 
@@ -230,6 +244,7 @@ const Auth: React.FC = () => {
         toast.success("Confirmation email has been sent to your device. Please check your inbox and verify your account before logging in.", {
           autoClose: 8000,
         });
+        setHasSignedUp(true); // Enable Resend Email button after signup
 
         // Get user information with improved error handling
         let user = signUpUser;
@@ -436,6 +451,8 @@ const Auth: React.FC = () => {
             setIsResetPassword(false);
             setIsLogin(true);
           }}
+          onShowResendEmail={() => {}} // Resend functionality is handled internally in AuthForm
+          hasSignedUp={hasSignedUp}
         />
 
         {/* Rate Limit Message */}
