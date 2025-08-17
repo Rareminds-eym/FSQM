@@ -16,8 +16,14 @@ const LevelsPage: React.FC = () => {
   const navigate = useNavigate();
   const [, setGameScenarios] = useRecoilState<any>(gameScenarios);
   const [topLevel, setTopLevel] = useState(0);
-  const { completeLevel } = useGameProgress();
+  const { completeLevel, progress } = useGameProgress();
   const { user } = useAuth();
+
+  // Put hackathon levels at the beginning
+  const sortedLevels = [
+    ...levels.filter((level: any) => level.title?.toLowerCase().includes('hackathon')),
+    ...levels.filter((level: any) => !level.title?.toLowerCase().includes('hackathon')),
+  ];
 
   // Initialize diagnostic scenarios in global state for game use
   useEffect(() => {
@@ -36,8 +42,14 @@ const LevelsPage: React.FC = () => {
   }, [user]);
 
   useEffect(() => {
-    for (let i = 1; i <= topLevel; i++) completeLevel(i);
-  }, [topLevel, completeLevel]);
+    if (topLevel > 0 && progress) {
+      for (let i = 1; i <= topLevel; i++) {
+        if (!progress.completedLevels.includes(i)) {
+          completeLevel(i);
+        }
+      }
+    }
+  }, [topLevel, completeLevel, progress]);
 
   return (
     <div className="flex-1 bg-gradient-to-b from-yellow-400 via-yellow-400 to-yellow-500 p-8 relative overflow-hidden">
@@ -67,12 +79,12 @@ const LevelsPage: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {levels && levels.length > 0 ? (
-            levels.map((level: any) => (
+          {sortedLevels && sortedLevels.length > 0 ? (
+            sortedLevels.map((level: any) => (
               <LevelCard key={level.id} level={level} />
             ))
           ) : (
-            <div className="col-span-full text-center text-white text-lg">
+            <div className="col-span-full text-center text-whitext-lg">
               Loading levels...
             </div>
           )}

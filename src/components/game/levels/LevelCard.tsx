@@ -1,4 +1,5 @@
 import { Lock } from "lucide-react";
+import "./LevelCard.css";
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useEnhancedGameProgress } from "../../../context/EnhancedGameProgressContext";
@@ -99,10 +100,23 @@ const LevelCard: React.FC<LevelCardProps> = ({ level }) => {
     }, 600); // Animation duration
   };
 
+  // Add running border and special theme for Hackathon Level 1 (id === 16) if active/unlocked
+  const isHackathonLevel1 = isHackathon && Number(level.id) === 16;
+  const showRunningBorder = isHackathonLevel1 && isUnlocked;
+
+  // Gold/yellow theme for Hackathon Level 1
+  const hackathon1FrontBg = "bg-gradient-to-br from-[#FFD700] via-[#FFB300] to-[#FF8C00] border-2 border-[#FFD700] shadow-2xl";
+  const hackathon1BackBg = "bg-gradient-to-br from-[#FFEF8E] via-[#FFD700] to-[#FFB300] border-[#FFD700] shadow-2xl";
+  const hackathon1Title = "text-[#7c5700] drop-shadow-[0_2px_8px_#fff8dc]"; // dark gold text with light shadow
+  const hackathon1Difficulty = "bg-[#FFD700]/20 border border-[#FFD700]/30 text-[#7c5700] font-semibold";
+  const hackathon1Button = "bg-gradient-to-r from-[#FFB300] to-[#FFD700] hover:from-[#FFD700] hover:to-[#FFB300] text-[#7c5700] font-bold shadow-md";
+  const hackathon1ButtonLocked = "bg-[#FFB300] text-[#7c5700] cursor-not-allowed font-bold opacity-70";
+  const hackathon1Text = "text-[#7c5700] drop-shadow-[0_1px_2px_#fff8dc]";
+
   return (
     <div
       className={`group h-[300px] md:h-[400px] perspective-1000 cursor-pointer 
-        ${!isUnlocked && "opacity-75 cursor-not-allowed"}`}
+        ${!isUnlocked && "opacity-75 cursor-not-allowed"} ${showRunningBorder ? "running-border" : ""}`}
       onMouseEnter={() => isUnlocked && setIsFlipped(true)}
       onMouseLeave={() => isUnlocked && setIsFlipped(false)}
       onClick={handleStartLevel}
@@ -117,8 +131,10 @@ const LevelCard: React.FC<LevelCardProps> = ({ level }) => {
             className={`h-full rounded-lg p-6 
             flex flex-col items-center justify-center gap-6
             transition-all duration-300 transform-gpu
-            bg-gradient-to-b from-yellow-900/40 via-yellow-800/40 to-yellow-700/40 backdrop-blur-sm
-            border border-yellow-600/30 shadow-lg
+            ${isHackathonLevel1
+              ? hackathon1FrontBg
+              : "bg-gradient-to-b from-yellow-900/40 via-yellow-800/40 to-yellow-700/40 border border-yellow-600/30 shadow-lg"}
+            backdrop-blur-sm
             ${isUnlocked ? "" : "opacity-75"}`}
           >
             <div className="relative">
@@ -130,17 +146,17 @@ const LevelCard: React.FC<LevelCardProps> = ({ level }) => {
                       : 'text-gray-200 group-hover:text-white'
                     }`} /> */}
                   <div
-                    className="absolute inset-0 bg-white/20 blur-xl rounded-full
-                    transition-colors duration-300"
+                    className={`absolute inset-0 rounded-full transition-colors duration-300 
+                      ${isHackathonLevel1 ? "bg-[#fff8dc]/60 blur-2xl" : "bg-white/20 blur-xl"}`}
                   />
                 </>
               ) : (
-                <Lock className="w-24 h-24 text-slate-600" />
+                <Lock className={`w-24 h-24 ${isHackathonLevel1 ? "text-[#7c5700] drop-shadow-[0_2px_8px_#fff8dc]" : "text-slate-600"}`} />
               )}
             </div>
 
             <div className="text-center">
-              <h3 className="text-3xl font-bold mb-3 text-yellow-400">
+              <h3 className={`text-3xl font-bold mb-3 ${isHackathonLevel1 ? hackathon1Title : "text-yellow-400"}`}>
                 {isHackathon ? level.title : `Level ${level.id}`}
               </h3>
               {!isHackathon && (
@@ -150,10 +166,14 @@ const LevelCard: React.FC<LevelCardProps> = ({ level }) => {
               )}
               <div
                 className={`inline-flex px-3 py-1 rounded-full 
-                ${isUnlocked ? "bg-yellow-400/10 border border-yellow-200/30" : "bg-gray-400/10 border border-gray-200/30"}`}
+                ${isHackathonLevel1
+                  ? hackathon1Difficulty
+                  : isUnlocked
+                    ? "bg-yellow-400/10 border border-yellow-200/30 text-yellow-100"
+                    : "bg-gray-400/10 border border-gray-200/30 text-black"}`}
               >
                 <span
-                  className={`text-sm font-medium ${isUnlocked ? "text-yellow-100" : "text-black"}`}
+                  className={`text-sm font-medium`}
                 >
                   {level.difficulty}
                 </span>
@@ -162,8 +182,8 @@ const LevelCard: React.FC<LevelCardProps> = ({ level }) => {
 
             {isUnlocked ? (
               <div
-                className="absolute bottom-4 left-1/2 -translate-x-1/2
-                text-black font-bold text-xs"
+                className={`absolute bottom-4 left-1/2 -translate-x-1/2 font-bold text-xs 
+                  ${isHackathonLevel1 ? hackathon1Text + " bg-[#fff8dc]/80 px-2 py-1 rounded shadow" : "text-black"}`}
               >
                 {isCompleted
                   ? "Completed - Click to replay"
@@ -171,8 +191,8 @@ const LevelCard: React.FC<LevelCardProps> = ({ level }) => {
               </div>
             ) : (
               <div
-                className="absolute bottom-4 left-1/2 -translate-x-1/2
-                text-black text-xs font-bold text-center px-2"
+                className={`absolute bottom-4 left-1/2 -translate-x-1/2 text-xs font-bold text-center px-2 
+                  ${isHackathonLevel1 ? hackathon1Text + " bg-[#fff8dc]/80 px-2 py-1 rounded shadow" : "text-black"}`}
               >
                 {isCheckingUnlock || enhancedProgress.isLoading
                   ? "Checking access..."
@@ -191,13 +211,13 @@ const LevelCard: React.FC<LevelCardProps> = ({ level }) => {
         {/* Back Side */}
         <div className="absolute inset-0 backface-visibility-hidden rotate-y-180">
           <div
-            className="h-full bg-gradient-to-b from-yellow-300 via-yellow-400 to-yellow-500
-            backdrop-blur-sm rounded-lg p-6 border border-yellow-600/30
-            flex flex-col items-center justify-center transition-all duration-300 transform-gpu
-            shadow-lg"
+            className={`h-full rounded-lg p-6 flex flex-col items-center justify-center transition-all duration-300 transform-gpu shadow-lg backdrop-blur-sm border 
+              ${isHackathonLevel1
+                ? hackathon1BackBg
+                : "bg-gradient-to-b from-yellow-300 via-yellow-400 to-yellow-500 border-yellow-600/30"}`}
           >
             <div className="text-center flex-grow flex items-center justify-center">
-              <p className="text-2xl font-medium text-yellow-800">
+              <p className={`text-2xl font-medium ${isHackathonLevel1 ? hackathon1Text + " drop-shadow-[0_2px_8px_#fff8dc] bg-[#fff8dc]/80 px-2 py-1 rounded" : "text-yellow-800"}`}>
                 {level.symptoms}
               </p>
             </div>
@@ -206,11 +226,11 @@ const LevelCard: React.FC<LevelCardProps> = ({ level }) => {
               onClick={handleStartLevel}
               className={`mt-4 w-full py-3 px-4 rounded-md transform 
                 hover:-translate-y-1 transition-all duration-300 font-medium
-                ${
-                  isUnlocked
+                ${isHackathonLevel1
+                  ? (isUnlocked ? hackathon1Button : hackathon1ButtonLocked)
+                  : isUnlocked
                     ? "bg-gradient-to-r from-yellow-600 to-yellow-700 hover:from-yellow-500 hover:to-yellow-600 text-white"
-                    : "bg-gray-400 text-gray-700 cursor-not-allowed"
-                }`}
+                    : "bg-gray-400 text-gray-700 cursor-not-allowed"}`}
             >
               {isCompleted
                 ? "View Level"
