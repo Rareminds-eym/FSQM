@@ -121,12 +121,30 @@ const ProfileMenu: React.FC = () => {
             setTeamInfo(teamData);
 
             // Auto-start editing if critical fields are missing (including "EMPTY" values)
+            console.log('🔍 Checking for missing data:', {
+              full_name: teamData.full_name,
+              phone: teamData.phone,
+              team_name: teamData.team_name,
+              college_code: teamData.college_code,
+              is_team_leader: teamData.is_team_leader,
+              join_code: teamData.join_code
+            });
+
             const hasCriticalMissingData = isFieldEmpty(teamData.full_name) ||
               isFieldEmpty(teamData.phone) ||
               isFieldEmpty(teamData.team_name) ||
               isFieldEmpty(teamData.college_code) ||
               teamData.is_team_leader === null ||
               teamData.is_team_leader === undefined;
+
+            console.log('🔍 Missing data check results:', {
+              full_name_empty: isFieldEmpty(teamData.full_name),
+              phone_empty: isFieldEmpty(teamData.phone),
+              team_name_empty: isFieldEmpty(teamData.team_name),
+              college_code_empty: isFieldEmpty(teamData.college_code),
+              is_team_leader_null: teamData.is_team_leader === null || teamData.is_team_leader === undefined,
+              hasCriticalMissingData
+            });
 
             if (hasCriticalMissingData) {
               console.log('🚨 Critical data missing (including EMPTY values), auto-starting edit mode');
@@ -241,6 +259,7 @@ const ProfileMenu: React.FC = () => {
   // Start editing mode - only for empty fields
   const startEditing = () => {
     if (teamInfo) {
+      console.log('🔧 Starting edit mode with team info:', teamInfo);
       setEditFormData({
         full_name: getCleanFieldValue(teamInfo.full_name),
         phone: getCleanFieldValue(teamInfo.phone),
@@ -462,6 +481,15 @@ const ProfileMenu: React.FC = () => {
     }));
   };
 
+  // Specific handler for team name to prevent issues
+  const handleTeamNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setEditFormData(prev => ({
+      ...prev,
+      team_name: value
+    }));
+  };
+
   // Handle join code lookup (same logic as sign-up)
   const handleJoinCodeChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const joinCode = e.target.value.toUpperCase();
@@ -589,7 +617,9 @@ const ProfileMenu: React.FC = () => {
               <div className="space-y-4">
                 <div className="text-xs text-yellow-800 font-semibold mb-3">
                   {userExistsInTeam
-                    ? `Please complete the following ${getEmptyFields().length} missing fields:`
+                    ? (getEmptyFields().length > 0
+                      ? `Please complete the following ${getEmptyFields().length} missing fields:`
+                      : 'Edit your profile information:')
                     : 'Complete your team registration:'
                   }
                 </div>
@@ -611,7 +641,7 @@ const ProfileMenu: React.FC = () => {
                 )}
 
                 {/* Full Name - Show if empty or new user */}
-                {(!userExistsInTeam || getEmptyFields().includes('full_name')) && (
+                {(!userExistsInTeam || isFieldEmpty(teamInfo?.full_name)) && (
                   <div>
                     <label className="block text-yellow-800 text-xs font-semibold mb-1">
                       <User className="w-3 h-3 inline mr-1" />
@@ -628,7 +658,7 @@ const ProfileMenu: React.FC = () => {
                 )}
 
                 {/* Phone - Show if empty or new user */}
-                {(!userExistsInTeam || getEmptyFields().includes('phone')) && (
+                {(!userExistsInTeam || isFieldEmpty(teamInfo?.phone)) && (
                   <div>
                     <label className="block text-yellow-800 text-xs font-semibold mb-1">
                       <Phone className="w-3 h-3 inline mr-1" />
@@ -649,7 +679,7 @@ const ProfileMenu: React.FC = () => {
                 )}
 
                 {/* Team Leader Status - Show if missing or new user */}
-                {(!userExistsInTeam || getEmptyFields().includes('is_team_leader')) && (
+                {(!userExistsInTeam || teamInfo?.is_team_leader === null || teamInfo?.is_team_leader === undefined) && (
                   <div>
                     <label className="block text-yellow-800 text-xs font-semibold mb-2">
                       <Users className="w-3 h-3 inline mr-1" />
@@ -680,47 +710,38 @@ const ProfileMenu: React.FC = () => {
                   </div>
                 )}
 
-                {/* Team Name - Show ONLY when team leader (Yes clicked) */}
-                {editFormData.is_team_leader === true && (
-                  !editFormData.team_name ||
-                  editFormData.team_name.trim() === '' ||
-                  editFormData.team_name.trim().toUpperCase() === 'EMPTY' ||
-                  getEmptyFields().includes('team_name')
-                ) && (
-                    <div>
-                      <label className="block text-yellow-800 text-xs font-semibold mb-1">
-                        <Users className="w-3 h-3 inline mr-1" />
-                        Team Name *
-                      </label>
-                      <input
-                        type="text"
-                        value={editFormData.team_name}
-                        onChange={(e) => handleInputChange('team_name', e.target.value)}
-                        className="w-full px-2 py-1 border rounded text-sm focus:outline-none bg-white border-red-400 text-gray-900 focus:border-red-600"
-                        placeholder="Enter your team name"
-                      />
-                    </div>
-                  )}
+                {/* Team Name - Show ONLY when team leader AND field is empty */}
+                {editFormData.is_team_leader === true && (!userExistsInTeam || isFieldEmpty(teamInfo?.team_name)) && (
+                  <div key="team-name-field">
+                    <label className="block text-yellow-800 text-xs font-semibold mb-1">
+                      <Users className="w-3 h-3 inline mr-1" />
+                      Team Name *
+                    </label>
+                    <input
+                      type="text"
+                      value={editFormData.team_name}
+                      onChange={handleTeamNameChange}
+                      className="w-full px-2 py-1 border rounded text-sm focus:outline-none bg-white border-red-400 text-gray-900 focus:border-red-600"
+                      placeholder="Enter your team name"
+                      autoComplete="off"
+                    />
+                  </div>
+                )}
 
-                {/* College Code - Show ONLY when team leader (Yes clicked) */}
-                {editFormData.is_team_leader === true && (
-                  !editFormData.college_code ||
-                  editFormData.college_code.trim() === '' ||
-                  editFormData.college_code.trim().toUpperCase() === 'EMPTY' ||
-                  getEmptyFields().includes('college_code')
-                ) && (
-                    <div>
-                      <label className="block text-yellow-800 text-xs font-semibold mb-1">
-                        College Code *
-                      </label>
-                      <CollegeCodeDropdown
-                        value={editFormData.college_code}
-                        onChange={(value) => handleInputChange('college_code', value)}
-                        placeholder="Select or type college code"
-                        className="text-xs"
-                      />
-                    </div>
-                  )}
+                {/* College Code - Show ONLY when team leader AND field is empty */}
+                {editFormData.is_team_leader === true && (!userExistsInTeam || isFieldEmpty(teamInfo?.college_code)) && (
+                  <div key="college-code-field">
+                    <label className="block text-yellow-800 text-xs font-semibold mb-1">
+                      College Code *
+                    </label>
+                    <CollegeCodeDropdown
+                      value={editFormData.college_code}
+                      onChange={(value) => handleInputChange('college_code', value)}
+                      placeholder="Select or type college code"
+                      className="text-xs"
+                    />
+                  </div>
+                )}
 
                 {/* Join Code Input - Show ONLY when team member (No clicked) */}
                 {editFormData.is_team_leader === false && (
