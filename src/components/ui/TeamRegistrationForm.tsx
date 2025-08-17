@@ -78,6 +78,15 @@ const TeamRegistrationForm: React.FC<TeamRegistrationFormProps> = ({ onSuccess }
     }));
   };
 
+  // Specific handler for team name to prevent issues
+  const handleTeamNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setFormData(prev => ({
+      ...prev,
+      teamName: value
+    }));
+  };
+
   // Handle team leader selection
   const handleTeamLeaderChange = (isLeader: boolean) => {
     if (isLeader) {
@@ -399,7 +408,7 @@ const TeamRegistrationForm: React.FC<TeamRegistrationFormProps> = ({ onSuccess }
 
         {/* Team Name - Show for team leaders */}
         {formData.isTeamLeader === true && (
-          <div>
+          <div key="team-name-field">
             <label className="block text-gray-700 text-sm font-semibold mb-2">
               <Users className="w-4 h-4 inline mr-1" />
               Team Name *
@@ -407,24 +416,30 @@ const TeamRegistrationForm: React.FC<TeamRegistrationFormProps> = ({ onSuccess }
             <input
               type="text"
               value={formData.teamName}
-              onChange={(e) => handleInputChange('teamName', e.target.value)}
+              onChange={handleTeamNameChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
               placeholder="Enter your team name"
               required
+              autoComplete="off"
             />
           </div>
         )}
 
         {/* College Code - Show for team leaders */}
         {formData.isTeamLeader === true && (
-          <div>
+          <div key="college-code-field">
             <label className="block text-gray-700 text-sm font-semibold mb-2">
               <Building className="w-4 h-4 inline mr-1" />
               College Code *
             </label>
             <CollegeCodeDropdown
               value={formData.collegeCode}
-              onChange={(value) => handleInputChange('collegeCode', value)}
+              onChange={(value) => {
+                setFormData(prev => ({
+                  ...prev,
+                  collegeCode: value
+                }));
+              }}
               placeholder="Select or type college code"
               className="w-full"
             />
