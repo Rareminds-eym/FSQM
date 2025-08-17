@@ -131,7 +131,7 @@ const Auth: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      if (isResetPassword) {
+  if (isResetPassword) {
         // Handle password reset
         if (!formData.email) {
           toast.error("Please enter your email address");
@@ -146,7 +146,7 @@ const Auth: React.FC = () => {
         toast.success("Password reset email sent! Check your inbox.");
         setIsResetPassword(false);
         setIsLogin(true);
-      } else if (isLogin) {
+  } else if (isLogin) {
         // Handle login
         const { error } = await signIn(formData.email, formData.password);
         if (error) {
@@ -178,6 +178,19 @@ const Auth: React.FC = () => {
 
         if (!formData.isTeamLeader && !formData.joinCode) {
           toast.error("Team members must provide a join code");
+          return;
+        }
+
+        // Check if account already exists
+        const { data: existing, error: existingError } = await supabase
+          .from('teams')
+          .select('email')
+          .eq('email', formData.email)
+          .maybeSingle();
+
+        if (existing) {
+          toast.error("An account with this email already exists. Please log in or use password reset.");
+          setIsLogin(true);
           return;
         }
 
