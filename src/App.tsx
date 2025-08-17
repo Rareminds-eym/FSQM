@@ -21,6 +21,7 @@ import { InstallPrompt, OfflineIndicator } from "./PWA";
 
 
 import { fetchAllLevels } from "./composables/fetchLevel";
+import { supabase, fetchWithFallback } from "./lib/supabaseClient";
 import { AuthProvider, useAuth } from "./components/home/AuthContext";
 import { GameProgressProvider } from "./context/GameProgressContext";
 import { EnhancedGameProgressProvider } from "./context/EnhancedGameProgressContext";
@@ -35,8 +36,24 @@ const AppContent: React.FC = () => {
   const [_gameScenarios, _setGameScenarios] = useRecoilState(gameScenarios);
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
 
-  // Effect to handle online/offline events and register service worker
+  // Example: Fetch scenarios from Supabase with fallback to local data
   useEffect(() => {
+    async function loadScenarios() {
+      const fetchFromSupabase = async () => {
+        const { data, error } = await supabase.from('scenarios').select('*');
+        if (error) throw error;
+        return data;
+      };
+      const fetchFromLocal = async () => {
+  // Replace with your local fallback logic, e.g., import('./data/localScenarios')
+  console.warn("[FSQM] Using local fallback for scenarios (Supabase fetch failed)");
+  return [];
+      };
+      const scenarios = await fetchWithFallback(fetchFromSupabase, fetchFromLocal);
+      _setGameScenarios(scenarios);
+    }
+    loadScenarios();
+
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
 
