@@ -113,16 +113,7 @@ const AuthForm: React.FC<AuthFormProps> = ({
         </AuthButton>
 
         <div className="space-y-2">
-          <div className="flex justify-between items-center">
-            <button
-              type="button"
-              onClick={handleResendEmail}
-              disabled={isResendingEmail || !formData.email}
-              className="text-sm text-green-600 hover:text-green-800 underline disabled:text-gray-400 disabled:cursor-not-allowed"
-              title="Resend confirmation email if you haven't received it"
-            >
-              {isResendingEmail ? "Resending..." : "Resend Confirmation"}
-            </button>
+          <div className="flex justify-end items-center">
             <button
               type="button"
               onClick={onBackToLogin}
@@ -131,9 +122,6 @@ const AuthForm: React.FC<AuthFormProps> = ({
               Back to Login
             </button>
           </div>
-          <p className="text-xs text-gray-600 text-center">
-            Need to verify your email first? Use "Resend Confirmation" above.
-          </p>
         </div>
       </form>
     );
@@ -161,16 +149,7 @@ const AuthForm: React.FC<AuthFormProps> = ({
         />
 
         <div className="space-y-2">
-          <div className="flex justify-between items-center">
-            <button
-              type="button"
-              onClick={handleResendEmail}
-              disabled={isResendingEmail || !formData.email}
-              className="text-sm text-green-600 hover:text-green-800 underline disabled:text-gray-400 disabled:cursor-not-allowed"
-              title="Resend confirmation email if you haven't received it"
-            >
-              {isResendingEmail ? "Resending..." : "Resend Email"}
-            </button>
+          <div className="flex justify-end items-center">
             <button
               type="button"
               onClick={onShowResetPassword}
@@ -179,9 +158,6 @@ const AuthForm: React.FC<AuthFormProps> = ({
               Forgot Password?
             </button>
           </div>
-          <p className="text-xs text-gray-600 text-center">
-            Haven't received your confirmation email? Click "Resend Email" above.
-          </p>
         </div>
 
         <AuthButton type="submit" isLogin={isLogin} disabled={loading} />
@@ -189,6 +165,7 @@ const AuthForm: React.FC<AuthFormProps> = ({
     );
   }
 
+  // Registration (Sign Up) Form
   return (
     <form onSubmit={onSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
       {/* Column 1 */}
@@ -337,9 +314,21 @@ const AuthForm: React.FC<AuthFormProps> = ({
         />
       </div>
 
-      {/* Submit Button */}
-      <div className="col-span-1 md:col-span-3 flex justify-center mt-6">
+      {/* Submit Button and Resend Email (only for sign up) */}
+      <div className="col-span-1 md:col-span-3 flex flex-col items-center mt-6 gap-2">
         <AuthButton type="submit" isLogin={isLogin} disabled={loading} />
+        <button
+          type="button"
+          onClick={handleResendEmail}
+          disabled={isResendingEmail || !formData.email}
+          className="text-sm text-green-600 hover:text-green-800 underline disabled:text-gray-400 disabled:cursor-not-allowed"
+          title="Resend confirmation email if you haven't received it"
+        >
+          {isResendingEmail ? "Resending..." : "Resend Email"}
+        </button>
+        <p className="text-xs text-gray-600 text-center">
+          Haven't received your confirmation email? Click "Resend Email" above.
+        </p>
       </div>
     </form>
   );
