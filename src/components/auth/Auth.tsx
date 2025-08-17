@@ -30,6 +30,7 @@ const Auth: React.FC = () => {
     isTeamLeader: null,
     joinCode: "",
   });
+  const [hasSignedUp, setHasSignedUp] = useState(false); // Track if user has signed up
   const { signIn, signUp, resetPassword, updatePassword, loading } = useAuth();
 
   const handleRateLimitExpired = () => {
@@ -243,6 +244,7 @@ const Auth: React.FC = () => {
         toast.success("Confirmation email has been sent to your device. Please check your inbox and verify your account before logging in.", {
           autoClose: 8000,
         });
+        setHasSignedUp(true); // Enable Resend Email button after signup
 
         // Get user information with improved error handling
         let user = signUpUser;
@@ -450,6 +452,7 @@ const Auth: React.FC = () => {
             setIsLogin(true);
           }}
           onShowResendEmail={() => {}} // Resend functionality is handled internally in AuthForm
+          hasSignedUp={hasSignedUp}
         />
 
         {/* Rate Limit Message */}

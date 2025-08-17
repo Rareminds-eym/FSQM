@@ -17,6 +17,7 @@ interface AuthFormProps {
   onShowResetPassword?: () => void;
   onBackToLogin?: () => void;
   onShowResendEmail?: () => void;
+  hasSignedUp?: boolean; // New prop to control Resend Email visibility
 }
 
 const AuthForm: React.FC<AuthFormProps> = ({
@@ -29,6 +30,7 @@ const AuthForm: React.FC<AuthFormProps> = ({
   onShowResetPassword,
   onBackToLogin,
   onShowResendEmail,
+  hasSignedUp = false,
 }) => {
   const [prefilledTeam, setPrefilledTeam] = useState<{ teamName: string; collegeCode: string } | null>(null);
   const [isLoadingTeam, setIsLoadingTeam] = useState(false);
@@ -317,18 +319,22 @@ const AuthForm: React.FC<AuthFormProps> = ({
       {/* Submit Button and Resend Email (only for sign up) */}
       <div className="col-span-1 md:col-span-3 flex flex-col items-center mt-6 gap-2">
         <AuthButton type="submit" isLogin={isLogin} disabled={loading} />
-        <button
-          type="button"
-          onClick={handleResendEmail}
-          disabled={isResendingEmail || !formData.email}
-          className="text-sm text-green-600 hover:text-green-800 underline disabled:text-gray-400 disabled:cursor-not-allowed"
-          title="Resend confirmation email if you haven't received it"
-        >
-          {isResendingEmail ? "Resending..." : "Resend Email"}
-        </button>
-        <p className="text-xs text-gray-600 text-center">
-          Haven't received your confirmation email? Click "Resend Email" above.
-        </p>
+        {hasSignedUp && (
+          <>
+            <button
+              type="button"
+              onClick={handleResendEmail}
+              disabled={isResendingEmail || !formData.email}
+              className="text-sm text-green-600 hover:text-green-800 underline disabled:text-gray-400 disabled:cursor-not-allowed"
+              title="Resend confirmation email if you haven't received it"
+            >
+              {isResendingEmail ? "Resending..." : "Resend Email"}
+            </button>
+            <p className="text-xs text-gray-600 text-center">
+              Haven't received your confirmation email? Click "Resend Email" above.
+            </p>
+          </>
+        )}
       </div>
     </form>
   );
