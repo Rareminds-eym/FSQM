@@ -18,16 +18,20 @@ jobs:
         with:
           node-version: 18
 
-      - name: Create .env file
-        run: |
-          echo "VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }}" >> .env
-          echo "VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }}" >> .env
-
       - name: Install dependencies
         run: npm install
 
+      - name: Debug env
+        run: |
+          echo "Supabase URL: $VITE_SUPABASE_URL"
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+
       - name: Build React app
         run: npm run build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
 
       - name: Archive build folder into tar
         run: tar -czf build.tar.gz -C dist .
