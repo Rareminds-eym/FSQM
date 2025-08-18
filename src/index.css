@@ -1111,7 +1111,7 @@
   /* Ensure full height usage on mobile landscape */
   html, body {
     height: 100vh;
-    overflow: hidden;
+    overflow: auto;
   }
   
   /* Optimize spacing for landscape */
