@@ -13,6 +13,12 @@ interface TeamInfo {
   full_name?: string;
   phone?: string;
   email?: string;
+  team_leader?: {
+    full_name?: string;
+    phone?: string;
+    email?: string;
+    user_id?: string;
+  } | null;
 }
 
 const ProfileMenu: React.FC = () => {
@@ -21,7 +27,10 @@ const ProfileMenu: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const menuRef = React.useRef<HTMLDivElement>(null);
   const buttonRef = React.useRef<HTMLButtonElement>(null);
-  const { user } = useAuth ? useAuth() : { user: null };
+  const auth = useAuth ? useAuth() : undefined;
+  const user = auth?.user || null;
+  const signOut = auth?.signOut;
+  const logout = auth?.logout;
 
   // Fetch profile info from Supabase teams table
   useEffect(() => {
@@ -29,15 +38,37 @@ const ProfileMenu: React.FC = () => {
       if (!user?.id) return;
       setLoading(true);
       try {
-        const { data, error } = await supabase
+        // Fetch the user's team record (including is_team_leader)
+        const { data: userData, error: userError } = await supabase
           .from('teams')
-          .select('full_name, phone, team_name, join_code, college_code')
+          .select('full_name, phone, team_name, join_code, college_code, is_team_leader, team_name, user_id')
           .eq('user_id', user.id)
           .single();
-        
-        if (!error && data) {
-          setProfile(data);
+
+        if (userError || !userData) {
+          setProfile(null);
+          return;
         }
+
+        let teamName = userData.team_name;
+        let leaderRecord = null;
+
+        if (!userData.is_team_leader) {
+          // Not a leader: fetch the team leader's record for this team
+          const { data: leaderData } = await supabase
+            .from('teams')
+            .select('full_name, phone, email, user_id, team_name')
+            .eq('join_code', userData.join_code)
+            .eq('is_team_leader', true)
+            .single();
+          leaderRecord = leaderData || null;
+          // If teamName is missing, get it from leader
+          if (!teamName && leaderData && leaderData.team_name) {
+            teamName = leaderData.team_name;
+          }
+        }
+
+        setProfile({ ...userData, team_name: teamName, team_leader: leaderRecord });
       } catch (err) {
         console.error('Error fetching profile:', err);
       } finally {
@@ -228,7 +259,11 @@ const ProfileMenu: React.FC = () => {
               <button
                 onClick={async () => {
                   try {
-                    await supabase.auth.signOut();
+                    if (logout) {
+                      logout();
+                    } else if (signOut) {
+                      await signOut();
+                    }
                   } catch (err) {
                     console.error('Sign out error:', err);
                   }
