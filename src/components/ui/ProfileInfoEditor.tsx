@@ -138,9 +138,10 @@ export const ProfileInfoEditor: React.FC<ProfileInfoEditorProps> = ({
         setForm(prev => ({ ...prev, join_code: joinCode, session_id: sessionId }));
       } else {
         // Not leader: validate join code and check team size
+        // Fetch the full leader record
         const { data: leaderData, error: leaderError } = await supabase
           .from('teams')
-          .select('session_id, team_name')
+          .select('*')
           .eq('join_code', form.join_code.trim())
           .eq('is_team_leader', true)
           .single();
@@ -153,7 +154,7 @@ export const ProfileInfoEditor: React.FC<ProfileInfoEditorProps> = ({
         }
 
         sessionId = leaderData.session_id;
-        
+
         // Check team size (max 4 including leader)
         const { count, error: countError } = await supabase
           .from('teams')
@@ -174,8 +175,10 @@ export const ProfileInfoEditor: React.FC<ProfileInfoEditorProps> = ({
           return;
         }
 
-        // Update team name from leader's data
-        setForm(prev => ({ ...prev, team_name: leaderData.team_name || '', session_id: sessionId }));
+  // Always use leader's team_name and college_code for non-leader
+  setForm(prev => ({ ...prev, team_name: leaderData.team_name || '', college_code: leaderData.college_code || '', session_id: sessionId }));
+  form.team_name = leaderData.team_name || '';
+  form.college_code = leaderData.college_code || '';
       }
 
       // Prepare data for upsert
@@ -186,10 +189,10 @@ export const ProfileInfoEditor: React.FC<ProfileInfoEditorProps> = ({
         email: form.email.trim(),
         is_team_leader: form.is_team_leader,
         session_id: sessionId,
+        team_name: form.team_name.trim(), // Always set team_name for all
+        college_code: form.college_code.trim(), // Always set college_code for all
         ...(form.is_team_leader && {
-          team_name: form.team_name.trim(),
           join_code: form.join_code || sessionId.substring(0, 6).toUpperCase(),
-          college_code: form.college_code.trim(),
         }),
         ...(!form.is_team_leader && {
           join_code: form.join_code.trim(),
