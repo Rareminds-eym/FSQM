@@ -1417,13 +1417,15 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
                 <ArrowLeft className="w-4 h-4" />
                 Back
               </button>
-              <button
-                onClick={handleDownloadPDF}
-                className="pixel-border bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white font-black py-2 px-4 pixel-text transition-all transform hover:scale-105 text-sm flex items-center gap-2"
-              >
-                <Download className="w-4 h-4" />
-                Download
-              </button>
+              {isLevel1Completed && (
+                <button
+                  onClick={handleDownloadPDF}
+                  className="pixel-border bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white font-black py-2 px-4 pixel-text transition-all transform hover:scale-105 text-sm flex items-center gap-2"
+                >
+                  <Download className="w-4 h-4" />
+                  Download
+                </button>
+              )}
             </div>
             <div className="flex justify-center mb-4">
               <div className="w-12 h-12 bg-cyan-500 pixel-border flex items-center justify-center">
@@ -1444,7 +1446,7 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
                   <Clock className="w-3 h-3 text-blue-300" />
                 </div>
                 <h3 className="font-black text-white text-xs pixel-text">
-                  90 MINUTES
+                  60 MINUTES
                 </h3>
                 <p className="text-blue-100 text-xs font-bold">
                   Complete all questions
