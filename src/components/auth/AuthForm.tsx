@@ -38,23 +38,28 @@ const AuthForm: React.FC<AuthFormProps> = ({
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    if (name === 'email') {
+      setFormData({ ...formData, [name]: value.trim().toLowerCase() });
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
   };
 
   // Handle resend confirmation email
   const handleResendEmail = async () => {
-    if (!formData.email) {
+    const lowerCaseEmail = formData.email?.trim().toLowerCase();
+    if (!lowerCaseEmail) {
       toast.error("Please enter your email address first");
       return;
     }
 
     setIsResendingEmail(true);
     try {
-      console.log('📧 Resending confirmation email to:', formData.email);
+      console.log('📧 Resending confirmation email to:', lowerCaseEmail);
 
       const { error } = await supabase.auth.resend({
         type: 'signup',
-        email: formData.email
+        email: lowerCaseEmail
       });
 
       if (error) {
@@ -107,7 +112,7 @@ const AuthForm: React.FC<AuthFormProps> = ({
           type="email"
           placeholder="Enter your email to reset password"
           value={formData.email}
-          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+          onChange={handleInputChange}
         />
 
         <AuthButton type="submit" isLogin={false} disabled={loading}>
@@ -138,7 +143,7 @@ const AuthForm: React.FC<AuthFormProps> = ({
           type="email"
           placeholder="Enter your email"
           value={formData.email}
-          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+          onChange={handleInputChange}
         />
 
         <InputField
