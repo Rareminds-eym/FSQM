@@ -10,6 +10,7 @@ import NotFoundPage from "./components/error/NotFoundPage";
 import GamePage from "./components/game/GamePage";
 import LevelsPage from "./components/game/levels/LevelsPage";
 import GameEngine from "./fsqm-simulation/GmpSimulation";
+import FsqmSimulationRouter from "./fsqm-simulation/FsqmSimulationRouter";
 import HomePage from "./components/home/HomePage";
 import { InstructionsPage } from "./components/instructions";
 import { LoaderScreen } from "./components/loader";
@@ -156,7 +157,8 @@ const AppContent: React.FC = () => {
                   {/* <div className="fixed top-4 right-4 z-50">
                     <ProfileMenu />
                   </div> */}
-                  <GameEngine />
+                  {/* Route HL2 to Level2Simulation, HL1 to GameEngine */}
+                  <FsqmSimulationRouter />
                 </>
               } />
               <Route path="/instructions" element={

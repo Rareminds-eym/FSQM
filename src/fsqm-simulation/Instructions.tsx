@@ -2,7 +2,7 @@ import Background from './background';
 import React, { useState } from "react";
 import { Icon } from '@iconify/react';
 import { Factory, Lightbulb, Target } from "lucide-react";
-import ProfileInfo from '../fsqm-simulation/ProfileInfo';
+import ProfileInfo from '../gmp-simulation/ProfileInfo';
 import { useAuth } from '../contexts/AuthContext';
 
 interface InstructionsProps {
@@ -38,7 +38,7 @@ const Instructions: React.FC<InstructionsProps> = ({ onStart }) => {
             <Icon icon="mdi:trophy-award" className="inline w-8 h-8 text-emerald-400 animate-float" />
           </h1>
           <p className="text-gray-500 mt-2 text-base lg:text-lg pixel-text">
-            Test your knowledge of Food Safety and Quailty Management through real-world deviation case simulations.
+            Test your knowledge of Good Manufacturing Practices through real-world deviation case simulations.
           </p>
         </div>
 
@@ -57,7 +57,7 @@ const Instructions: React.FC<InstructionsProps> = ({ onStart }) => {
           <div className="bg-emerald-900/80 p-4 rounded-lg text-center pixel-border">
             <Icon icon="mdi:clipboard-list-outline" className="w-8 h-8 text-emerald-300 mx-auto mb-2 animate-float" />
             <h3 className="font-semibold text-emerald-100 pixel-text">5 Cases</h3>
-            <p className="text-emerald-200 text-sm pixel-text">Random FSQM Scenarios</p>
+            <p className="text-emerald-200 text-sm pixel-text">Random GMP Scenarios</p>
           </div>
         </div>
 
