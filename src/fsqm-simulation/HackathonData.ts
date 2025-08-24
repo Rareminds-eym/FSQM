@@ -12,502 +12,502 @@ export interface Question {
 export const hackathonData: Question[] = [
   {
     "id": 1,
-    "caseFile": "During Paracetamol 500 mg tablet production, the compression machine stopped after ~45% of the batch. The hopper lid was not closed properly, so the blend sat uncovered ~30 minutes before restart. The line log shows no downtime product protection entry. In‑process weight checks right after restart show wider variation than earlier samples. Environmental differential pressure dipped once during the stoppage. What should the production and QA teams record and consider for this lot?",
+    "caseFile": "During a ready-to-eat chicken curry run, the cooker trend chart shows the core of the largest pieces reached 70°C for 2 minutes. The validated CCP requires ≥74°C for ≥15 seconds at the core. Operators, rushing to meet the dispatch cut-off, let the batch move to packing while planning to 'check later.' No photo or note of probe placement was taken, and the daily probe verification entry is missing for that shift. Some units have thicker cuts than usual because a new butcher joined that morning. What should the QA team do next?",
     "violationOptions": [
-      "Preventive maintenance not done as per schedule",
-      "Cleaning done with wrong detergent",
-      "Use of expired raw materials",
-      "Primary packaging stored in open area"
+      "Product left the CCP without meeting the validated critical limit",
+      "Line used stainless steel utensils",
+      "Operators changed hair nets at shift change",
+      "Labels printed in black ink"
     ],
-    "correctViolation": "Preventive maintenance not done as per schedule",
+    "correctViolation": "Product left the CCP without meeting the validated critical limit",
     "rootCauseOptions": [
-      "Faulty motor sensor not replaced on time",
-      "Wrong label artwork received from vendor",
-      "QC analyst used wrong reference standard",
-      "Weighing balance drift in warehouse"
+      "Probe placed near surface; no core verification; operator rushed due to backlog",
+      "CO2 level high in boiler room",
+      "Wrong font size on label artwork",
+      "Excess hand sanitizer used by staff"
     ],
-    "correctRootCause": "Faulty motor sensor not replaced on time",
+    "correctRootCause": "Probe placed near surface; no core verification; operator rushed due to backlog",
     "solutionOptions": [
-      "Replace the sensor, update maintenance plan, train operators on downtime handling and covering of product",
-      "Reject all future batches of this product",
-      "Run machine faster to catch up lost time",
-      "Skip in‑process checks to save time"
+      "Place calibrated core probes; retrain on CCP monitoring; hold and reheat/recook if safe, else reject; document and verify trend",
+      "Cool product faster to balance undercooking",
+      "Add extra spices to mask issue",
+      "Ship only to nearby customers"
     ],
-    "correctSolution": "Replace the sensor, update maintenance plan, train operators on downtime handling and covering of product"
+    "correctSolution": "Place calibrated core probes; retrain on CCP monitoring; hold and reheat/recook if safe, else reject; document and verify trend"
   },
   {
     "id": 2,
-    "caseFile": "An antibiotic dry-blend moved straight to drying because the operator skipped wet granulation after misreading the BMR. The shift was short-staffed, and two steps on the BMR fall on a page break. Sieve analysis shows non‑uniform particle size and poor flow. The critical-step checkbox is blank for this stage. What should the team review and capture in the deviation?",
+    "caseFile": "A 'nut-free' cookie order showed low peanut protein in a routine finished-product test. Earlier that day, the same sifter was used for peanut cookies and then 'cleaned.' The cleaning log shows only visual clean and a rinse; the 'allergen verification swab' row is blank. Changeover took 20 minutes instead of the scheduled 45. Color-coded tools for allergen lines are stored on the same rack as non-allergen tools. What actions should follow?",
     "violationOptions": [
-      "Skipping a validated manufacturing step",
-      "Using a smaller FBD bag",
-      "Printing labels in a different room",
-      "Changing hair cover type"
+      "Failure to prevent allergen cross-contact as per HACCP pre-requisite program",
+      "Using blue gloves in production",
+      "Recording metal detector checks every hour",
+      "Wearing steel-toe shoes"
     ],
-    "correctViolation": "Skipping a validated manufacturing step",
+    "correctViolation": "Failure to prevent allergen cross-contact as per HACCP pre-requisite program",
     "rootCauseOptions": [
-      "Unclear BMR layout; critical step not highlighted",
-      "Faulty temperature probe in dryer",
-      "Vendor sent different grade of API",
-      "Wrong mesh used in sifter"
+      "Shared equipment not cleaned to validated allergen removal standard; changeover checklist incomplete",
+      "Supplier sent wrong carton size",
+      "Incorrect QR code on pallet tag",
+      "Ambient noise high in packing hall"
     ],
-    "correctRootCause": "Unclear BMR layout; critical step not highlighted",
+    "correctRootCause": "Shared equipment not cleaned to validated allergen removal standard; changeover checklist incomplete",
     "solutionOptions": [
-      "Revise BMR with clear step numbers/visual flags; retrain operators on critical steps; add peer check before moving to next stage",
-      "Proceed to compression and rely on final testing",
-      "Shorten drying time in future batches",
-      "Increase lubricant for better flow"
+      "Implement validated allergen cleaning; dedicated tools or sifter; visual ID for allergen tools; update changeover checklist; verify with rapid allergen test",
+      "Print an allergy warning sticker and continue",
+      "Shorten bake time to reduce proteins",
+      "Switch to paper hair nets"
     ],
-    "correctSolution": "Revise BMR with clear step numbers/visual flags; retrain operators on critical steps; add peer check before moving to next stage"
+    "correctSolution": "Implement validated allergen cleaning; dedicated tools or sifter; visual ID for allergen tools; update changeover checklist; verify with rapid allergen test"
   },
   {
     "id": 3,
-    "caseFile": "A vitamin capsule blend ran 60 minutes instead of 40 due to a power outage and late restart. Mixer timer logs show a gap; no hold‑time assessment was recorded. The batch record does not indicate whether the lubricant was added before or after the extra mixing. Early dissolution results look slightly slower than trend. What information belongs in the BMR and deviation file?",
+    "caseFile": "After a shift change, the date coder on the pouch line was set to +7 days, but pasteurized milk has an approved shelf life of 3 days. The line packed 5,000 pouches before QC noticed at post-run check. The two-person coder verification box on the line-clearance sheet was left unchecked, and the vision camera that reads codes was 'temporarily disabled' during maintenance. Trucks with mixed lots have already left the plant. What decisions are needed now?",
     "violationOptions": [
-      "Mixing beyond validated time limit",
-      "Using a clean scoop without log entry",
-      "Sampling at 3 locations instead of 5",
-      "Recording data in blue ink"
+      "Incorrect date coding contrary to label approval and shelf-life validation",
+      "Using automated case packers",
+      "Sampling every production hour",
+      "Applying tamper-evident seals"
     ],
-    "correctViolation": "Mixing beyond validated time limit",
+    "correctViolation": "Incorrect date coding contrary to label approval and shelf-life validation",
     "rootCauseOptions": [
-      "No UPS/generator for mixer; no SOP for power failure handling",
-      "Wrong label applied to API drum",
-      "Incorrect assay method used",
-      "Humidity high in dispensing room"
+      "Date coder preset not updated after changeover; verification step skipped during line clearance",
+      "Pasteurizer holding tube slightly fouled",
+      "Dock leveler not serviced",
+      "Operator forgot hair net"
     ],
-    "correctRootCause": "No UPS/generator for mixer; no SOP for power failure handling",
+    "correctRootCause": "Date coder preset not updated after changeover; verification step skipped during line clearance",
     "solutionOptions": [
-      "Install backup power; add power‑loss SOP; test blend uniformity and dissolution risk; document hold time decision",
-      "Reduce mixing time for all future products",
-      "Bypass QA approval for restarts",
-      "Blend again to 'average out' impact"
+      "Stop distribution; trace and recall affected lots; correct coding; reinforce line clearance and coder verification with two-person check",
+      "Reduce storage temperature to extend life",
+      "Blend old milk with fresh",
+      "Overlabel only the pallets at the plant"
     ],
-    "correctSolution": "Install backup power; add power‑loss SOP; test blend uniformity and dissolution risk; document hold time decision"
+    "correctSolution": "Stop distribution; trace and recall affected lots; correct coding; reinforce line clearance and coder verification with two-person check"
   },
   {
     "id": 4,
-    "caseFile": "During packaging of an antihypertensive tablet, labels carried the previous batch number for about 2,000 packs before detection. The line clearance sheet is incomplete; the second‑person label check line is blank. Label reconciliation counts do not match the used/returned labels. Pallets from the first hour are already staged for dispatch. What must the team document about scope and traceability?",
+    "caseFile": "At start-up, the metal detector failed the 2.0 mm ferrous test piece. Operators adjusted sensitivity downward to reduce false rejects and kept running for 40 minutes. There is no interlock to stop the conveyor after a failed challenge, and the reject-confirmation test has not been performed for a week. Product from that period is already palletized. How should this situation be handled?",
     "violationOptions": [
-      "Line clearance and label verification not done as per SOP",
-      "Use of non‑sterile gloves in packing",
-      "Cartons not shrink‑wrapped",
-      "Use of different lot of desiccant"
+      "Continuing production after failing a critical control verification test",
+      "Using smaller cartons",
+      "Measuring weight every 30 minutes",
+      "Using foils for sealing"
     ],
-    "correctViolation": "Line clearance and label verification not done as per SOP",
+    "correctViolation": "Continuing production after failing a critical control verification test",
     "rootCauseOptions": [
-      "Label reconciliation failure; second check skipped under time pressure",
-      "Printer cartridge low causing faint text",
-      "QC approval memo not filed",
-      "Warehouse issued extra shippers"
+      "Test piece placed off-centre; detector sensitivity not set as per product effect; no interlock to stop conveyor",
+      "Humidity high in corridor",
+      "Wrong pallet height used",
+      "QC sample bottle cracked"
     ],
-    "correctRootCause": "Label reconciliation failure; second check skipped under time pressure",
+    "correctRootCause": "Test piece placed off-centre; detector sensitivity not set as per product effect; no interlock to stop conveyor",
     "solutionOptions": [
-      "Stop line; segregate and destroy wrong packs; perform full line clearance; retrain staff; enforce independent double‑check and reconciliation",
-      "Overwrite labels with marker pen",
-      "Release packs with a market recall plan",
-      "Print a correction note and insert into cartons"
+      "Stop line; hold and re-screen affected product; fix setup; add interlock and SOP to prevent bypass; retrain operators",
+      "Ship the product but increase market sampling",
+      "Switch detector brand immediately",
+      "Reduce pack speed only"
     ],
-    "correctSolution": "Stop line; segregate and destroy wrong packs; perform full line clearance; retrain staff; enforce independent double‑check and reconciliation"
+    "correctSolution": "Stop line; hold and re-screen affected product; fix setup; add interlock and SOP to prevent bypass; retrain operators"
   },
   {
     "id": 5,
-    "caseFile": "For a multivitamin product, size '0' shells were loaded instead of size '00'. Half the batch was filled before anyone noticed the height mismatch at visual check. The component racks hold look‑alike boxes, and there is no barcode scan step at shell loading. Early net weight checks look acceptable because fill mass adjusted, but sealing defects appear in samples. What details should be captured about line setup and identification controls?",
+    "caseFile": "A zone-2 environmental swab in the salad room came back presumptive Listeria spp. on Saturday. The weekend supervisor did not place a product hold, assuming 'it's not on food contact.' Two more shifts produced and shipped product. The EMP SOP has unclear action limits and no weekend escalation contact list. What should the food safety team do now?",
     "violationOptions": [
-      "Wrong component selection at line setup",
-      "Using stainless steel scoop",
-      "Running at slower speed",
-      "Using different tray color"
+      "Failure to act on environmental pathogen positive in RTE area",
+      "Using color-coded mops",
+      "Recording employee temperatures at entry",
+      "Using stainless tables"
     ],
-    "correctViolation": "Wrong component selection at line setup",
+    "correctViolation": "Failure to act on environmental pathogen positive in RTE area",
     "rootCauseOptions": [
-      "Look‑alike packaging; no barcode or second‑person verification",
-      "Wrong blend potency",
-      "Incorrect vacuum setting",
-      "Humidity excursion in store"
+      "Ambiguous action limits in EMP SOP; weekend shift unsure about authority; no hold/release protocol",
+      "Condensation on ceiling",
+      "Supplier provided larger lettuce leaves",
+      "Scale uncalibrated"
     ],
-    "correctRootCause": "Look‑alike packaging; no barcode or second‑person verification",
+    "correctRootCause": "Ambiguous action limits in EMP SOP; weekend shift unsure about authority; no hold/release protocol",
     "solutionOptions": [
-      "Quarantine filled units; 100% visual check; introduce barcode verification and two‑person check at shell loading; update line setup checklist",
-      "Blend more fill to adjust weight",
-      "Increase tamping pins to compensate",
-      "Release only bottles with correct net weight"
+      "Immediate product hold and risk assessment; intensified swabbing; sanitize; review EMP action levels; train weekend shift; revise hold/release flow",
+      "Heat product after packing",
+      "Dilute salad with vinegar",
+      "Change room air freshener"
     ],
-    "correctSolution": "Quarantine filled units; 100% visual check; introduce barcode verification and two‑person check at shell loading; update line setup checklist"
+    "correctSolution": "Immediate product hold and risk assessment; intensified swabbing; sanitize; review EMP action levels; train weekend shift; revise hold/release flow"
   },
   {
     "id": 6,
-    "caseFile": "QC ran the tablet dissolution at 39 °C instead of 37 ± 0.5 °C. The bath probe daily verification entry is missing, and the control chart shows mild drift for a week. Results are out‑of‑trend versus prior lots. The analyst realized the error only after reviewing the raw data post‑run. What documents and records belong with this deviation?",
+    "caseFile": "The aw meter used to release dried fruit shows a calibration due date that expired two weeks ago; the sticker is faded. Three lots were released based on this meter's readings. The calibration tracker spreadsheet shows no alerts sent to QC for due dates, and the alternate meter is locked in another building. What is the right next step?",
     "violationOptions": [
-      "Analyst did not verify bath temperature before run",
-      "Samples not vortexed for 10 seconds",
-      "Using Class A glassware",
-      "Recording observations every 5 minutes"
+      "Using measuring equipment past calibration schedule",
+      "Storing pouches in cartons",
+      "Using powder-free gloves",
+      "Having SOPs in a folder"
     ],
-    "correctViolation": "Analyst did not verify bath temperature before run",
+    "correctViolation": "Using measuring equipment past calibration schedule",
     "rootCauseOptions": [
-      "Temperature probe drift; no daily verification log",
-      "Impeller blade worn out",
-      "Incorrect medium volume printed",
-      "Filter interaction with API"
+      "Calibration tracker not updated; no alert; sticker faded",
+      "High room temperature",
+      "Long sample equilibration time",
+      "Operator left early"
     ],
-    "correctRootCause": "Temperature probe drift; no daily verification log",
+    "correctRootCause": "Calibration tracker not updated; no alert; sticker faded",
     "solutionOptions": [
-      "Calibrate/replace probe; add pre‑run temperature verification step; invalidate results and repeat; retrain analysts",
-      "Adjust results mathematically for temperature",
-      "Accept results as they are since close",
-      "Change dissolution method permanently"
+      "Quarantine affected lots; verify with a calibrated aw meter; update electronic tracker with alerts; retrain staff",
+      "Average current aw with historical data",
+      "Release by visual dryness only",
+      "Reduce target aw next time"
     ],
-    "correctSolution": "Calibrate/replace probe; add pre‑run temperature verification step; invalidate results and repeat; retrain analysts"
+    "correctSolution": "Quarantine affected lots; verify with a calibrated aw meter; update electronic tracker with alerts; retrain staff"
   },
   {
     "id": 7,
-    "caseFile": "A cough‑syrup assay used a titrant beyond expiry. The shelf tag is handwritten and faint; the reagent cabinet has no expired‑stock segregation shelf. Initial assay results looked normal, so the batch record was signed before the error was found during review. What receiving, storage, and inventory details should be written into the case file?",
+    "caseFile": "A peanut lot arrived with a COA reporting aflatoxin B1 = 8 ppb; the plant spec is ≤5 ppb. Receiving focused on weight and appearance and filed the COA without review; the lot was issued to roasting and used in production. A customer asks for the COA copy and the gap is discovered. Intake has no rapid aflatoxin screen and no COA review checklist. How should this be handled?",
     "violationOptions": [
-      "Use of expired analytical reagent",
-      "Using amber glassware",
-      "Triplicate injections instead of duplicate",
-      "Using class F weights"
+      "Accepting and using a raw material that does not meet specification",
+      "Taking duplicate retain samples",
+      "Recording dock temperature",
+      "Using metal pallets"
     ],
-    "correctViolation": "Use of expired analytical reagent",
+    "correctViolation": "Accepting and using a raw material that does not meet specification",
     "rootCauseOptions": [
-      "Inventory control failure; no expiry alerts; expired bottle not segregated",
-      "Balance not leveled",
-      "Wrong calculation factor used",
-      "Analyst switched columns mid‑run"
+      "Receiving check focused on appearance/weight; COA review not done; no rapid aflatoxin test in intake",
+      "Supplier pallet height too tall",
+      "CO2 fogging absent",
+      "Incorrect forklift route"
     ],
-    "correctRootCause": "Inventory control failure; no expiry alerts; expired bottle not segregated",
+    "correctRootCause": "Receiving check focused on appearance/weight; COA review not done; no rapid aflatoxin test in intake",
     "solutionOptions": [
-      "Invalidate results; retest with in‑date reagent; implement electronic stock alerts; segregate expired items; 5S of reagent shelves",
-      "Average results with previous batch",
-      "Adjust assay by adding correction factor",
-      "Skip assay and rely on dissolution only"
+      "Quarantine finished product; trace back; test retains and in-process; block supplier until corrective action; add intake rapid test and COA verification",
+      "Roast peanuts longer to burn off toxins",
+      "Add sugar to mask bitterness",
+      "Use the same supplier but request discount"
     ],
-    "correctSolution": "Invalidate results; retest with in‑date reagent; implement electronic stock alerts; segregate expired items; 5S of reagent shelves"
+    "correctSolution": "Quarantine finished product; trace back; test retains and in-process; block supplier until corrective action; add intake rapid test and COA verification"
   },
   {
     "id": 8,
-    "caseFile": "An HPLC assay failed because the standard dilution factor was wrong. The SOP table is crowded, and the analyst copied the factor from the previous method version. There is no peer verification step for standard prep calculations. System suitability failed on response factor consistency. What should be preserved as evidence for the investigation pack?",
+    "caseFile": "Yogurt pallets sat at the dock at ~12°C for ~4 hours because the cold room was full. The SOP has no put-away time target, and the dock has no temperature logger. When moved inside, some cartons had condensation and wet shrink wrap. The delivery timing overlaps with three other chilled deliveries every Friday. What must the team decide and change?",
     "violationOptions": [
-      "Deviation from SOP in standard preparation",
-      "Column equilibrated for 30 minutes",
-      "Mobile phase filtered and degassed",
-      "System suitability run performed"
+      "Failure to maintain required cold-chain temperature during receiving",
+      "Using plastic wrap on pallets",
+      "Recording truck seal number",
+      "Using slip sheets"
     ],
-    "correctViolation": "Deviation from SOP in standard preparation",
+    "correctViolation": "Failure to maintain required cold-chain temperature during receiving",
     "rootCauseOptions": [
-      "Analyst misread dilution table; no peer verification step",
-      "Column end‑capped differently",
-      "PDA lamp aging",
-      "Autosampler misalignment"
+      "No put-away time target; limited cold-room capacity; dock temperature not monitored",
+      "Wrong pallet jack type",
+      "Excess shrink film",
+      "Unpainted floor lines"
     ],
-    "correctRootCause": "Analyst misread dilution table; no peer verification step",
+    "correctRootCause": "No put-away time target; limited cold-room capacity; dock temperature not monitored",
     "solutionOptions": [
-      "Add peer verification for calculations; redesign SOP table for clarity; provide calculator template; retrain analysts",
-      "Increase injection volume to fix response",
-      "Change column to a newer type",
-      "Shorten runtime to save time"
+      "Move pallets to cold room; assess excursion; increase capacity or staging plan; set put-away SLA; add dock loggers; train staff",
+      "Quick-freeze to bring temp down faster",
+      "Mix with colder pallets to average temp",
+      "Shorten shelf life by 1 day and ship"
     ],
-    "correctSolution": "Add peer verification for calculations; redesign SOP table for clarity; provide calculator template; retrain analysts"
+    "correctSolution": "Move pallets to cold room; assess excursion; increase capacity or staging plan; set put-away SLA; add dock loggers; train staff"
   },
   {
     "id": 9,
-    "caseFile": "Potency results varied by analyst for the same batch. Investigation shows samples were left at room temperature for hours instead of 2–8 °C as required. The label on the sample bag does not show storage condition, and the handover log between shifts is incomplete. Fridge temperature log has gaps. What should be described about sample custody and storage?",
+    "caseFile": "To catch up with orders, sanitation staff reduced CIP contact time by 30% on the beverage line. ATP swabs after start-up failed at two sites downstream. The CIP recipe is not password-locked, and there is no step that forces QA to review a CIP exception before production starts. Two hours of product have been filled. What should be done?",
     "violationOptions": [
-      "Not following defined sample storage conditions",
-      "Using 10 mL vials instead of 20 mL",
-      "Labeling samples with blue ink",
-      "Sampling from top only"
+      "Changing validated sanitation parameters without approval",
+      "Using different colored gaskets",
+      "Recording lot numbers of chemicals",
+      "Performing daily toolbox talk"
     ],
-    "correctViolation": "Not following defined sample storage conditions",
+    "correctViolation": "Changing validated sanitation parameters without approval",
     "rootCauseOptions": [
-      "Poor handover; storage instruction not communicated; fridge log not maintained",
-      "Filter lot variability",
-      "Different needle gauges used",
-      "Balance sensitivity limit"
+      "Production pressure; no real-time oversight; CIP recipe not password protected",
+      "Water hardness variation only",
+      "Incorrect pump rotation direction",
+      "Chemical MSDS outdated"
     ],
-    "correctRootCause": "Poor handover; storage instruction not communicated; fridge log not maintained",
+    "correctRootCause": "Production pressure; no real-time oversight; CIP recipe not password protected",
     "solutionOptions": [
-      "Define handover checklist; label samples with storage condition; maintain fridge logs with alarms; retrain staff; repeat testing",
-      "Warm samples to room temperature before every test",
-      "Increase acceptance ranges to pass",
-      "Pool analyst results to average out"
+      "Stop production; re-run full CIP; lock recipe; add verification swabs; implement production-sanitation scheduling rules",
+      "Run hot water once and start up",
+      "Switch to stronger caustic permanently",
+      "Ignore ATP fails if visual is clean"
     ],
-    "correctSolution": "Define handover checklist; label samples with storage condition; maintain fridge logs with alarms; retrain staff; repeat testing"
+    "correctSolution": "Stop production; re-run full CIP; lock recipe; add verification swabs; implement production-sanitation scheduling rules"
   },
   {
     "id": 10,
-    "caseFile": "Stability samples meant for 25 °C/60% RH spent two days at ambient. Chambers look similar; sample trays are un‑color‑coded, and the LIMS location field was left as 'TBD'. Some sample labels are smudged from condensation. No excursion assessment form was opened. What should be noted for scope identification and evidence collection?",
+    "caseFile": "Two tomato-sauce lots were labeled with duplicate case barcodes due to a cloned label template that reused the same lot seed. Warehouse scanners flag random 'already scanned' errors, delaying dispatch, and making trace-back unclear. There is no software validation record for the label system, and QA verification at start-up focuses on text, not ID uniqueness. How should the site proceed?",
     "violationOptions": [
-      "Placing stability samples in wrong storage condition",
-      "Sampling at 0, 3, and 6 months",
-      "Recording chamber ID on label",
-      "Using tamper seals"
+      "Compromising traceability by issuing duplicate identifiers",
+      "Using taller pallets",
+      "Applying two labels per case",
+      "Manual stretch wrapping"
     ],
-    "correctViolation": "Placing stability samples in wrong storage condition",
+    "correctViolation": "Compromising traceability by issuing duplicate identifiers",
     "rootCauseOptions": [
-      "Similar‑looking chambers; labels unclear; no location scanning",
-      "Power failure in the correct chamber",
-      "Excess sample pulled by QC",
-      "Wrong stability protocol approved"
+      "Label software template duplicated with same lot seed; no unique ID control; no QA check",
+      "Printer ribbon worn",
+      "Carton glue set too fast",
+      "Forklift parked near printer"
     ],
-    "correctRootCause": "Similar‑looking chambers; labels unclear; no location scanning",
+    "correctRootCause": "Label software template duplicated with same lot seed; no unique ID control; no QA check",
     "solutionOptions": [
-      "Move samples to correct chamber; evaluate impact with excursion assessment; add barcode location control and clear signage; retrain staff",
-      "Discard all stability lots",
-      "Reduce study time to compensate",
-      "Skip affected time points"
+      "Stop dispatch; re-label with unique IDs; validate label software; add QA verification and lock lot seeds; conduct mock trace",
+      "Ship and fix IDs at customer site",
+      "Keep a handwritten list of cases",
+      "Shorten lot code to save space"
     ],
-    "correctSolution": "Move samples to correct chamber; evaluate impact with excursion assessment; add barcode location control and clear signage; retrain staff"
+    "correctSolution": "Stop dispatch; re-label with unique IDs; validate label software; add QA verification and lock lot seeds; conduct mock trace"
   },
   {
     "id": 11,
-    "caseFile": "A lactose drum arrived without any supplier label. Warehouse placed it in quarantine, but receipt was entered without a photo record or supplier contact. No ID test was requested before someone moved it to a general aisle pending 'clarification.' Later, issuance was halted by QA during a walk‑through. What receiving checkpoints and trace notes belong in the scenario record?",
+    "caseFile": "An operator saw a rodent near the flour silo at 06:10. The pest-control log shows two missed weekly checks, and proofing around cable entries is incomplete. Inside the silo area, spilled flour is visible along the wall. No product hold decision has been recorded. What are the immediate and follow-up steps?",
     "violationOptions": [
-      "Accepting unidentified material into warehouse",
-      "Placing pallets 10 cm from wall",
-      "Using nylon straps for pallets",
-      "Recording GRN within 24 hours"
+      "Failure to maintain pest control as per schedule and to act on sighting",
+      "Using earplugs near machines",
+      "Changing mop heads weekly",
+      "Posting safety posters"
     ],
-    "correctViolation": "Accepting unidentified material into warehouse",
+    "correctViolation": "Failure to maintain pest control as per schedule and to act on sighting",
     "rootCauseOptions": [
-      "Vendor dispatch error not caught; receiving checklist incomplete",
-      "Humidity excursion in dock",
-      "Forklift battery low",
-      "Wrong bin card color used"
+      "Pest control contractor visit missed and not tracked; internal audit not done; feed openings not sealed",
+      "High ambient humidity only",
+      "Different broom type used",
+      "Short gap in shift handover"
     ],
-    "correctRootCause": "Vendor dispatch error not caught; receiving checklist incomplete",
+    "correctRootCause": "Pest control contractor visit missed and not tracked; internal audit not done; feed openings not sealed",
     "solutionOptions": [
-      "Quarantine drum; reject receipt; inform vendor; strengthen vendor audits; enforce receiving checklist and photo capture",
-      "Open drum and smell/visual check only",
-      "Issue material to production under caution",
-      "Relabel the drum manually"
+      "Seal entry points; perform full inspection and intensified trapping; update schedule tracker; retrain staff to escalate sightings immediately",
+      "Increase air freshener use",
+      "Spray perfume near silo",
+      "Ignore since product is baked later"
     ],
-    "correctSolution": "Quarantine drum; reject receipt; inform vendor; strengthen vendor audits; enforce receiving checklist and photo capture"
+    "correctSolution": "Seal entry points; perform full inspection and intensified trapping; update schedule tracker; retrain staff to escalate sightings immediately"
   },
   {
     "id": 12,
-    "caseFile": "Gelatin (2–8 °C) sat at ambient for ~6 hours awaiting put‑away. The dock was busy; there is no put‑away SLA in the SOP, and shift logs do not show escalation. The delivery had three lots mixed on one pallet; carton thermometers were not used. Condensation was seen on outer cartons. What details should students capture about timing, temperatures, and lot segregation?",
+    "caseFile": "A new ready-to-eat sous-vide chicken was launched using a copy of an older HACCP plan. The new process adds a rapid-chill step, but no CCP/OPRP is listed for chilling, and there is no validation for time–temperature limits. First customer feedback mentions variable texture. Change-control records do not show a cross-functional HACCP review. What needs to happen?",
     "violationOptions": [
-      "Failure to store temperature‑controlled material as per requirement",
-      "Using white pallet tags",
-      "Weighing on 2‑decimal balance",
-      "Stacking two pallets high"
+      "Operating with an outdated HACCP plan that misses new hazards/CCPs",
+      "Using a new recipe card format",
+      "Printing labels in bilingual format",
+      "Weighing spices in separate room"
     ],
-    "correctViolation": "Failure to store temperature‑controlled material as per requirement",
+    "correctViolation": "Operating with an outdated HACCP plan that misses new hazards/CCPs",
     "rootCauseOptions": [
-      "New storekeeper not trained; no visual cues; no put‑away time target",
-      "Truck off‑loading delay due to rain",
-      "Chiller coil frosting",
-      "Delivery note missing batch number"
+      "Change management did not trigger HACCP review; cross-functional team not assembled",
+      "New chiller delivered late",
+      "QC team short-staffed",
+      "Packaging vendor changed ink"
     ],
-    "correctRootCause": "New storekeeper not trained; no visual cues; no put‑away time target",
+    "correctRootCause": "Change management did not trigger HACCP review; cross-functional team not assembled",
     "solutionOptions": [
-      "Move to cold room; evaluate excursion; add training, colored zone labels, put‑away SLA, and dock temperature loggers",
-      "Dry the gelatin and use it",
-      "Mix with other lots to dilute impact",
-      "Ignore if COA meets specs"
+      "Run a formal hazard analysis; update HACCP; validate time–temperature for sous-vide; train team; integrate into change control",
+      "Add extra salt to improve safety",
+      "Shorten shelf life by one day without validation",
+      "Keep old HACCP until the next audit"
     ],
-    "correctSolution": "Move to cold room; evaluate excursion; add training, colored zone labels, put‑away SLA, and dock temperature loggers"
+    "correctSolution": "Run a formal hazard analysis; update HACCP; validate time–temperature for sous-vide; train team; integrate into change control"
   },
   {
     "id": 13,
-    "caseFile": "A starch drum with a torn inner liner was received and pushed to storage without QA decision. The receiving checklist lacks a damage criteria item and a photo capture step. Later, foreign specks were seen during sifting trials. What evidence and process gaps should be written up?",
+    "caseFile": "Yogurt fermentation completed overnight. The pH at end-point was not recorded because the pH meter was in maintenance. The supervisor judged readiness by taste and texture and released the batch to packing. There is no backup meter or hold step when critical readings are unavailable. What should QA require now?",
     "violationOptions": [
-      "Accepting physically damaged material without QA decision",
-      "Not shrink‑wrapping pallets",
-      "Using single‑use gloves",
-      "Skipping safety shoes"
+      "Missing critical quality attribute record at release",
+      "Using a new ladle",
+      "Extra cleaning of floor drains",
+      "Wearing different shoe color"
     ],
-    "correctViolation": "Accepting physically damaged material without QA decision",
+    "correctViolation": "Missing critical quality attribute record at release",
     "rootCauseOptions": [
-      "Receiving inspection checklist not followed; no escalation to QA",
-      "Forklift operator inexperienced",
-      "Supplier used different liner color",
-      "COA not stamped by QA"
+      "Operator assumed taste/texture sufficient; pH meter kept in maintenance; no alternate device or hold step",
+      "Milk fat % varied slightly",
+      "Cup size changed",
+      "Sticker roll finished"
     ],
-    "correctRootCause": "Receiving inspection checklist not followed; no escalation to QA",
+    "correctRootCause": "Operator assumed taste/texture sufficient; pH meter kept in maintenance; no alternate device or hold step",
     "solutionOptions": [
-      "Quarantine drum; inspect for contamination; take QA decision; train receiving team; add damage criteria and photo evidence in SOP",
-      "Use material after sieving only",
-      "Blend with intact lots",
-      "Re‑bag material and proceed"
+      "Introduce mandatory pH recording with calibrated meter; add hold until data captured; provide backup meter; retrain staff",
+      "Lower incubation temperature next time",
+      "Increase starter culture dose",
+      "Skip pH checks for thick products"
     ],
-    "correctSolution": "Quarantine drum; inspect for contamination; take QA decision; train receiving team; add damage criteria and photo evidence in SOP"
+    "correctSolution": "Introduce mandatory pH recording with calibrated meter; add hold until data captured; provide backup meter; retrain staff"
   },
   {
     "id": 14,
-    "caseFile": "An older API lot expired in store while newer lots were issued. Bin cards and WMS show mismatched statuses; rack labels are hard to read. No cycle count occurred last month, and the FEFO rule is not enforced in the issuance screen. Production only realized after a reconciliation audit. What stock‑rotation and system‑control facts belong in the narrative?",
+    "caseFile": "A chocolate bar uses soy lecithin, but the new label artwork omitted the 'contains soy' statement. Artwork was changed to add a nutrition claim, and the allergen checklist was not part of the approval flow. Two production days have shipped. E-commerce images also show the incorrect label. What needs to be done immediately?",
     "violationOptions": [
-      "Not following FEFO/FIFO during issuance",
-      "Printing GRN the next day",
-      "Double shrink‑wrapping pallets",
-      "Using metal pallets"
+      "Incorrect allergen labeling against regulatory requirements",
+      "Incorrect carton EAN code",
+      "Shorter label width",
+      "Two languages present on label"
     ],
-    "correctViolation": "Not following FEFO/FIFO during issuance",
+    "correctViolation": "Incorrect allergen labeling against regulatory requirements",
     "rootCauseOptions": [
-      "Manual picking; no system control; poor rack labeling",
-      "Unplanned overtime in warehouse",
-      "API demand forecast error only",
-      "QC COA attached late"
+      "Artwork change not reviewed by QA/regulatory; allergen statement not on the checklist",
+      "Supplier sent new COA format",
+      "Ink smudged during print",
+      "Operator used small blades"
     ],
-    "correctRootCause": "Manual picking; no system control; poor rack labeling",
+    "correctRootCause": "Artwork change not reviewed by QA/regulatory; allergen statement not on the checklist",
     "solutionOptions": [
-      "Implement barcode/WMS with FEFO rules; relabel racks; cycle count; train staff; investigate expired lot disposal",
-      "Allow use of expired lot after testing",
-      "Change expiry date in system",
-      "Issue credit note to production"
+      "Stop shipments; relabel/recall affected lots; revise artwork approval checklist to include allergen statement; retrain approvers",
+      "Add a separate sticker at store level later",
+      "Reduce soy lecithin amount",
+      "Print allergen in a different color only"
     ],
-    "correctSolution": "Implement barcode/WMS with FEFO rules; relabel racks; cycle count; train staff; investigate expired lot disposal"
+    "correctSolution": "Stop shipments; relabel/recall affected lots; revise artwork approval checklist to include allergen statement; retrain approvers"
   },
   {
     "id": 15,
-    "caseFile": "The blending step was completed, but the operator signature and date are missing in the BMR. The supervisor also did not initial the page review box. A later note claims 'done at 14:30,' but no time‑stamped equipment printout is attached. What should be described about documentation timing and verification artifacts?",
+    "caseFile": "Cooking oil delivered yesterday has peroxide value above spec, but the COA was not reviewed at intake. Without an on-site PV quick test, the oil was pumped to the fryer and used for two hours. Operators noted a slight off-odor at cooling. The supplier is new and not yet on the approved-supplier list. What should the plant decide?",
     "violationOptions": [
-      "Failure to complete real‑time documentation",
-      "Using black ink instead of blue",
-      "Writing block letters",
-      "Attaching printouts with staples"
+      "Using an input that fails quality specification",
+      "Using stainless fry baskets",
+      "Daily fryer boil-out performed",
+      "Counting cartons per lot"
     ],
-    "correctViolation": "Failure to complete real‑time documentation",
+    "correctViolation": "Using an input that fails quality specification",
     "rootCauseOptions": [
-      "High workload; no in‑process documentation check by supervisor",
-      "Pen ran out of ink",
-      "Wrong BMR version used",
-      "Different operator handwriting"
+      "COA not reviewed at intake; rapid PV test not available; FIFO confusion",
+      "Fryer exhaust fan loud",
+      "Wrong glove size",
+      "Small pallets used"
     ],
-    "correctRootCause": "High workload; no in‑process documentation check by supervisor",
+    "correctRootCause": "COA not reviewed at intake; rapid PV test not available; FIFO confusion",
     "solutionOptions": [
-      "Interview operator; verify step completion with witnesses and records; add in‑process documentation check; retrain on ALCOA+ principles",
-      "Sign now with today's date",
-      "Ask QA to sign on behalf of operator",
-      "Ignore as minor"
+      "Stop production; drain fryer; test finished product for rancidity markers; add PV intake test; tighten COA review and FEFO",
+      "Mask rancid flavor with spices",
+      "Blend with fresh oil to dilute PV",
+      "Ship quickly before flavor develops"
     ],
-    "correctSolution": "Interview operator; verify step completion with witnesses and records; add in‑process documentation check; retrain on ALCOA+ principles"
+    "correctSolution": "Stop production; drain fryer; test finished product for rancidity markers; add PV intake test; tighten COA review and FEFO"
   },
   {
     "id": 16,
-    "caseFile": "An analyst changed a pH value in a logbook without crossing out the old entry, adding a reason, or signing and dating. The next page shows corrected calculations, but no deviation number is referenced. The reviewer noticed inconsistent handwriting pressure on the altered line. What should the case narrative include about data integrity observations?",
+    "caseFile": "A glass jar broke near the filler during production. Staff quickly picked up the big pieces and restarted after about 10 minutes. They didn't block off the full area, didn't pull back jars that had already passed through, and didn't do a full glass check. Later, tiny glass chips were found stuck in the cap chute guard.",
     "violationOptions": [
-      "Non‑compliant data correction; breach of data integrity",
-      "Using gel pen in logbook",
-      "Writing in capital letters",
-      "Attaching a post‑it note"
+      "Incomplete response to glass breakage per foreign-body control program",
+      "Using plastic scoops",
+      "Changing filters weekly",
+      "Running conveyors at slower speed"
     ],
-    "correctViolation": "Non‑compliant data correction; breach of data integrity",
+    "correctViolation": "Incomplete response to glass breakage per foreign-body control program",
     "rootCauseOptions": [
-      "Analyst not trained on data correction SOP; weak review culture",
-      "pH meter drifted overnight",
-      "Reagent expired",
-      "QC manager on leave"
+      "No defined cordon zone; staff unaware of full-glass audit steps; inadequate checklist",
+      "Jar supplier increased pallet size",
+      "Glue temperature varied",
+      "Operator gloves torn"
     ],
-    "correctRootCause": "Analyst not trained on data correction SOP; weak review culture",
+    "correctRootCause": "No defined cordon zone; staff unaware of full-glass audit steps; inadequate checklist",
     "solutionOptions": [
-      "Start data integrity investigation; retrain on GMP data correction; add second‑person review; audit recent entries; strengthen culture",
-      "Rewrite the whole page neatly",
-      "Delete the page and re‑enter",
-      "Accept the value since close to target"
+      "Stop line; cordon area; remove and quarantine all product from last safe point; perform documented glass audit; retrain staff",
+      "Install a stronger magnet to catch glass",
+      "Wipe top surface only and restart",
+      "Continue but increase QC sampling later"
     ],
-    "correctSolution": "Start data integrity investigation; retrain on GMP data correction; add second‑person review; audit recent entries; strengthen culture"
+    "correctSolution": "Stop line; cordon area; remove and quarantine all product from last safe point; perform documented glass audit; retrain staff"
   },
   {
     "id": 17,
-    "caseFile": "A deviation report was submitted without root cause or CAPA fields completed. Closure was marked 'no impact' and sent for signature. The e‑form does not force those fields before submission, and there is no QA pre‑close gate. Training records show the initiator is new to deviation writing. What should be captured about documentation flow and competence?",
+    "caseFile": "To reduce waste, the mixer added 25% rework dough, though the SOP limit is 15%. The BMR does not list the extra rework, and scale printouts show manual overrides. Biscuit texture on cooling is harder than usual. The rework bin lacks auto-weigh recording and supervisor approval. What should be addressed?",
     "violationOptions": [
-      "Submitting incomplete deviation documentation",
-      "Using the old deviation template",
-      "Filing deviation one day late",
-      "Not attaching a photo"
+      "Exceeding validated rework limits and poor documentation",
+      "Cleaning belts with approved chemical",
+      "Adjusting oven zone 2 temperature",
+      "Using new pallets"
     ],
-    "correctViolation": "Submitting incomplete deviation documentation",
+    "correctViolation": "Exceeding validated rework limits and poor documentation",
     "rootCauseOptions": [
-      "Staff not trained in deviation writing; no QA gate before closure",
-      "Deviation form too long",
-      "Supervisor on shift change",
-      "Printer out of toner"
+      "Pressure to reduce waste; no automatic rework weighing/recording; supervisor approval step absent",
+      "Humidity lower than usual",
+      "Shorter cooling belt",
+      "Carton tape width changed"
     ],
-    "correctRootCause": "Staff not trained in deviation writing; no QA gate before closure",
+    "correctRootCause": "Pressure to reduce waste; no automatic rework weighing/recording; supervisor approval step absent",
     "solutionOptions": [
-      "Return for completion; provide training and job aids; add QA review gate; track overdue deviations and escalate",
-      "Close deviation with 'no impact' note",
-      "Create a new deviation for the same event",
-      "Ignore missing sections if batch passed"
+      "Hold product; evaluate quality; implement rework scale with auto-record; add approval workflow; train team on limits",
+      "Increase baking time to fix texture",
+      "Blend more fresh dough to average down",
+      "Ignore if customers do not complain"
     ],
-    "correctSolution": "Return for completion; provide training and job aids; add QA review gate; track overdue deviations and escalate"
+    "correctSolution": "Hold product; evaluate quality; implement rework scale with auto-record; add approval workflow; train team on limits"
   },
   {
     "id": 18,
-    "caseFile": "Chromatography software was updated and several sequences were lost because no backup was taken. IT and QC emails show schedule confusion; the change control ticket lacks a step for pre‑update backup proof. Partial PDF printouts exist, but raw data files are missing. What should be noted about change authorization and data protection?",
+    "caseFile": "A final taste check for a premium soup included a panelist with a cold and blocked nose. The panel still scored the soup as normal, and the product was shipped to meet the truck time. Afterward, two customers reported odd flavors. There was no health check for tasters and no backup panelists available.",
     "violationOptions": [
-      "Failing to back up electronic data before system change",
-      "Printing fewer chromatograms",
-      "Using a shorter runtime",
-      "Changing column wash"
+      "Deviation from sensory panel qualification and health-screening SOP",
+      "Using white booths with neutral light",
+      "Randomizing sample order",
+      "Rinsing with water between samples"
     ],
-    "correctViolation": "Failing to back up electronic data before system change",
+    "correctViolation": "Deviation from sensory panel qualification and health-screening SOP",
     "rootCauseOptions": [
-      "No pre‑update backup SOP; IT‑QC communication gap",
-      "UPS capacity low",
-      "Autosampler leak",
-      "CDS audit trail off"
+      "No pre-panel health checklist; pressure to meet release timing; alternate panelists not trained",
+      "Serving temperature slightly off",
+      "Sample cups smaller",
+      "Timer battery low"
     ],
-    "correctRootCause": "No pre‑update backup SOP; IT‑QC communication gap",
+    "correctRootCause": "No pre-panel health checklist; pressure to meet release timing; alternate panelists not trained",
     "solutionOptions": [
-      "Restore from last backup; re‑run tests as needed; create mandatory pre‑change backup SOP with sign‑off; schedule joint IT‑QC changes",
-      "Accept previous averages for lost data",
-      "Ignore because COA is already issued",
-      "Disable updates permanently"
+      "Invalidate panel; repeat with qualified panelists; introduce health checklist and backup panel roster; train panel leader",
+      "Adjust scoring scale downward",
+      "Skip sensory for low-risk lots",
+      "Ask customers to confirm by email"
     ],
-    "correctSolution": "Restore from last backup; re‑run tests as needed; create mandatory pre‑change backup SOP with sign‑off; schedule joint IT‑QC changes"
+    "correctSolution": "Invalidate panel; repeat with qualified panelists; introduce health checklist and backup panel roster; train panel leader"
   },
   {
     "id": 19,
-    "caseFile": "Post‑cleaning swab results exceeded limits, yet production of the next batch was started without re‑cleaning or QA release. The supervisor wrote 're‑swab later' on the line board. The stop rule is vague in the cleaning SOP, and the QA check box is at the end of the batch start list, not before it. What details should be included about release steps and limits?",
+    "caseFile": "A consumer reported a foreign body in a product from lot L24-118. When QA tried to pull the retention sample, it could not be found. The retention fridge shows gaps in the manual log, and there is no barcode/LIMS index. Chain-of-custody documents are incomplete. How should the investigation proceed?",
     "violationOptions": [
-      "Starting production without QA release after failed cleaning validation",
-      "Using hot water instead of warm",
-      "Skipping exterior wipe‑down",
-      "Shorter drying time"
+      "Failure to maintain and retrieve retention samples as per retention program",
+      "Using thicker sample jars",
+      "Keeping samples in dark room",
+      "Applying tamper tape"
     ],
-    "correctViolation": "Starting production without QA release after failed cleaning validation",
+    "correctViolation": "Failure to maintain and retrieve retention samples as per retention program",
     "rootCauseOptions": [
-      "Supervisor misread report; pressure to meet schedule; unclear stop rule",
-      "Detergent concentration slightly low",
-      "Water hardness high",
-      "Swab recovery factor not applied"
+      "Sample storage not indexed; LIMS not used; manual log had gaps; periodic reconciliation not done",
+      "Fridge temperature slightly high",
+      "Labels smudged",
+      "Courier delayed"
     ],
-    "correctRootCause": "Supervisor misread report; pressure to meet schedule; unclear stop rule",
+    "correctRootCause": "Sample storage not indexed; LIMS not used; manual log had gaps; periodic reconciliation not done",
     "solutionOptions": [
-      "Stop batch; quarantine materials; re‑clean and re‑test; define clear stop rules in SOP; retrain supervisors; require QA sign‑off",
-      "Blend next batch to dilute residue",
-      "Proceed but test more samples later",
-      "Change limit to current result"
+      "Institute barcode/LIMS tracking; reconcile inventory monthly; retrain staff; update retention SOP; conduct mock retrieval drills",
+      "Ask customer to return their product only",
+      "Close complaint due to lack of sample",
+      "Reduce retention period next year"
     ],
-    "correctSolution": "Stop batch; quarantine materials; re‑clean and re‑test; define clear stop rules in SOP; retrain supervisors; require QA sign‑off"
+    "correctSolution": "Institute barcode/LIMS tracking; reconcile inventory monthly; retrain staff; update retention SOP; conduct mock retrieval drills"
   },
   {
     "id": 20,
-    "caseFile": "An in‑process pH meter carried a calibration sticker expired by 3 days. Two intermediate checks were logged using this meter. The calibration tracker spreadsheet shows the device as 'due soon,' but no alert reached the area. A backup meter exists in another room but requires a key. What context should be recorded about equipment status and access?",
+    "caseFile": "The site has not performed a mock recall/trace drill for 22 months. A real-world trace request from a retailer last week took 9 hours to complete because the contact list was outdated and systems weren't aligned (ERP/WMS/LIMS). Staff turnover is high, and no one owns the recall calendar. What is the next move?",
     "violationOptions": [
-      "Using measuring equipment past calibration due date",
-      "Not cleaning probe with DI water",
-      "Not wearing safety goggles",
-      "Recording pH to one decimal place"
+      "Missing annual mock recall/trace exercise as required by QMS/regulators",
+      "Posting SOPs on notice board",
+      "Weekly toolbox meetings",
+      "Having visitor logs at gate"
     ],
-    "correctViolation": "Using measuring equipment past calibration due date",
+    "correctViolation": "Missing annual mock recall/trace exercise as required by QMS/regulators",
     "rootCauseOptions": [
-      "Calibration tracking system not updated; no visual alert on due date",
-      "Probe junction dirty",
-      "Power adapter loose",
-      "Temperature not compensated"
+      "Recall program lacked a scheduler/owner; competing priorities; no KPI",
+      "Printer down time",
+      "Two new staff joined",
+      "Customer returned empty pallets late"
     ],
-    "correctRootCause": "Calibration tracking system not updated; no visual alert on due date",
+    "correctRootCause": "Recall program lacked a scheduler/owner; competing priorities; no KPI",
     "solutionOptions": [
-      "Quarantine affected results/batches; calibrate meter; review last valid date; implement electronic calibration tracker with alerts; retrain users",
-      "Ignore because only 3 days overdue",
-      "Average pH with previous runs",
-      "Switch to color paper test"
+      "Plan and run a full mock recall; assign owner and KPI; document lessons; update contact lists; schedule recurring drills",
+      "Run a paper-only audit without exercising systems",
+      "Wait until next certification audit",
+      "Reduce product variety to simplify"
     ],
-    "correctSolution": "Quarantine affected results/batches; calibrate meter; review last valid date; implement electronic calibration tracker with alerts; retrain users"
+    "correctSolution": "Plan and run a full mock recall; assign owner and KPI; document lessons; update contact lists; schedule recurring drills"
   }
 ];
