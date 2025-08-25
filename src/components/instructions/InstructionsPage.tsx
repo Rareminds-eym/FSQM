@@ -204,7 +204,7 @@ const InstructionsPage: React.FC = () => {
               icon={Brain}
               title="Innovation PDF — Sections"
               description={`1) Problem Statement & Context
-2) Root Cause / Risk Analysis (FSQM or GMP)
+2) Root Cause / Risk Analysis Food Safety & Quality Managment
 3) Solution Concept & Workflow
 4) Implementation Plan (roles, timeline, resources)
 5) Feasibility (cost, people, process, technology)
