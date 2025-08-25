@@ -3,7 +3,9 @@ import React, { useState } from "react";
 import { Icon } from '@iconify/react';
 import { Factory, Lightbulb, Target } from "lucide-react";
 import ProfileInfo from '../gmp-simulation/ProfileInfo';
+import { useAuth } from '../../components/home/AuthContext';
 import { useAuth } from '../components/home/AuthContext';
+
 
 interface InstructionsProps {
   onStart: () => void;
