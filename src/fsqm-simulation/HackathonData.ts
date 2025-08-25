@@ -12,7 +12,7 @@ export interface Question {
 export const hackathonData: Question[] = [
   {
     "id": 1,
-    "caseFile": "During a ready-to-eat chicken curry run, the cooker trend chart shows the core of the largest pieces reached 70 °C for 2 minutes. The validated CCP requires ≥74 °C for ≥15 seconds at the core. Operators, rushing to meet the dispatch cut-off, let the batch move to packing while planning to 'check later.' No photo or note of probe placement was taken, and the daily probe verification entry is missing for that shift. Some units have thicker cuts than usual because a new butcher joined that morning. What should the QA team do next?",
+    "caseFile": "During a ready-to-eat chicken curry run, the cooker trend chart shows the core of the largest pieces reached 70°C for 2 minutes. The validated CCP requires ≥74°C for ≥15 seconds at the core. Operators, rushing to meet the dispatch cut-off, let the batch move to packing while planning to 'check later.' No photo or note of probe placement was taken, and the daily probe verification entry is missing for that shift. Some units have thicker cuts than usual because a new butcher joined that morning. What should the QA team do next?",
     "violationOptions": [
       "Product left the CCP without meeting the validated critical limit",
       "Line used stainless steel utensils",
@@ -112,7 +112,7 @@ export const hackathonData: Question[] = [
   },
   {
     "id": 5,
-    "caseFile": "A zone-2 environmental swab in the salad room came back presumptive Listeria spp. on Saturday. The weekend supervisor did not place a product hold, assuming “it’s not on food contact.” Two more shifts produced and shipped product. The EMP SOP has unclear action limits and no weekend escalation contact list. What should the food safety team do now?",
+    "caseFile": "A zone-2 environmental swab in the salad room came back presumptive Listeria spp. on Saturday. The weekend supervisor did not place a product hold, assuming 'it's not on food contact.' Two more shifts produced and shipped product. The EMP SOP has unclear action limits and no weekend escalation contact list. What should the food safety team do now?",
     "violationOptions": [
       "Failure to act on environmental pathogen positive in RTE area",
       "Using color-coded mops",
@@ -137,7 +137,7 @@ export const hackathonData: Question[] = [
   },
   {
     "id": 6,
-    "caseFile": "The aw meter used to release dried fruit shows a calibration due date that expired two weeks ago; the sticker is faded. Three lots were released based on this meter’s readings. The calibration tracker spreadsheet shows no alerts sent to QC for due dates, and the alternate meter is locked in another building. What is the right next step?",
+    "caseFile": "The aw meter used to release dried fruit shows a calibration due date that expired two weeks ago; the sticker is faded. Three lots were released based on this meter's readings. The calibration tracker spreadsheet shows no alerts sent to QC for due dates, and the alternate meter is locked in another building. What is the right next step?",
     "violationOptions": [
       "Using measuring equipment past calibration schedule",
       "Storing pouches in cartons",
@@ -187,7 +187,7 @@ export const hackathonData: Question[] = [
   },
   {
     "id": 8,
-    "caseFile": "Yogurt pallets sat at the dock at ~12 °C for ~4 hours because the cold room was full. The SOP has no put-away time target, and the dock has no temperature logger. When moved inside, some cartons had condensation and wet shrink wrap. The delivery timing overlaps with three other chilled deliveries every Friday. What must the team decide and change?",
+    "caseFile": "Yogurt pallets sat at the dock at ~12°C for ~4 hours because the cold room was full. The SOP has no put-away time target, and the dock has no temperature logger. When moved inside, some cartons had condensation and wet shrink wrap. The delivery timing overlaps with three other chilled deliveries every Friday. What must the team decide and change?",
     "violationOptions": [
       "Failure to maintain required cold-chain temperature during receiving",
       "Using plastic wrap on pallets",
@@ -237,7 +237,7 @@ export const hackathonData: Question[] = [
   },
   {
     "id": 10,
-    "caseFile": "Two tomato-sauce lots were labeled with duplicate case barcodes due to a cloned label template that reused the same lot seed. Warehouse scanners flag random “already scanned” errors, delaying dispatch, and making trace-back unclear. There is no software validation record for the label system, and QA verification at start-up focuses on text, not ID uniqueness. How should the site proceed?",
+    "caseFile": "Two tomato-sauce lots were labeled with duplicate case barcodes due to a cloned label template that reused the same lot seed. Warehouse scanners flag random 'already scanned' errors, delaying dispatch, and making trace-back unclear. There is no software validation record for the label system, and QA verification at start-up focuses on text, not ID uniqueness. How should the site proceed?",
     "violationOptions": [
       "Compromising traceability by issuing duplicate identifiers",
       "Using taller pallets",
@@ -337,7 +337,7 @@ export const hackathonData: Question[] = [
   },
   {
     "id": 14,
-    "caseFile": "A chocolate bar uses soy lecithin, but the new label artwork omitted the “contains soy” statement. Artwork was changed to add a nutrition claim, and the allergen checklist was not part of the approval flow. Two production days have shipped. E-commerce images also show the incorrect label. What needs to be done immediately?",
+    "caseFile": "A chocolate bar uses soy lecithin, but the new label artwork omitted the 'contains soy' statement. Artwork was changed to add a nutrition claim, and the allergen checklist was not part of the approval flow. Two production days have shipped. E-commerce images also show the incorrect label. What needs to be done immediately?",
     "violationOptions": [
       "Incorrect allergen labeling against regulatory requirements",
       "Incorrect carton EAN code",
@@ -387,7 +387,7 @@ export const hackathonData: Question[] = [
   },
   {
     "id": 16,
-    "caseFile": "A glass jar broke near the filler during production. Staff quickly picked up the big pieces and restarted after about 10 minutes. They didn’t block off the full area, didn’t pull back jars that had already passed through, and didn’t do a full glass check. Later, tiny glass chips were found stuck in the cap chute guard.",
+    "caseFile": "A glass jar broke near the filler during production. Staff quickly picked up the big pieces and restarted after about 10 minutes. They didn't block off the full area, didn't pull back jars that had already passed through, and didn't do a full glass check. Later, tiny glass chips were found stuck in the cap chute guard.",
     "violationOptions": [
       "Incomplete response to glass breakage per foreign-body control program",
       "Using plastic scoops",
@@ -487,7 +487,7 @@ export const hackathonData: Question[] = [
   },
   {
     "id": 20,
-    "caseFile": "The site has not performed a mock recall/trace drill for 22 months. A real-world trace request from a retailer last week took 9 hours to complete because the contact list was outdated and systems weren’t aligned (ERP/WMS/LIMS). Staff turnover is high, and no one owns the recall calendar. What is the next move?",
+    "caseFile": "The site has not performed a mock recall/trace drill for 22 months. A real-world trace request from a retailer last week took 9 hours to complete because the contact list was outdated and systems weren't aligned (ERP/WMS/LIMS). Staff turnover is high, and no one owns the recall calendar. What is the next move?",
     "violationOptions": [
       "Missing annual mock recall/trace exercise as required by QMS/regulators",
       "Posting SOPs on notice board",

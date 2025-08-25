@@ -149,7 +149,7 @@ export const levels: Level[] = [
   {
     id: 17,
     title: "Hackathon Level 2",
-    symptoms: "Forged entries and fake signatures in BMR",
+    symptoms: "Hackathon Level 2",
     difficulty: "Hard",
     img: "",
     isEnabled: false,

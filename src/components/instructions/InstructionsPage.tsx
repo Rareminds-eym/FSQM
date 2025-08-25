@@ -159,81 +159,62 @@ const InstructionsPage: React.FC = () => {
           {/* Title */}
           <div className="text-center space-y-4 mt-10">
             <AnimatedTitle 
-              text="🚀 Welcome to Safebite 2.0!" 
+              text="Welcome to Level 2 of the Hackathon 🎉" 
               className="text-center"
             />
-            <div className="text-black text-lg md:text-xl font-semibold">
-              Theme: Root Cause or Bust!
-            </div>
             <p className="text-black text-sm md:text-lg">
-              🎯 Goal: Spot the violations. Crack the root cause. Score big.
+              Solution & Innovation Stage — read carefully and submit on time.
             </p>
           </div>
 
-          {/* Hackathon Level Info */}
+          {/* Hackathon Level 2 Info */}
           <div className="text-center bg-gradient-to-b from-red-200 to-red-300 rounded-3xl p-6 border-2 border-red-100">
-            <h2 className="text-2xl font-bold text-black mb-4">🕹 Hackathon Level 1</h2>
+            <h2 className="text-2xl font-bold text-black mb-4">🏆 Hackathon Level 2</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-black">
               <div>
-                <div className="font-semibold">Level 1:</div>
-                <div>5 problem statements</div>
+                <div className="font-semibold">Eligibility</div>
+                <div>Only shortlisted teams that cleared Level 1</div>
               </div>
               <div>
-                <div className="font-semibold">Team Size:</div>
-                <div>Work as a team of 4</div>
+                <div className="font-semibold">Team Size</div>
+                <div>1 (solo) to 4 members</div>
               </div>
               <div>
-                <div className="font-semibold">Attempts:</div>
-                <div>1 attempt only</div>
+                <div className="font-semibold">Time</div>
+                <div>⏰ 3 hours from start</div>
               </div>
-            </div>
-            <div className="mt-4 text-xl font-bold text-red-700">
-              ⏰ 60 mins on the clock
             </div>
           </div>
 
           {/* Instructions Sections */}
           <div className="grid gap-4 md:gap-8">
             <InstructionCard
-              icon={Trophy}
-              title="📊 Scoring"
-              description="Violation Accuracy – 50% | Root Cause Depth – 50%"
-            />
-
-            <InstructionCard
               icon={Target}
-              title="📥 Submission"
-              description="Online, after all 5 problems are done. No late entries"
-            />
-
-            <InstructionCard
-              icon={Zap}
-              title="⚡ Pro Tip: Divide and Conquer"
-              description="Assign roles, stay sharp, beat the clock. Don't go linear - run two parallel passes on each case."
-            />
-
-            <InstructionCard
-              icon={Brain}
-              title="Rapid Scan (2–3 mins)"
-              description="Identify likely violations first using a quick checklist: policy breach? data gap? SOP miss? safety lapse?"
-            />
-
-            <InstructionCard
-              icon={Shield}
-              title="RCA Sprint (3–4 mins)"
-              description="For each flagged violation, draft a one-line root cause using 5 Whys lite (Why → Because → Evidence)."
+              title="Scenario"
+              description="Choose ONE scenario from the hackathon problem statements and stick to it."
             />
 
             <InstructionCard
               icon={Award}
-              title="Cross-Map & Integrity Check"
-              description="If a root cause doesn't clearly explain a flagged violation (or vice versa), relink or drop it. Finish with a 30–45 sec integrity check."
+              title="Submission"
+              description="One PDF per person uploaded on the portal before the deadline. Max size: 2 MB. No late submissions."
             />
 
             <InstructionCard
-              icon={Users}
-              title="Team Roles"
-              description="Scanner, Mapper, RCA Lead, Timekeeper/QC. Stay modular, not sequential."
+              icon={Brain}
+              title="Innovation PDF — Sections"
+              description={`1) Problem Statement & Context
+2) Root Cause / Risk Analysis Food Safety & Quality Managment
+3) Solution Concept & Workflow
+4) Implementation Plan (roles, timeline, resources)
+5) Feasibility (cost, people, process, technology)
+6) Impact at Scale & Compliance`}
+            />
+
+            <InstructionCard
+              icon={Shield}
+              title="Important Notes"
+              description="Uploads are final (no edits). Plagiarism or copying leads to disqualification. Keep work original, practical, and relevant to Food Safety & Quality Managment"
             />
           </div>
 
@@ -245,7 +226,7 @@ const InstructionsPage: React.FC = () => {
               border-2 border-yellow-100 backdrop-blur-sm  hover:border-yellow-500/50
               transform hover:-translate-y-1 transition-all duration-300 text-lg font-semibold"
             >
-              🚀 Start Safebite 2.0 Challenge
+              🚀 Start Level 2
             </button>
           </div>
         </div>
@@ -272,7 +253,20 @@ const InstructionCard: React.FC<{
 
       <div>
         <h3 className="text-lg md:text-xl font-semibold text-slate-600 mb-2">{title}</h3>
-        <p className="text-sm md:text-xl text-slate-500">{description}</p>
+        <div className="text-sm md:text-xl text-slate-500">
+          {description.includes('\n') ? (
+            <div className="space-y-1">
+              {description.split('\n').map((line, index) => (
+                <div key={index} className="flex items-start">
+                  <span className="mr-2">•</span>
+                  <span>{line}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p>{description}</p>
+          )}
+        </div>
       </div>
     </div>
   </div>
