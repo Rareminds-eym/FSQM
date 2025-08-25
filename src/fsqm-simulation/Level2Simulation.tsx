@@ -5,6 +5,7 @@ import Level2Card from "./Level2Card";
 // import Level2Timer from "./Level2Timer";
 import { getLevel2Progress, isLevel2Screen3Completed } from "./level2/level2ProgressHelpers";
 import { useGameSession } from "./useGameSession";
+import { useDeviceLayout } from "../hooks/useOrientation";
 
 // Real eligibility check: only allow if user is in winners_list_level1
 import { supabase } from "../lib/supabase";
@@ -53,6 +54,10 @@ const Level2Simulation: React.FC = () => {
   // const [timerValue, setTimerValue] = useState(INITIAL_TIME);
   const [isFirstTime, setIsFirstTime] = useState(true);
   const [isLevel2Completed, setIsLevel2Completed] = useState(false);
+
+  // Orientation lock: require landscape for HL-2 gameplay
+  const { isMobile, isHorizontal } = useDeviceLayout();
+  const isMobileHorizontal = isMobile && isHorizontal;
 
   // Restore progress on mount
   useEffect(() => {
@@ -201,6 +206,18 @@ const Level2Simulation: React.FC = () => {
       </div>
     );
   }
+
+  // Global portrait block for HL-2 (applies to start screen, congrats, and gameplay)
+  if (canAccessLevel2 !== false && !isHorizontal) {
+    return (
+      <div className="min-h-screen bg-gray-800 flex items-center justify-center p-4">
+        <div className="pixel-border bg-gradient-to-r from-yellow-600 to-orange-600 text-white font-black px-4 py-6 text-center max-w-sm w-full">
+          <div className="text-3xl mb-2">🔁</div>
+          <div className="text-sm">Please rotate your device to landscape to continue HL-2.</div>
+        </div>
+      </div>
+    );
+  }
   // Block simulation UI while congrats modal is showing
   if (showCongrats && fullName) {
     console.log('[Level2Simulation][DEBUG] Congrats modal rendered. showCongrats =', showCongrats, 'fullName =', fullName);
@@ -276,6 +293,17 @@ const Level2Simulation: React.FC = () => {
   // (already declared at the top with other hooks)
   // ---
   if (showLevel2Card) {
+  // Block HL-2 gameplay in portrait on mobile until rotated
+  if (isMobile && !isHorizontal) {
+    return (
+      <div className="min-h-screen bg-gray-800 flex items-center justify-center p-4">
+        <div className="pixel-border bg-gradient-to-r from-yellow-600 to-orange-600 text-white font-black px-4 py-6 text-center max-w-sm w-full">
+          <div className="text-3xl mb-2">🔁</div>
+          <div className="text-sm">Please rotate your device to landscape to continue HL-2.</div>
+        </div>
+      </div>
+    );
+  }
   const isCaseSelection = level2Screen === 1 && showLevel2Card;
   if (hideProgress) {
     return null;
@@ -385,6 +413,11 @@ const Level2Simulation: React.FC = () => {
           ) : (
             <button
               onClick={() => {
+                // Block starting in portrait on mobile
+                if (isMobile && !isHorizontal) {
+                  alert('Please rotate your device to landscape to start HL-2.');
+                  return;
+                }
                 // Set session_id and email in sessionStorage if available
                 if (session_id && email) {
                   window.sessionStorage.setItem('session_id', session_id);

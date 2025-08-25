@@ -64,7 +64,7 @@ const Level2Game: React.FC<Level2GameProps> = ({
         <h1 className="text-xl font-black text-purple-100 mb-3 pixel-text">GMP SOLUTION ROUND</h1>
         <p className="text-purple-100 mb-4 text-sm font-bold">Select the best solutions for each GMP case scenario</p>
         <button
-          onClick={showWalkthroughVideo}
+          onClick={() => window.open('https://www.youtube.com/watch?v=De5tXqUyT-0&feature=youtu.be', '_blank', 'noopener,noreferrer')}
           className="pixel-border bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white font-black py-2 px-4 pixel-text transition-all transform hover:scale-105 text-sm flex items-center gap-2 mt-2"
         >
           <span role="img" aria-label="play" className="text-white text-lg">▶️</span>
