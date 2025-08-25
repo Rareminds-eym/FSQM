@@ -22,32 +22,34 @@ export const ModuleCompleteModal: React.FC<ModuleCompleteModalProps> = ({
   onProceed,
   scenarios
 }) => {
-  // Defensive: ensure scenarios is always an array
-  const safeScenarios = Array.isArray(scenarios) ? scenarios : [];
   // PDF generation handler
   const handleDownloadPDF = () => {
     const doc = new jsPDF();
+    doc.setFont('Times', 'normal');
     doc.setFontSize(16);
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
-    const margin = 28;
-    const usableWidth = pageWidth - margin * 2;
-    const usableHeight = pageHeight - margin * 2;
-    const title = 'Level 1: Attempted Scenarios';
-    const titleWidth = doc.getTextWidth(title);
-    doc.text(title, (pageWidth - titleWidth) / 2, margin);
-    let y = margin + 20;
-    safeScenarios.forEach((sc, idx) => {
+  const margin = 28;
+  const usableWidth = pageWidth - margin * 2;
+  const usableHeight = pageHeight - margin * 2;
+  const title = 'Level 1: Attempted Scenarios';
+  const titleWidth = doc.getTextWidth(title);
+  doc.text(title, (pageWidth - titleWidth) / 2, margin);
+  let y = margin + 20;
+    scenarios.forEach((sc, idx) => {
       doc.setFontSize(12);
       doc.text(`${idx + 1}.`, margin, y);
       doc.setFontSize(11);
       doc.text('Case:', margin + 12, y);
-      const normalizedCase = sc.caseFile.replace(/[‐-―−­‑‒–—―﹘﹣－]/g, '-');
+      doc.setFont('Times', 'bold');
+      // Normalize hyphens to prevent extra spacing (replace non-breaking and en/em dashes with standard hyphen)
+      const normalizedCase = sc.caseFile.replace(/[\u2010-\u2015\u2212\u00AD\u2011\u2012\u2013\u2014\u2015\uFE58\uFE63\uFF0D]/g, '-');
       const caseLines = doc.splitTextToSize(normalizedCase, usableWidth - 32);
       caseLines.forEach((line: string, i: number) => {
         doc.text(line, margin + 32, y + i * 8, { maxWidth: usableWidth - 32, align: 'justify' });
       });
       y += 8 * caseLines.length + 16;
+      doc.setFont('Times', 'normal');
       if (y > margin + usableHeight - 10) {
         doc.addPage();
         y = margin + 8;
@@ -130,7 +132,7 @@ export const ModuleCompleteModal: React.FC<ModuleCompleteModalProps> = ({
               className={`pixel-border bg-gradient-to-r from-green-500 to-green-600 hover:from-green-400 hover:to-green-500 text-white font-black pixel-text transition-all duration-200 flex items-center space-x-2 transform hover:scale-105 shadow-lg ${isMobileHorizontal ? 'py-1 px-3 text-xs' : 'py-2 px-4 text-sm'
                 }`}
             >
-              <Download className="w-4 h-4 animate-pulse" />
+                <Download className="w-4 h-4 animate-pulse" />
               <span>
                 Click to Download Attempted Scenarios
               </span>
@@ -138,7 +140,7 @@ export const ModuleCompleteModal: React.FC<ModuleCompleteModalProps> = ({
             </button>
 
             <button
-              onClick={() => navigate('/')}
+              onClick={() => navigate('/home')}
               className={`pixel-border bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white font-black pixel-text transition-all duration-200 flex items-center space-x-2 transform hover:scale-105 shadow-lg ${isMobileHorizontal ? 'py-1 px-3 text-xs' : 'py-2 px-4 text-sm'
                 }`}
             >

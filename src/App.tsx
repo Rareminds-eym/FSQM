@@ -1,6 +1,6 @@
 // src/App.tsx - Simple version without complex PWA logic
 import React, { useEffect, useState } from "react";
-import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
+import { Route, BrowserRouter as Router, Routes, useLocation } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useRecoilState } from "recoil";
@@ -10,6 +10,7 @@ import NotFoundPage from "./components/error/NotFoundPage";
 import GamePage from "./components/game/GamePage";
 import LevelsPage from "./components/game/levels/LevelsPage";
 import GameEngine from "./fsqm-simulation/GmpSimulation";
+import FsqmSimulationRouter from "./fsqm-simulation/FsqmSimulationRouter";
 import HomePage from "./components/home/HomePage";
 import { InstructionsPage } from "./components/instructions";
 import { LoaderScreen } from "./components/loader";
@@ -34,6 +35,10 @@ const AppContent: React.FC = () => {
   const { isAuthenticated } = useAuth();
   const [_gameScenarios, _setGameScenarios] = useRecoilState(gameScenarios);
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
+  const location = useLocation();
+
+  // Check if current route is the HL2 simulation
+  const isHL2Route = location.pathname === '/fsqm-simulation/HL2';
 
   // Effect to handle online/offline events and register service worker
   useEffect(() => {
@@ -156,7 +161,8 @@ const AppContent: React.FC = () => {
                   {/* <div className="fixed top-4 right-4 z-50">
                     <ProfileMenu />
                   </div> */}
-                  <GameEngine />
+                  {/* Route HL2 to Level2Simulation, HL1 to GameEngine */}
+                  <FsqmSimulationRouter />
                 </>
               } />
               <Route path="/instructions" element={
@@ -191,9 +197,12 @@ const AppContent: React.FC = () => {
           )}
         </Routes>
       </div>
-      <div className="bg-yelloww py-5 text-yellow-100 font-semibold flex justify-center w-full">
-        Copyright © 2025 Rareminds.
-      </div>
+      {/* Only show copyright footer if not on HL2 route */}
+      {!isHL2Route && (
+        <div className="bg-yelloww py-5 text-yellow-100 font-semibold flex justify-center w-full">
+          Copyright © 2025 Rareminds.
+        </div>
+      )}
 
     </div>
   );

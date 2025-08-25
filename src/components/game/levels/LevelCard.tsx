@@ -85,12 +85,18 @@ const LevelCard: React.FC<LevelCardProps> = ({ level }) => {
     e.stopPropagation();
     if (!isUnlocked || isAnimating) return;
     setIsAnimating(true);
+
+    const title = (level.title || "").toLowerCase();
+    const isHL1 = Number(level.id) === 16 || title.includes("hackathon level 1");
+    const isHL2 = Number(level.id) === 17 || title.includes("hackathon level 2");
+
     setTimeout(() => {
-      if (Number(level.id) === 16) {
-        console.log("[LevelCard] Navigating to FSQM Simulation for level 16 (HL1)");
+      console.log("[LevelCard] Clicked level:", { id: level.id, title: level.title });
+      if (isHL1) {
+        console.log("[LevelCard] Navigating to FSQM Simulation for HL1");
         navigate("/fsqm-simulation/HL1");
-      } else if (Number(level.id) === 17) {
-        console.log("[LevelCard] Navigating to FSQM Simulation for level 17 (HL2)");
+      } else if (isHL2) {
+        console.log("[LevelCard] Navigating to FSQM Simulation for HL2");
         navigate("/fsqm-simulation/HL2");
       } else {
         console.log(`[LevelCard] Navigating to /game/${level.id}`);
