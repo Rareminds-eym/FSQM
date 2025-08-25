@@ -51,11 +51,11 @@ const Level2Timer: React.FC<Level2TimerProps> = ({
 
   // Auto-save timer state periodically if enabled
   useEffect(() => {
-    if (autoSave && onSaveTimer && isActive) {
+    if (autoSave && onSaveTimer && isActive && timeRemaining > 0) {
       // Save every 30 seconds if time has changed by at least 30 seconds
       saveIntervalRef.current = setInterval(() => {
         const timeDifference = Math.abs(timeRemaining - lastSavedTimeRef.current);
-        if (timeDifference >= 30) {
+        if (timeDifference >= 30 && timeRemaining > 0) {
           console.log('[Level2Timer] Auto-saving timer state:', timeRemaining, `(${timeDifference}s elapsed)`);
           onSaveTimer(timeRemaining);
           lastSavedTimeRef.current = timeRemaining;
@@ -113,24 +113,40 @@ const Level2Timer: React.FC<Level2TimerProps> = ({
   // Save timer state when component unmounts to prevent data loss
   useEffect(() => {
     return () => {
-      if (autoSave && onSaveTimer && timeRemaining !== lastSavedTimeRef.current) {
+      if (autoSave && onSaveTimer && timeRemaining > 0 && timeRemaining !== lastSavedTimeRef.current) {
         console.log('[Level2Timer] Final save on unmount:', timeRemaining);
         onSaveTimer(timeRemaining);
       }
     };
   }, [autoSave, onSaveTimer, timeRemaining]);
 
-  const minutes = Math.floor(timeRemaining / 60);
+  const hours = Math.floor(timeRemaining / 3600);
+  const minutes = Math.floor((timeRemaining % 3600) / 60);
   const seconds = timeRemaining % 60;
   const percentage = (timeRemaining / initialTime) * 100;
   const getTextColor = () => {
-    if (percentage > 25) return 'text-white';
-    return 'text-red-400';
+    // Always use a strong white color for visibility
+    return 'text-white';
   };
 
+  // Blinking animation if 5 minutes or less left
+  const isBlinking = timeRemaining <= 300;
+
   return (
-    <div className={`text-xs font-mono ${getTextColor()}`}>
-      {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
+    <div
+      className={`text-xs font-mono ${getTextColor()}${isBlinking ? ' animate-blink-timer' : ''}`}
+      style={isBlinking ? { animation: 'blink-timer 2s ease-in-out infinite', color: '#fff', textShadow: '0 0 8px #fff, 0 0 16px #fff' } : { color: '#fff', textShadow: '0 0 8px #fff, 0 0 16px #fff' }}
+    >
+      {String(hours).padStart(2, '0')}:{String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
+      <style>{`
+        @keyframes blink-timer {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
+        }
+        .animate-blink-timer {
+          animation: blink-timer 2s ease-in-out infinite !important;
+        }
+      `}</style>
     </div>
   );
 };

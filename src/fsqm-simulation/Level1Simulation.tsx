@@ -1709,10 +1709,12 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
     if (initialLevel === 1) {
       return (
         <div className="min-h-screen bg-gray-800 flex items-center justify-center p-2 relative">
+
+          {/* Modal */}
           {/* Background Pattern */}
           <div className="absolute inset-0 bg-pixel-pattern opacity-10"></div>
           <div className="absolute inset-0 bg-scan-lines opacity-20"></div>
-
+          
           <div className="pixel-border-thick bg-gradient-to-r from-cyan-600 to-blue-600 p-4 max-w-xl w-full text-center relative z-10">
             {/* Back Button - styled like walkthrough video modal */}
             <div className="absolute top-3 left-3 z-20">

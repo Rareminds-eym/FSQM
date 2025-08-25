@@ -1,20 +1,22 @@
 import React from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Navigate } from "react-router-dom";
 import GameEngine from "./GmpSimulation";
 import Level2Simulation from "./Level2Simulation";
 
-// Simple router to route HL1/HL2 to their respective components
+// Routes HL1 to GameEngine and HL2 to Level2Simulation based on :levelId
 const FsqmSimulationRouter: React.FC = () => {
   const { levelId } = useParams<{ levelId: string }>();
-  const id = levelId?.toUpperCase();
+  const id = (levelId || "").toLowerCase();
 
-  if (id === "HL2") {
-    // Dedicated HL2 flow with eligibility checks and progress
-    return <Level2Simulation />;
-  }
+  // Accept a few common variants just in case
+  const isHL2 = ["hl2", "l2", "2", "level2"].includes(id);
+  const isHL1 = ["hl1", "l1", "1", "level1"].includes(id);
 
-  // Default (HL1) uses GameEngine
-  return <GameEngine />;
+  if (isHL2) return <Level2Simulation />;
+  if (isHL1) return <GameEngine />;
+
+  // Unknown levelId -> redirect to levels page (or render HL1 by default)
+  return <Navigate to="/levels" replace />;
 };
 
 export default FsqmSimulationRouter;

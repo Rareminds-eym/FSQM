@@ -7,8 +7,8 @@ import { saveLevel2Progress, getLevel2Progress, Level2Progress, saveLevel2TimerS
  * Save Level 2 progress for the user.
  * Call this after each screen is completed or timer is updated.
  */
-export async function saveHL2Progress({ user_id, current_screen, completed_screens, timer }: Level2Progress) {
-	return saveLevel2Progress({ user_id, current_screen, completed_screens, timer });
+export async function saveHL2Progress({ user_id, current_screen, completed_screens }: Level2Progress) {
+	return saveLevel2Progress({ user_id, current_screen, completed_screens });
 }
 
 /**

@@ -57,6 +57,7 @@ export interface StageContentProps {
   onFormDataChange: (field: keyof StageFormData, value: string | File | null) => void;
   isMobileHorizontal: boolean;
   isAnimating: boolean;
+  prototypeStageRef?: React.RefObject<any>;
 }
 
 export interface NavigationBarProps {

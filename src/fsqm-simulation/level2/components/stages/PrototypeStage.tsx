@@ -1,32 +1,57 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Upload, CheckCircle, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
+import React, { useState, useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
+import { Upload, CheckCircle, Loader2, AlertCircle, RefreshCw, Clock, Trash2 } from 'lucide-react';
 import { StageProps } from '../../types';
 import { uploadFileToS3 } from '../../../../utils/awsConfig';
+import { useSupabaseUserId } from '../../../../hooks/useSupabaseUserId';
+import { supabase } from '../../../../lib/supabase';
 
-const PrototypeStage: React.FC<StageProps> = ({ formData, onFormDataChange, isMobileHorizontal }) => {
+// Add interface for ref methods
+export interface PrototypeStageRef {
+  uploadSelectedFile: () => Promise<boolean>;
+}
+
+const PrototypeStage = forwardRef(
+  ({ formData, onFormDataChange, isMobileHorizontal }: StageProps, ref: React.ForwardedRef<PrototypeStageRef>) => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [s3Url, setS3Url] = useState<string | null>(null);
-  const [lastSelectedFile, setLastSelectedFile] = useState<File | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [retryCount, setRetryCount] = useState(0);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [fileValidationError, setFileValidationError] = useState<string | null>(null);
   const MAX_RETRY_ATTEMPTS = 3;
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { userId } = useSupabaseUserId();
   
   // Focus the file input when the component mounts (stage changes)
   useEffect(() => {
     const focusTimeout = setTimeout(() => {
       if (fileInputRef.current) {
-        // For file inputs, we'll focus the label instead since file input focus doesn't show visually
-        // But we can still programmatically focus it
         fileInputRef.current.focus();
       }
-    }, 100); // Small delay to ensure the component is fully rendered
+    }, 100);
     
     return () => clearTimeout(focusTimeout);
-  }, []); // Empty dependency array means this runs once when component mounts
+  }, []);
 
-  const uploadFile = async (file: File, isRetry = false) => {
+  // Expose upload method to parent via ref
+  useImperativeHandle(ref, () => ({
+    uploadSelectedFile: async (): Promise<boolean> => {
+      if (!selectedFile) {
+        console.log('No file selected to upload');
+        return true; // No file is OK for optional stage
+      }
+      
+      try {
+        return await uploadFileToCloud(selectedFile);
+      } catch (error) {
+        console.error('Upload failed during confirmation:', error);
+        return false;
+      }
+    }
+  }));
+
+  const uploadFileToCloud = async (file: File, isRetry = false): Promise<boolean> => {
     try {
       setIsUploading(true);
       setUploadError(null);
@@ -35,22 +60,52 @@ const PrototypeStage: React.FC<StageProps> = ({ formData, onFormDataChange, isMo
         setRetryCount(0);
       }
       
-      // Upload to S3
-      const s3Location = await uploadFileToS3(file);
+      // Generate custom filename with user ID
+      const fileExtension = file.name.split('.').pop() || 'pdf';
+      const sanitizedOriginalName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+      const timestamp = Date.now();
+      const customFileName = userId 
+        ? `prototypes/${userId}_${timestamp}_${sanitizedOriginalName}`
+        : `prototypes/anonymous_${timestamp}_${sanitizedOriginalName}`;
+      
+      // Upload to S3 with custom filename
+      const s3Location = await uploadFileToS3(file, customFileName);
       
       if (!s3Location) {
         throw new Error('Upload failed: No URL returned');
       }
       
       setS3Url(s3Location);
-      
-      // Update form data with the file
-      onFormDataChange('file', file);
-      
       console.log('File uploaded successfully to S3:', s3Location);
+      
+      // Save the S3 URL and filename to the database
+      try {
+        if (userId) {
+          console.log('💾 Saving S3 file data to database...');
+          const { error: dbError } = await supabase
+            .from('level2_screen3_progress')
+            .update({
+              stage9_prototype_file_name: customFileName,
+              stage9_prototype_file_data: s3Location,
+            })
+            .eq('user_id', userId);
+          
+          if (dbError) {
+            console.error('❌ Failed to save S3 file data to database:', dbError);
+            // Don't fail the upload, but log the error
+          } else {
+            console.log('✅ S3 file data saved to database successfully');
+          }
+        }
+      } catch (dbSaveError) {
+        console.error('❌ Error saving S3 file data to database:', dbSaveError);
+        // Don't fail the upload, but log the error
+      }
       
       // Reset retry count on successful upload
       setRetryCount(0);
+      return true;
+      
     } catch (uploadError: any) {
       console.error('S3 upload failed:', uploadError);
       
@@ -79,11 +134,8 @@ const PrototypeStage: React.FC<StageProps> = ({ formData, onFormDataChange, isMo
       }
       
       setUploadError(errorMessage);
+      return false;
       
-      // Still update form data with local file for UI purposes
-      onFormDataChange('file', file);
-      
-      throw uploadError;
     } finally {
       setIsUploading(false);
     }
@@ -114,19 +166,13 @@ const PrototypeStage: React.FC<StageProps> = ({ formData, onFormDataChange, isMo
     return allowedMimeTypes.includes(file.type);
   };
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const validateAndSelectFile = (file: File): boolean => {
     // Reset previous states
+    setFileValidationError(null);
     setUploadError(null);
     setS3Url(null);
     
     try {
-      if (!e.target.files || !e.target.files[0]) {
-        throw new Error('No file selected');
-      }
-
-      const file = e.target.files[0];
-      setLastSelectedFile(file);
-      
       // Enhanced PDF validation
       if (!isPdfFile(file)) {
         throw new Error('Only PDF files are allowed. Please select a valid PDF document.');
@@ -136,20 +182,28 @@ const PrototypeStage: React.FC<StageProps> = ({ formData, onFormDataChange, isMo
         throw new Error('File size must be less than 2MB');
       }
       
-      await uploadFile(file);
-    } catch (error: any) {
-      console.error('File upload error:', error);
+      // File is valid - store it locally
+      setSelectedFile(file);
+      onFormDataChange('file', file); // Update form data for UI purposes
+      console.log('File selected and validated:', file.name);
+      return true;
       
-      // If not already set by uploadFile, set a general error
-      if (!uploadError) {
-        let errorMessage = 'An unexpected error occurred.';
-        
-        if (error?.message) {
-          errorMessage = error.message;
-        }
-        
-        setUploadError(errorMessage);
+    } catch (error: any) {
+      console.error('File validation error:', error);
+      setFileValidationError(error.message || 'File validation failed');
+      return false;
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    try {
+      if (!e.target.files || !e.target.files[0]) {
+        return;
       }
+
+      const file = e.target.files[0];
+      validateAndSelectFile(file);
+      
     } finally {
       // Clear the input to allow re-uploading the same file if needed
       if (e.target) {
@@ -159,7 +213,7 @@ const PrototypeStage: React.FC<StageProps> = ({ formData, onFormDataChange, isMo
   };
 
   const handleRetryUpload = async () => {
-    if (!lastSelectedFile) {
+    if (!selectedFile) {
       setUploadError('No file to retry upload');
       return;
     }
@@ -171,9 +225,8 @@ const PrototypeStage: React.FC<StageProps> = ({ formData, onFormDataChange, isMo
     
     try {
       setRetryCount(prev => prev + 1);
-      await uploadFile(lastSelectedFile, true);
+      await uploadFileToCloud(selectedFile, true);
     } catch (error) {
-      // Error is already handled in uploadFile
       console.error('Retry upload failed:', error);
     }
   };
@@ -190,50 +243,70 @@ const PrototypeStage: React.FC<StageProps> = ({ formData, onFormDataChange, isMo
     setIsDragOver(false);
   };
 
-  const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragOver(false);
-    
-    // Reset previous states
-    setUploadError(null);
-    setS3Url(null);
     
     try {
       const files = Array.from(e.dataTransfer.files);
       
       if (files.length === 0) {
-        throw new Error('No files dropped');
+        setFileValidationError('No files dropped');
+        return;
       }
       
       if (files.length > 1) {
-        throw new Error('Please drop only one PDF file at a time.');
+        setFileValidationError('Please drop only one PDF file at a time.');
+        return;
       }
       
       const file = files[0];
-      setLastSelectedFile(file);
+      validateAndSelectFile(file);
       
-      // Enhanced PDF validation
-      if (!isPdfFile(file)) {
-        throw new Error('Only PDF files are allowed. Please drop a valid PDF document.');
-      }
-      
-      if (file.size > 2 * 1024 * 1024) { // 2MB limit
-        throw new Error('File size must be less than 2MB');
-      }
-      
-      await uploadFile(file);
     } catch (error: any) {
       console.error('File drop error:', error);
-      
-      let errorMessage = 'An unexpected error occurred.';
-      
-      if (error?.message) {
-        errorMessage = error.message;
-      }
-      
-      setUploadError(errorMessage);
+      setFileValidationError(error.message || 'File drop failed');
     }
+  };
+
+  const handleRemoveFile = async () => {
+    // Reset all file-related state
+    setSelectedFile(null);
+    setS3Url(null);
+    setUploadError(null);
+    setFileValidationError(null);
+    setRetryCount(0);
+    onFormDataChange('file', null);
+    
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+    
+    // Clear S3 data from database
+    try {
+      if (userId) {
+        console.log('🗑️ Clearing S3 file data from database...');
+        const { error: dbError } = await supabase
+          .from('level2_screen3_progress')
+          .update({
+            stage9_prototype_file_name: null,
+            stage9_prototype_file_data: null,
+          })
+          .eq('user_id', userId);
+        
+        if (dbError) {
+          console.error('❌ Failed to clear S3 file data from database:', dbError);
+        } else {
+          console.log('✅ S3 file data cleared from database successfully');
+        }
+      }
+    } catch (dbClearError) {
+      console.error('❌ Error clearing S3 file data from database:', dbClearError);
+    }
+    
+    console.log('File removed successfully');
   };
 
   return (
@@ -299,7 +372,7 @@ const PrototypeStage: React.FC<StageProps> = ({ formData, onFormDataChange, isMo
                   <span className={`${
                     isDragOver ? 'text-pink-300' : 'text-gray-400'
                   } block mb-4 font-bold ${isMobileHorizontal ? 'text-sm' : ''} transition-colors duration-300`}>
-                    {isDragOver ? 'RELEASE TO UPLOAD PDF' : 'DRAG & DROP OR CLICK TO BROWSE'}
+                    {isDragOver ? 'RELEASE TO SELECT PDF' : 'DRAG & DROP OR CLICK TO BROWSE'}
                   </span>
                   <input
                     ref={fileInputRef}
@@ -320,6 +393,29 @@ const PrototypeStage: React.FC<StageProps> = ({ formData, onFormDataChange, isMo
                     {isUploading ? 'UPLOADING...' : 'SELECT FILE'}
                   </div>
                 </label>
+                {/* File Validation Error Display */}
+                {fileValidationError && (
+                  <div 
+                    className={`pixel-border mt-4 bg-red-900/30 relative overflow-hidden ${isMobileHorizontal ? 'p-3' : 'p-4'}`}
+                  >
+                    <div className="absolute inset-0 opacity-20">
+                      <div className="absolute inset-0" style={{
+                        backgroundImage: `repeating-linear-gradient(
+                          45deg,
+                          transparent,
+                          transparent 4px,
+                          rgba(255,0,0,0.1) 4px,
+                          rgba(255,0,0,0.1) 8px
+                        )`
+                      }}></div>
+                    </div>
+                    <div className="relative z-10">
+                      <AlertCircle className="w-6 h-6 text-red-400 mx-auto mb-2" />
+                      <p className="text-red-300 text-sm font-bold text-center">{fileValidationError}</p>
+                    </div>
+                  </div>
+                )}
+
                 {/* Upload Error Display */}
                 {uploadError && (
                   <div 
@@ -341,7 +437,7 @@ const PrototypeStage: React.FC<StageProps> = ({ formData, onFormDataChange, isMo
                       <p className="text-red-300 text-sm font-bold text-center mb-3">{uploadError}</p>
                       
                       {/* Retry Button */}
-                      {lastSelectedFile && retryCount < MAX_RETRY_ATTEMPTS && (
+                      {selectedFile && retryCount < MAX_RETRY_ATTEMPTS && (
                         <div className="text-center">
                           <button
                             onClick={handleRetryUpload}
@@ -372,8 +468,48 @@ const PrototypeStage: React.FC<StageProps> = ({ formData, onFormDataChange, isMo
                   </div>
                 )}
                 
-                {/* Success Display */}
-                {formData.file && (
+                {/* File Selected - Pending Upload */}
+                {formData.file && !s3Url && !uploadError && !isUploading && (
+                  <div 
+                    className={`pixel-border mt-4 bg-blue-900/30 relative overflow-hidden ${isMobileHorizontal ? 'p-3' : 'p-4'}`}
+                  >
+                    <div className="absolute inset-0 opacity-20">
+                      <div className="absolute inset-0" style={{
+                        backgroundImage: `repeating-linear-gradient(
+                          45deg,
+                          transparent,
+                          transparent 4px,
+                          rgba(59,130,246,0.1) 4px,
+                          rgba(59,130,246,0.1) 8px
+                        )`
+                      }}></div>
+                    </div>
+                    <div className="relative z-10">
+                      <Clock className="w-6 h-6 text-blue-400 mx-auto mb-2" />
+                      <span className="text-blue-400 font-black block">{formData.file.name}</span>
+                      <p className="text-blue-300 text-sm mt-1 font-bold">
+                        FILE READY - WILL UPLOAD WHEN YOU PROCEED
+                      </p>
+                      <p className="text-blue-200 text-xs mt-1 mb-3">
+                        Click "PROCEED" to upload this file to cloud storage
+                      </p>
+                      
+                      {/* Remove Button */}
+                      <div className="text-center">
+                        <button
+                          onClick={handleRemoveFile}
+                          className="pixel-border inline-flex items-center px-3 py-2 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white transition-colors duration-300 font-black text-sm hover:shadow-lg"
+                        >
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          REMOVE
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                {/* File Uploaded Successfully */}
+                {formData.file && s3Url && (
                   <div 
                     className={`pixel-border mt-4 bg-green-900/30 relative overflow-hidden ${isMobileHorizontal ? 'p-3' : 'p-4'}`}
                   >
@@ -392,13 +528,22 @@ const PrototypeStage: React.FC<StageProps> = ({ formData, onFormDataChange, isMo
                       <CheckCircle className="w-6 h-6 text-green-400 mx-auto mb-2" />
                       <span className="text-green-400 font-black">{formData.file.name}</span>
                       <p className="text-green-300 text-sm mt-1 font-bold">
-                        {s3Url ? 'FILE UPLOADED TO CLOUD STORAGE' : 'FILE SELECTED (UPLOAD FAILED)'}
+                        FILE UPLOADED TO CLOUD STORAGE
                       </p>
-                      {s3Url && (
-                        <p className="text-green-200 text-xs mt-1 break-all">
-                          URL: {s3Url}
-                        </p>
-                      )}
+                      <p className="text-green-200 text-xs mt-1 break-all mb-3">
+                        URL: {s3Url}
+                      </p>
+                      
+                      {/* Remove Button */}
+                      <div className="text-center">
+                        <button
+                          onClick={handleRemoveFile}
+                          className="pixel-border inline-flex items-center px-3 py-2 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white transition-colors duration-300 font-black text-sm hover:shadow-lg"
+                        >
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          REMOVE
+                        </button>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -424,6 +569,6 @@ const PrototypeStage: React.FC<StageProps> = ({ formData, onFormDataChange, isMo
       </div>
     </div>
   );
-};
+}) as React.ForwardRefExoticComponent<StageProps & React.RefAttributes<PrototypeStageRef>>;
 
 export default PrototypeStage;
