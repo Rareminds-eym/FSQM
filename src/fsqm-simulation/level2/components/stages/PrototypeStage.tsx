@@ -2,22 +2,20 @@ import React, { useState, useEffect, useRef, useImperativeHandle, forwardRef } f
 import { Upload, CheckCircle, Loader2, AlertCircle, RefreshCw, Clock, Trash2 } from 'lucide-react';
 import { StageProps } from '../../types';
 import { uploadFileToS3 } from '../../../../utils/awsConfig';
-<<<<<<< HEAD
 import { useAuth } from '../../../../components/home/AuthContext';
 import { supabase } from '../../../../lib/supabase';
 import Toast from '../Toast';
-=======
 import { useSupabaseUserId } from '../../../../hooks/useSupabaseUserId';
 import { supabase } from '../../../../lib/supabase';
->>>>>>> e35d0677309aba7b944e171cce50b5fba0570a5a
+import { useSupabaseUserId } from '../../../../hooks/useSupabaseUserId';
+import { supabase } from '../../../../lib/supabase';
 
 // Add interface for ref methods
 export interface PrototypeStageRef {
   uploadSelectedFile: () => Promise<boolean>;
-<<<<<<< HEAD
+
   getLastUploadError: () => string | null;
-=======
->>>>>>> e35d0677309aba7b944e171cce50b5fba0570a5a
+
 }
 
 const PrototypeStage = forwardRef(
@@ -29,17 +27,16 @@ const PrototypeStage = forwardRef(
   const [retryCount, setRetryCount] = useState(0);
   const [isDragOver, setIsDragOver] = useState(false);
   const [fileValidationError, setFileValidationError] = useState<string | null>(null);
-<<<<<<< HEAD
+
   const [showSuccessToast, setShowSuccessToast] = useState(false);
-  const MAX_RETRY_ATTEMPTS = 3;
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuth();
   const userId = user?.id || null;
-=======
   const MAX_RETRY_ATTEMPTS = 3;
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { userId } = useSupabaseUserId();
->>>>>>> e35d0677309aba7b944e171cce50b5fba0570a5a
+  const MAX_RETRY_ATTEMPTS = 3;
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { userId } = useSupabaseUserId();
   
   // Focus the file input when the component mounts (stage changes)
   useEffect(() => {
@@ -52,11 +49,6 @@ const PrototypeStage = forwardRef(
     return () => clearTimeout(focusTimeout);
   }, []);
 
-<<<<<<< HEAD
-  // Expose upload method and last error to parent via ref
-=======
-  // Expose upload method to parent via ref
->>>>>>> e35d0677309aba7b944e171cce50b5fba0570a5a
   useImperativeHandle(ref, () => ({
     uploadSelectedFile: async (): Promise<boolean> => {
       if (!selectedFile) {
@@ -70,12 +62,26 @@ const PrototypeStage = forwardRef(
         console.error('Upload failed during confirmation:', error);
         return false;
       }
-<<<<<<< HEAD
     },
     getLastUploadError: () => uploadError
-=======
     }
->>>>>>> e35d0677309aba7b944e171cce50b5fba0570a5a
+  }));
+
+  // Expose upload method to parent via ref
+  useImperativeHandle(ref, () => ({
+    uploadSelectedFile: async (): Promise<boolean> => {
+      if (!selectedFile) {
+        console.log('No file selected to upload');
+        return true; // No file is OK for optional stage
+      }
+      
+      try {
+        return await uploadFileToCloud(selectedFile);
+      } catch (error) {
+        console.error('Upload failed during confirmation:', error);
+        return false;
+      }
+    }
   }));
 
   const uploadFileToCloud = async (file: File, isRetry = false): Promise<boolean> => {
@@ -131,13 +137,9 @@ const PrototypeStage = forwardRef(
       
       // Reset retry count on successful upload
       setRetryCount(0);
-<<<<<<< HEAD
       
       // Show success toast
       setShowSuccessToast(true);
-      
-=======
->>>>>>> e35d0677309aba7b944e171cce50b5fba0570a5a
       return true;
       
     } catch (uploadError: any) {
