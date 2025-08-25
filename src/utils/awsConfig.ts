@@ -17,7 +17,7 @@ export const s3Client = new S3Client({
 });
 
 // Upload file to S3 bucket
-export const uploadFileToS3 = async (file: File): Promise<string> => {
+export const uploadFileToS3 = async (file: File, key?: string): Promise<string> => {
   try {
     // Validate environment variables
     if (!AWS_ACCESS_KEY_ID || !AWS_SECRET_ACCESS_KEY || !AWS_REGION || !S3_BUCKET_NAME) {
@@ -37,7 +37,7 @@ export const uploadFileToS3 = async (file: File): Promise<string> => {
       throw new Error('File size exceeds 10MB limit');
     }
     
-    const fileName = `prototypes/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+    const fileName = key ?? `prototypes/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
     
     // Convert file to ArrayBuffer for AWS SDK v3 compatibility
     let fileBuffer: ArrayBuffer;

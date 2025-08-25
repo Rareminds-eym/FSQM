@@ -2,13 +2,9 @@ import React, { useState, useEffect, useRef, useImperativeHandle, forwardRef } f
 import { Upload, CheckCircle, Loader2, AlertCircle, RefreshCw, Clock, Trash2 } from 'lucide-react';
 import { StageProps } from '../../types';
 import { uploadFileToS3 } from '../../../../utils/awsConfig';
-import { useAuth } from '../../../../components/home/AuthContext';
-import { supabase } from '../../../../lib/supabase';
 import Toast from '../Toast';
-import { useSupabaseUserId } from '../../../../hooks/useSupabaseUserId';
 import { supabase } from '../../../../lib/supabase';
 import { useSupabaseUserId } from '../../../../hooks/useSupabaseUserId';
-import { supabase } from '../../../../lib/supabase';
 
 // Add interface for ref methods
 export interface PrototypeStageRef {
@@ -29,14 +25,9 @@ const PrototypeStage = forwardRef(
   const [fileValidationError, setFileValidationError] = useState<string | null>(null);
 
   const [showSuccessToast, setShowSuccessToast] = useState(false);
-  const { user } = useAuth();
-  const userId = user?.id || null;
-  const MAX_RETRY_ATTEMPTS = 3;
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const { userId } = useSupabaseUserId();
   const MAX_RETRY_ATTEMPTS = 3;
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { userId } = useSupabaseUserId();
   
   // Focus the file input when the component mounts (stage changes)
   useEffect(() => {
@@ -63,25 +54,7 @@ const PrototypeStage = forwardRef(
         return false;
       }
     },
-    getLastUploadError: () => uploadError
-    }
-  }));
-
-  // Expose upload method to parent via ref
-  useImperativeHandle(ref, () => ({
-    uploadSelectedFile: async (): Promise<boolean> => {
-      if (!selectedFile) {
-        console.log('No file selected to upload');
-        return true; // No file is OK for optional stage
-      }
-      
-      try {
-        return await uploadFileToCloud(selectedFile);
-      } catch (error) {
-        console.error('Upload failed during confirmation:', error);
-        return false;
-      }
-    }
+    getLastUploadError: () => uploadError,
   }));
 
   const uploadFileToCloud = async (file: File, isRetry = false): Promise<boolean> => {
