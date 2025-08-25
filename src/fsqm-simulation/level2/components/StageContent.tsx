@@ -11,7 +11,8 @@ const StageContent: React.FC<StageContentProps> = ({
   formData, 
   onFormDataChange, 
   isMobileHorizontal, 
-  isAnimating 
+  isAnimating,
+  prototypeStageRef
 }) => {
   const handleTextChange = (field: keyof typeof formData) => (value: string) => {
     onFormDataChange(field, value);
@@ -128,7 +129,7 @@ const StageContent: React.FC<StageContentProps> = ({
         return <FinalStatementStage formData={formData} onFormDataChange={onFormDataChange} isMobileHorizontal={isMobileHorizontal} />;
 
       case 9:
-        return <PrototypeStage formData={formData} onFormDataChange={onFormDataChange} isMobileHorizontal={isMobileHorizontal} />;
+        return <PrototypeStage ref={prototypeStageRef} formData={formData} onFormDataChange={onFormDataChange} isMobileHorizontal={isMobileHorizontal} />;
 
       case 10:
         return (

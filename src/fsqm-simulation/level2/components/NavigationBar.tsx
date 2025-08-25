@@ -93,33 +93,22 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
                   isMobileHorizontal ? "space-x-1" : "space-x-2"
                 }`}
               >
-                {stage === 9 ? (
-                  <>
-                    <CheckCircle
-                      className={`${
-                        isMobileHorizontal ? "w-3 h-3" : "w-5 h-5"
-                      }`}
-                    />
-                    <span>{isMobileHorizontal ? "DONE" : "COMPLETE"}</span>
-                  </>
-                ) : (
-                  <>
-                    <span>{"PROCEED"}</span>
-                    {canProceed && !isMobileHorizontal && (
-                      <div className="flex space-x-1">
-                        <div className="w-1 h-1 bg-current rounded-full animate-bounce"></div>
-                        <div
-                          className="w-1 h-1 bg-current rounded-full animate-bounce"
-                          style={{ animationDelay: "0.1s" }}
-                        ></div>
-                        <div
-                          className="w-1 h-1 bg-current rounded-full animate-bounce"
-                          style={{ animationDelay: "0.2s" }}
-                        ></div>
-                      </div>
-                    )}
-                  </>
-                )}
+                <>
+                  <span>{"PROCEED"}</span>
+                  {canProceed && !isMobileHorizontal && (
+                    <div className="flex space-x-1">
+                      <div className="w-1 h-1 bg-current rounded-full animate-bounce"></div>
+                      <div
+                        className="w-1 h-1 bg-current rounded-full animate-bounce"
+                        style={{ animationDelay: "0.1s" }}
+                      ></div>
+                      <div
+                        className="w-1 h-1 bg-current rounded-full animate-bounce"
+                        style={{ animationDelay: "0.2s" }}
+                      ></div>
+                    </div>
+                  )}
+                </>
               </div>
             </button>
           </div>

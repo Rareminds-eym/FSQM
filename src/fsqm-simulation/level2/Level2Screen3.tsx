@@ -18,12 +18,11 @@ import LoadingScreen from './components/LoadingScreen';
 import ResetProgressModal from './components/ResetProgressModal';
 import Toast from './components/Toast';
 import { convertProgressToFormData, useLevel2Screen3Progress } from './hooks/useLevel2Screen3Progress';
+import { saveLevel2TimerState } from './level2ProgressHelpers';
 
-interface Level2Screen3Props {
-  timer: number;
-}
+interface Level2Screen3Props {}
 
-const Level2Screen3: React.FC<Level2Screen3Props> = ({ timer }) => {
+const Level2Screen3: React.FC<Level2Screen3Props> = () => {
   const [selectedCase, setSelectedCase] = useState<{ email: string; case_id: number; updated_at: string, description?: string } | null>(null);
   const navigate = useNavigate();
   const [showBrief, setShowBrief] = useState(false);
@@ -138,6 +137,29 @@ const Level2Screen3: React.FC<Level2Screen3Props> = ({ timer }) => {
   const [isInitialPageLoad, setIsInitialPageLoad] = useState(true);
   const { isMobile, isHorizontal } = useDeviceLayout();
   const isMobileHorizontal = isMobile && isHorizontal;
+  // Timer logic: read persistent start time and calculate elapsed
+
+
+  // Handle timer reaching zero: end test and show final modal
+  const handleTimerTimeUp = useCallback(() => {
+    setIsLevelCompleted(true);
+    setShowCompletionPopup(true);
+  }, []);
+
+  // Auto-save timer handler
+  const handleSaveTimer = useCallback(
+    async (time: number) => {
+      if (user && user.id) {
+        try {
+          await saveLevel2TimerState(user.id, time);
+        } catch (err) {
+          // Optionally handle error (e.g., show toast)
+          console.error('[Level2Screen3] Failed to auto-save timer:', err);
+        }
+      }
+    },
+    [user]
+  );
 
   const showToast = useCallback((type: 'success' | 'error', message: string) => {
     setToast({ show: true, type, message });
@@ -564,16 +586,9 @@ const Level2Screen3: React.FC<Level2Screen3Props> = ({ timer }) => {
             onShowBrief={() => setShowBrief(true)}
             progress={progress}
             timerStopped={isLevelCompleted}
-            savedTimer={timer}
-            onTimerTick={(updatedTime) => {
-              console.log('[Level2Screen3] Timer tick received:', updatedTime);
-              // Note: We don't update timer here as it's managed by parent Level2Simulation
-              // This callback is mainly for logging/monitoring purposes
-            }}
-            onTimerTimeUp={() => {
-              console.log('⏰ Timer expired in Level2Screen3');
-              // Handle timer expiration (e.g., show modal, save progress, etc.)
-            }}
+            autoSave={true}
+            onSaveTimer={handleSaveTimer}
+            onTimerTimeUp={handleTimerTimeUp}
           />
           
           {/* Loading/Error for Brief Button */}

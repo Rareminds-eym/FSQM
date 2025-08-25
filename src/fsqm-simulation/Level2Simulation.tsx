@@ -2,8 +2,8 @@ import { AlertTriangle, Clock, Play } from "lucide-react";
 import React, { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Level2Card from "./Level2Card";
-import Level2Timer from "./Level2Timer";
-import { getLevel2Progress, saveLevel2TimerState } from "./level2/level2ProgressHelpers";
+// import Level2Timer from "./Level2Timer";
+import { getLevel2Progress, isLevel2Screen3Completed } from "./level2/level2ProgressHelpers";
 import { useGameSession } from "./useGameSession";
 
 // Real eligibility check: only allow if user is in winners_list_level1
@@ -48,10 +48,11 @@ const Level2Simulation: React.FC = () => {
   const [teamMembers, setTeamMembers] = useState<{ name: string; email: string }[]>([]);
   const [level2Screen, setLevel2Screen] = useState(1);
   const totalQuestions = 5; // Adjust if dynamic
-  const INITIAL_TIME = 10800;
-  const [timerActive, setTimerActive] = useState(false);
-  const [timerValue, setTimerValue] = useState(INITIAL_TIME);
+  // const INITIAL_TIME = 10800;
+  // const [timerActive, setTimerActive] = useState(false);
+  // const [timerValue, setTimerValue] = useState(INITIAL_TIME);
   const [isFirstTime, setIsFirstTime] = useState(true);
+  const [isLevel2Completed, setIsLevel2Completed] = useState(false);
 
   // Restore progress on mount
   useEffect(() => {
@@ -59,8 +60,15 @@ const Level2Simulation: React.FC = () => {
       try {
         const { data: { user }, error: authError } = await supabase.auth.getUser();
         if (authError || !user || !user.id) throw new Error('User not authenticated');
+        
+        // Check if Level2Screen3 (Innovation Round) is completed
+        const level2CompletionStatus = await isLevel2Screen3Completed(user.id);
+        setIsLevel2Completed(level2CompletionStatus);
+        
         const progress = await getLevel2Progress(user.id);
         console.log('[Level2Simulation] Restored progress from hl2_progress:', progress);
+        console.log('[Level2Simulation] Level2Screen3 completion status:', level2CompletionStatus);
+        
         if (progress) {
           // Resume from next incomplete screen
           let nextScreen = 1;
@@ -70,30 +78,16 @@ const Level2Simulation: React.FC = () => {
             nextScreen = progress.current_screen;
           }
           setLevel2Screen(nextScreen);
-          
-          // Restore timer - ensure it's a valid number
-          if (typeof progress.timer === 'number' && progress.timer > 0) {
-            console.log('[Level2Simulation] Restoring timer from database:', progress.timer);
-            setTimerValue(progress.timer);
-          } else {
-            console.log('[Level2Simulation] No valid timer found, using initial time:', INITIAL_TIME);
-            setTimerValue(INITIAL_TIME);
-          }
-          
           // Update isFirstTime based on progress
           setIsFirstTime(nextScreen === 1 && !progress.completed_screens?.length);
         } else {
-          console.log('[Level2Simulation] No progress found, initializing with default timer');
-          setTimerValue(INITIAL_TIME);
           setIsFirstTime(true);
         }
       } catch (err) {
-        console.warn('[Level2Simulation] Error restoring progress:', err);
-        setTimerValue(INITIAL_TIME);
         setIsFirstTime(true);
       }
     })();
-  }, [INITIAL_TIME]);
+  }, []);
   useEffect(() => {
     console.log('[Level2Simulation][DEBUG] hideProgress state changed:', hideProgress);
   }, [hideProgress]);
@@ -196,22 +190,7 @@ const Level2Simulation: React.FC = () => {
     setShowLevelModal(true);
   }, []);
 
-  // Timer auto-save handler
-  const handleTimerSave = useCallback(async (time: number) => {
-    try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      if (authError || !user || !user.id) {
-        console.error('[Level2Simulation] Auth error during timer save:', authError);
-        return;
-      }
-      
-      console.log('[Level2Simulation] Auto-saving timer:', time);
-      await saveLevel2TimerState(user.id, time, level2Screen);
-      console.log('[Level2Simulation] Timer auto-save successful');
-    } catch (err) {
-      console.error('[Level2Simulation] Timer auto-save failed:', err);
-    }
-  }, [level2Screen]);
+  // Timer auto-save handler removed
 
   // UI rendering
   console.log('[Level2Simulation][DEBUG] Render: canAccessLevel2 =', canAccessLevel2);
@@ -268,7 +247,7 @@ const Level2Simulation: React.FC = () => {
             onClick={() => navigate('/levels')}
             className="mt-4 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded font-bold pixel-border"
           >
-            Back to Levels
+            Back to Modules
           </button>
         </div>
       </div>
@@ -297,13 +276,10 @@ const Level2Simulation: React.FC = () => {
   // (already declared at the top with other hooks)
   // ---
   if (showLevel2Card) {
-  const progress = ((currentQuestion + 1) / totalQuestions) * 100;
   const isCaseSelection = level2Screen === 1 && showLevel2Card;
-  // Loader overlay at top level
   if (hideProgress) {
     return null;
   }
-  // Handler to advance screen and show loader
   const handleAdvanceScreen = () => {
     setHideProgress(true);
     setTimeout(() => {
@@ -313,64 +289,12 @@ const Level2Simulation: React.FC = () => {
   };
   return (
     <div className="min-h-screen bg-gray-800 flex flex-col items-center justify-center relative">
-      <div className="container mx-auto px-3">
-        {level2Screen !== 3 && (
-          <div className="flex items-center justify-between pixel-border bg-gradient-to-r from-gray-700 to-gray-600 px-2 py-1 mb-4">
-            {/* Left - Level and Case */}
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gray-700 pixel-border flex items-center justify-center">
-                <span className="text-gray-100 font-black text-sm pixel-text">2</span>
-              </div>
-              <div>
-                <h1 className="text-gray-100 font-black text-sm pixel-text">LEVEL 2</h1>
-                <div className="text-white text-xs font-bold bg-violet-600 px-3 py-1 rounded-lg">
-                  {isCaseSelection ? 'Case Selection' : `CASE ${currentQuestion + 1}/${totalQuestions}`}
-                </div>
-              </div>
-            </div>
-            {/* Right - Progress and Timer */}
-            <div className="flex items-center gap-4">
-              {/* Progress Bar */}
-              <div className="flex items-center gap-1">
-                {/* <div className="w-16 h-2 bg-gray-800 pixel-border overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 transition-all duration-500"
-                    style={{ width: `${progress}%` }}
-                  />
-                </div> */}
-                {/* <span className="text-white text-xs font-black min-w-[2rem] pixel-text">
-                  {Math.round(progress)}%
-                </span> */}
-                {/* <div className="w-3 h-3 bg-yellow-600 pixel-border flex items-center justify-center">
-                  <svg className="w-2 h-2 text-yellow-300" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 17.75L18.2 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.44 4.73L5.8 21z" /></svg>
-                </div> */}
-              </div>
-              {/* Timer */}
-              <div className="flex items-center gap-1 pixel-border bg-gradient-to-r from-red-700 to-red-600 px-2 py-1">
-                <div className="w-3 h-3 bg-gray-800 pixel-border flex items-center justify-center">
-                  <Clock className="w-2 h-2 text-gray-300" />
-                </div>
-                <Level2Timer
-                  initialTime={INITIAL_TIME}
-                  savedTime={timerValue}
-                  isActive={timerActive}
-                  onTimeUp={() => setTimerActive(false)}
-                  onTick={setTimerValue}
-                  autoSave={true}
-                  onSaveTimer={handleTimerSave}
-                />
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
       <div className="relative w-full">
         <Level2Card
           teamName={teamName || ''}
           teamMembers={teamMembers}
           screen={level2Screen}
           onAdvanceScreen={handleAdvanceScreen}
-          timer={timerValue}
         />
         {/* Countdown overlay for screen 1 */}
         {isCaseSelection && showCountdown && (
@@ -398,14 +322,15 @@ const Level2Simulation: React.FC = () => {
       <div className="absolute inset-0 bg-pixel-pattern opacity-10"></div>
       <div className="absolute inset-0 bg-scan-lines opacity-20"></div>
       <div className="pixel-border-thick bg-gradient-to-r from-blue-600 to-blue-700 p-4 max-w-xl w-full text-center relative z-10">
-        {/* Back Button */}
-        <div className="absolute top-4 left-4">
+        {/* Back Button - styled like Level 1 modal */}
+        <div className="absolute top-3 left-3 z-20">
           <button
             onClick={() => navigate('/levels')}
-            className="pixel-border bg-gradient-to-r from-red-500 to-red-600 hover:from-red-400 hover:to-red-500 text-white font-black py-2 px-4 pixel-text transition-all transform hover:scale-105 text-sm flex items-center gap-2"
+            className="pixel-border bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white font-black py-1 px-3 pixel-text transition-all flex items-center gap-2 text-xs shadow-lg"
+            aria-label="Back"
           >
-            <Play className="w-4 h-4" />
-            BACK
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+            Back
           </button>
         </div>
         <div className="flex justify-center mb-4">
@@ -416,16 +341,16 @@ const Level2Simulation: React.FC = () => {
         <h1 className="text-xl font-black text-blue-100 mb-3 pixel-text">
           Safebite 2.0
         </h1>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-4">
+        <div className="grid grid-cols-3 gap-2 mb-4">
           <div className="pixel-border bg-gradient-to-r from-blue-700 to-blue-600 p-2">
             <div className="w-6 h-6 bg-blue-800 pixel-border mx-auto mb-1 flex items-center justify-center">
               <Clock className="w-3 h-3 text-blue-300" />
             </div>
             <h3 className="font-black text-white text-xs pixel-text">
-              3 Hours
+              3 HOURS
             </h3>
             <p className="text-blue-100 text-xs font-bold">
-              Select 1 case , find Solution and Innovate.
+              Select 1 case, find Solution and Innovate.
             </p>
           </div>
           <div className="pixel-border bg-gradient-to-r from-orange-700 to-orange-600 p-2">
@@ -433,7 +358,7 @@ const Level2Simulation: React.FC = () => {
               <AlertTriangle className="w-3 h-3 text-orange-300" />
             </div>
             <h3 className="font-black text-white text-xs pixel-text">
-              Solution Round
+              SOLUTION ROUND
             </h3>
             <p className="text-orange-100 text-xs font-bold">
               Find Solution for selected case
@@ -444,7 +369,7 @@ const Level2Simulation: React.FC = () => {
               <Play className="w-3 h-3 text-purple-300" />
             </div>
             <h3 className="font-black text-white text-xs pixel-text">
-               INNOVATION ROUND
+              INNOVATION ROUND
             </h3>
             <p className="text-purple-100 text-xs font-bold">
               Answer precisely and add attachment
@@ -452,35 +377,45 @@ const Level2Simulation: React.FC = () => {
           </div>
         </div>
         <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
-          <button
-            onClick={() => {
-              // Set session_id and email in sessionStorage if available
-              if (session_id && email) {
-                window.sessionStorage.setItem('session_id', session_id);
-                window.sessionStorage.setItem('email', email);
-                console.log('[DEBUG] Set session_id and email in sessionStorage:', session_id, email);
-              } else {
-                console.warn('[DEBUG] session_id or email missing, not set in sessionStorage');
-              }
-              setShowCountdown(true);
-              setCountdownNumber(3);
-              setTimerActive(false); // Ensure timer is not running during countdown
-              let i = 3;
-              const interval = setInterval(() => {
-                i--;
-                setCountdownNumber(i);
-                if (i === 0) {
-                  clearInterval(interval);
-                  setShowCountdown(false);
-                  setShowLevel2Card(true);
-                  setTimerActive(true); // Start timer after countdown
+          {isLevel2Completed ? (
+            <div className="pixel-border bg-gradient-to-r from-yellow-500 to-orange-500 text-white font-black py-2 px-4 pixel-text text-sm flex items-center gap-2">
+              <span className="text-2xl">🏆</span>
+              HL2-Completed
+            </div>
+          ) : (
+            <button
+              onClick={() => {
+                // Set session_id and email in sessionStorage if available
+                if (session_id && email) {
+                  window.sessionStorage.setItem('session_id', session_id);
+                  window.sessionStorage.setItem('email', email);
+                  console.log('[DEBUG] Set session_id and email in sessionStorage:', session_id, email);
+                } else {
+                  console.warn('[DEBUG] session_id or email missing, not set in sessionStorage');
                 }
-              }, 1000);
-            }}
-            className="pixel-border bg-gradient-to-r from-green-500 to-green-600 hover:from-green-400 hover:to-green-500 text-white font-black py-2 px-4 pixel-text transition-all transform hover:scale-105 text-sm"
-          >
-            {isFirstTime ? "START HACKATHON" : "CONTINUE"}
-          </button>
+                setShowCountdown(true);
+                setCountdownNumber(3);
+                let i = 3;
+                const interval = setInterval(() => {
+                  i--;
+                  setCountdownNumber(i);
+                  if (i === 0) {
+                    clearInterval(interval);
+                    setShowCountdown(false);
+                    setShowLevel2Card(true);
+                    // Set timer start timestamp if not already set
+                    if (!window.sessionStorage.getItem('level2_timer_start')) {
+                      window.sessionStorage.setItem('level2_timer_start', Date.now().toString());
+                      console.log('[TIMER] Set level2_timer_start:', Date.now());
+                    }
+                  }
+                }, 1000);
+              }}
+              className="pixel-border bg-gradient-to-r from-green-500 to-green-600 hover:from-green-400 hover:to-green-500 text-white font-black py-2 px-4 pixel-text transition-all transform hover:scale-105 text-sm"
+            >
+              {isFirstTime ? "START HACKATHON" : "CONTINUE"}
+            </button>
+          )}
           <button
             onClick={showWalkthroughVideo}
             className="pixel-border bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white font-black py-2 px-4 pixel-text transition-all transform hover:scale-105 text-sm flex items-center gap-2"
@@ -507,12 +442,7 @@ const Level2Simulation: React.FC = () => {
       </div>
     </div>
   );
-// Stop timer if game is completed
-useEffect(() => {
-  if (gameCompleted) {
-    setTimerActive(false);
-  }
-}, [gameCompleted]);
+// Timer effect removed
 };
 
 export default Level2Simulation;
