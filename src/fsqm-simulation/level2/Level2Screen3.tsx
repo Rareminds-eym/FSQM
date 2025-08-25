@@ -1,5 +1,5 @@
 import { FileText, Globe, Lightbulb, Rocket, Sparkles, Target, Upload, Users, Zap } from 'lucide-react';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDeviceLayout } from '../../hooks/useOrientation';
 import { supabase } from '../../lib/supabase';
@@ -12,18 +12,18 @@ import LevelCompletionPopup from './components/LevelCompletionPopup';
 import NavigationBar from './components/NavigationBar';
 import ProgressTrack from './components/ProgressTrack';
 import StageContent from './components/StageContent';
+import type { PrototypeStageRef } from './components/stages/PrototypeStage';
 import { StageData, StageFormData } from './types';
 // import ProgressIndicator from './components/ProgressIndicator';
 import LoadingScreen from './components/LoadingScreen';
 import ResetProgressModal from './components/ResetProgressModal';
 import Toast from './components/Toast';
 import { convertProgressToFormData, useLevel2Screen3Progress } from './hooks/useLevel2Screen3Progress';
+import { saveLevel2TimerState } from './level2ProgressHelpers';
 
-interface Level2Screen3Props {
-  timer: number;
-}
+interface Level2Screen3Props {}
 
-const Level2Screen3: React.FC<Level2Screen3Props> = ({ timer }) => {
+const Level2Screen3: React.FC<Level2Screen3Props> = () => {
   const [selectedCase, setSelectedCase] = useState<{ email: string; case_id: number; updated_at: string, description?: string } | null>(null);
   const navigate = useNavigate();
   const [showBrief, setShowBrief] = useState(false);
@@ -31,6 +31,8 @@ const Level2Screen3: React.FC<Level2Screen3Props> = ({ timer }) => {
   const [caseError, setCaseError] = useState<string | null>(null);
   // Fetch selected case on mount
   const { user } = useAuth();
+  // Ref to call upload from Stage 9 before proceeding
+  const prototypeStageRef = useRef<PrototypeStageRef | null>(null);
 
   // Move isStageComplete here so it is defined before any usage
   const isStageComplete = (stageNum: number) => {
@@ -138,6 +140,29 @@ const Level2Screen3: React.FC<Level2Screen3Props> = ({ timer }) => {
   const [isInitialPageLoad, setIsInitialPageLoad] = useState(true);
   const { isMobile, isHorizontal } = useDeviceLayout();
   const isMobileHorizontal = isMobile && isHorizontal;
+  // Timer logic: read persistent start time and calculate elapsed
+
+
+  // Handle timer reaching zero: end test and show final modal
+  const handleTimerTimeUp = useCallback(() => {
+    setIsLevelCompleted(true);
+    setShowCompletionPopup(true);
+  }, []);
+
+  // Auto-save timer handler
+  const handleSaveTimer = useCallback(
+    async (time: number) => {
+      if (user && user.id) {
+        try {
+          await saveLevel2TimerState(user.id, time);
+        } catch (err) {
+          // Optionally handle error (e.g., show toast)
+          console.error('[Level2Screen3] Failed to auto-save timer:', err);
+        }
+      }
+    },
+    [user]
+  );
 
   const showToast = useCallback((type: 'success' | 'error', message: string) => {
     setToast({ show: true, type, message });
@@ -414,6 +439,26 @@ const Level2Screen3: React.FC<Level2Screen3Props> = ({ timer }) => {
       // Determine the next stage before saving
       let nextStage = stage;
       if (stage === 9) {
+        // Before proceeding from Stage 9, attempt the PDF upload if a file is selected
+        try {
+          if (prototypeStageRef.current && typeof prototypeStageRef.current.uploadSelectedFile === 'function') {
+            const uploaded = await prototypeStageRef.current.uploadSelectedFile();
+            if (!uploaded) {
+              console.error('❌ PDF upload failed - not proceeding to next stage');
+              const lastErr = prototypeStageRef.current?.getLastUploadError?.();
+              setShowProceedWarning(false); // close modal so toast is visible
+              showToast('error', lastErr || 'Failed to upload your PDF. Please try again.');
+              setIsSaving(false);
+              return;
+            }
+          }
+        } catch (uploadErr) {
+          console.error('💥 Error during PDF upload from stage 9:', uploadErr);
+          setShowProceedWarning(false); // close modal so toast is visible
+          showToast('error', 'Failed to upload your PDF. Please try again.');
+          setIsSaving(false);
+          return;
+        }
         nextStage = 10;
       } else if (stage === 10) {
         nextStage = 10; // Stay on 10 for completion
@@ -564,16 +609,9 @@ const Level2Screen3: React.FC<Level2Screen3Props> = ({ timer }) => {
             onShowBrief={() => setShowBrief(true)}
             progress={progress}
             timerStopped={isLevelCompleted}
-            savedTimer={timer}
-            onTimerTick={(updatedTime) => {
-              console.log('[Level2Screen3] Timer tick received:', updatedTime);
-              // Note: We don't update timer here as it's managed by parent Level2Simulation
-              // This callback is mainly for logging/monitoring purposes
-            }}
-            onTimerTimeUp={() => {
-              console.log('⏰ Timer expired in Level2Screen3');
-              // Handle timer expiration (e.g., show modal, save progress, etc.)
-            }}
+            autoSave={true}
+            onSaveTimer={handleSaveTimer}
+            onTimerTimeUp={handleTimerTimeUp}
           />
           
           {/* Loading/Error for Brief Button */}
@@ -603,6 +641,7 @@ const Level2Screen3: React.FC<Level2Screen3Props> = ({ timer }) => {
             onFormDataChange={handleFormDataChange}
             isMobileHorizontal={isMobileHorizontal}
             isAnimating={isAnimating}
+            prototypeStageRef={prototypeStageRef}
           />
 
           {/* Navigation Bar */}

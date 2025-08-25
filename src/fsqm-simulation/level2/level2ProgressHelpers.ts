@@ -4,20 +4,23 @@ export interface Level2Progress {
   user_id: string;
   current_screen: number;
   completed_screens: number[];
-  timer: number;
+  timer?: number;
 }
 
 export async function saveLevel2Progress({ user_id, current_screen, completed_screens, timer }: Level2Progress) {
+  const upsertObj: any = {
+    user_id,
+    current_screen,
+    completed_screens,
+    updated_at: new Date().toISOString(),
+  };
+  if (typeof timer === 'number') {
+    upsertObj.timer = timer;
+  }
   const { data, error } = await supabase
     .from('hl2_progress')
     .upsert([
-      {
-        user_id,
-        current_screen,
-        completed_screens,
-        timer,
-        updated_at: new Date().toISOString(),
-      },
+      upsertObj
     ], { onConflict: 'user_id' });
   if (error) throw error;
   return data;
@@ -154,6 +157,34 @@ export async function markScreenCompleteWithTimer(user_id: string, screen: numbe
     return data;
   } catch (err) {
     console.error('[Screen Complete] Failed to mark screen complete:', err);
-    throw err;
+  throw err;
+  }
+}
+
+/**
+ * Check if Level 2 Screen 3 (Innovation Round) is completed
+ * @param user_id - User identifier
+ * @returns boolean indicating completion status
+ */
+export async function isLevel2Screen3Completed(user_id: string): Promise<boolean> {
+  try {
+    const { data, error } = await supabase
+      .from('level2_screen3_progress')
+      .select('is_completed')
+      .eq('user_id', user_id)
+      .single();
+    
+    if (error) {
+      // If no record exists, it's not completed
+      if (error.code === 'PGRST116') {
+        return false;
+      }
+      throw error;
+    }
+    
+    return data?.is_completed || false;
+  } catch (err) {
+    console.error('[Level2Screen3 Check] Error checking completion:', err);
+    return false;
   }
 }

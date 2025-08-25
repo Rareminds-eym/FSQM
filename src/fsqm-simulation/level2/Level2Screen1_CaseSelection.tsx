@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import Header from './components/Header';
+import { saveLevel2TimerState } from './level2ProgressHelpers';
 import { useDeviceLayout } from '../../hooks/useOrientation';
 import { saveSelectedCase } from './supabaseHelpers';
 import { saveLevel2Progress, getLevel2Progress } from './level2ProgressHelpers';
@@ -24,6 +26,7 @@ interface Level2Screen1Props {
   onContinue: () => void;
 }
 
+
 const Level2Screen1_CaseSelection: React.FC<Level2Screen1Props> = ({
   teamName,
   teamMembers,
@@ -37,6 +40,31 @@ const Level2Screen1_CaseSelection: React.FC<Level2Screen1Props> = ({
   const [allCases, setAllCases] = useState<{ member: { email: string }, attempt: AttemptDetail }[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [confirmModal, setConfirmModal] = useState<{ open: boolean; email: string | null; caseId: number | null }>({ open: false, email: null, caseId: null });
+
+  // Timer logic: read persistent start time and calculate elapsed
+  const [savedTimer, setSavedTimer] = useState<number | null>(null);
+  useEffect(() => {
+    const timerStart = window.sessionStorage.getItem('level2_timer_start');
+    if (timerStart) {
+      const elapsed = Math.floor((Date.now() - parseInt(timerStart, 10)) / 1000);
+      setSavedTimer(elapsed > 0 ? elapsed : 0);
+    }
+  }, []);
+
+  // Auto-save timer handler
+  const handleSaveTimer = React.useCallback(
+    async (time: number) => {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user || !user.id) return;
+      try {
+        await saveLevel2TimerState(user.id, time);
+      } catch (err) {
+        // Optionally handle error (e.g., show toast)
+        console.error('[Level2Screen1] Failed to auto-save timer:', err);
+      }
+    },
+    []
+  );
 
   // mobile modal for viewing/navigating cases
   const [mobileCaseIndex, setMobileCaseIndex] = useState<number | null>(null);
@@ -142,7 +170,26 @@ const Level2Screen1_CaseSelection: React.FC<Level2Screen1Props> = ({
   return (
     <>
       <style>{infoAnimStyle}</style>
+      {/* Header for Case Selection */}
+        <Header
+          currentStageData={{
+            icon: () => <span className="text-yellow-300">🗂️</span>,
+            title: 'Case Selection',
+            subtitle: 'Select',
+            color: 'from-yellow-500 to-yellow-400',
+            bgColor: 'from-yellow-900/20 to-yellow-900/10',
+            accent: 'yellow',
+            description: 'Select a case for the solution round',
+            caseNumber: 1
+          }}
+          isMobileHorizontal={isMobile && isHorizontal}
+          titleText="CASE SELECTION QUEST"
+          savedTimer={savedTimer}
+          autoSave={true}
+          onSaveTimer={handleSaveTimer}
+        />
       <div className="flex flex-col items-center justify-center bg-gray-800 overflow-hidden relative" style={{ height: 'calc(100vh - 80px)' }}>
+        
         <div
           className={`w-full ${isMobile ? '' : 'max-w-3xl'} rounded-lg shadow-lg p-2 sm:p-4 flex flex-col items-center glass-3d-effect`}
           style={{ height: '100%', overflow: 'hidden', margin: '0 auto' }}

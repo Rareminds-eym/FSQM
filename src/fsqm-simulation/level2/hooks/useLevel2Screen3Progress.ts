@@ -125,7 +125,8 @@ export const useLevel2Screen3Progress = (): UseLevel2Screen3ProgressReturn => {
       stage8_final_creativity: formData.finalCreativity || '',
       stage8_final_speed_scale: formData.finalSpeedScale || '',
       stage8_final_impact: formData.finalImpact || '',
-      stage9_prototype_file_name: formData.file?.name,
+      // Preserve existing S3 data - don't overwrite with local file data
+      // stage9_prototype_file_name and stage9_prototype_file_data are managed by PrototypeStage directly
       current_stage: currentStage,
       completed_stages: completedStages,
       progress_percentage: calculateProgressPercentage(completedStages),
@@ -238,20 +239,8 @@ export const useLevel2Screen3Progress = (): UseLevel2Screen3ProgressReturn => {
       
       console.log('   - Final progressData to save:', progressData);
 
-      // Handle file data conversion to base64 if file exists
-      if (formData.file) {
-        try {
-          const fileBase64 = await new Promise<string>((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result as string);
-            reader.onerror = reject;
-            reader.readAsDataURL(formData.file!);
-          });
-          progressData.stage9_prototype_file_data = fileBase64;
-        } catch (fileError) {
-          console.warn('Could not convert file to base64:', fileError);
-        }
-      }
+      // Note: S3 file data is handled directly by PrototypeStage component
+      // We don't need to handle file conversion here anymore
 
       const { data, error: saveError } = await supabase
         .from('level2_screen3_progress')

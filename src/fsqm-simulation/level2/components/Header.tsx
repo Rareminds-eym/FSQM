@@ -2,21 +2,50 @@ import { FileText } from 'lucide-react';
 import React from 'react';
 import { HeaderProps } from '../types';
 import Level2Timer from '../../Level2Timer';
+import { useEffect, useState } from 'react';
+import { getLevel2TimerState } from '../level2ProgressHelpers';
+import { supabase } from '../../../lib/supabase';
 
 
-const Header: React.FC<HeaderProps> = ({ 
+interface HeaderWithTitleProps extends HeaderProps {
+  titleText?: string;
+  onProceed?: () => void;
+  canProceed?: boolean;
+  autoSave?: boolean;
+  onSaveTimer?: (time: number) => void;
+}
+
+const Header: React.FC<HeaderWithTitleProps> = ({ 
   currentStageData, 
   isMobileHorizontal, 
   selectedCase, 
   onShowBrief, 
   progress, 
   timerStopped = false, 
-  savedTimer = null,
+  savedTimer = null, // will be ignored, replaced by DB fetch
   onTimerTick,
-  onTimerTimeUp
+  onTimerTimeUp,
+  titleText,
+  onProceed,
+  canProceed,
+  autoSave = false,
+  onSaveTimer
 }) => {
+  const [dbTimer, setDbTimer] = useState<number | null>(null);
+  useEffect(() => {
+    async function fetchTimer() {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (error || !user || !user.id) return;
+      const timer = await getLevel2TimerState(user.id);
+      if (typeof timer === 'number') {
+        console.log('[Header] Timer value fetched from DB:', timer);
+        setDbTimer(timer);
+      }
+    }
+    fetchTimer();
+  }, []);
   return (
-    <div className={isMobileHorizontal ? 'mb-3' : 'mb-6'}>
+    <div className={isMobileHorizontal ? 'mb-1' : 'mb-3'}>
         {/* <div 
           className={`pixel-border-thick bg-gradient-to-br ${currentStageData.bgColor} relative overflow-hidden ${isMobileHorizontal ? 'p-1.5' : 'p-6'}`}
           style={{
@@ -47,13 +76,15 @@ const Header: React.FC<HeaderProps> = ({
                 <div className="flex items-center space-x-1 mb-0.5">
                   <h1 className={`pixel-text ${isMobileHorizontal ? 'text-xs' : 'text-2xl'} font-black text-white`} 
                       style={{ textShadow: isMobileHorizontal ? '1.5px 1.5px 0px rgba(0,0,0,0.7), 0 0 6px rgba(6,182,212,0.3)' : '3px 3px 0px rgba(0,0,0,0.7), 0 0 20px rgba(6,182,212,0.3)' }}>
-                    INNOVATION QUEST
+                    {titleText || 'INNOVATION QUEST'}
                   </h1>
                 </div>
-                {/* Case number below heading */}
-                <span className={"text-white text-xs font-bold bg-violet-600 px-3 py-1 rounded-lg"}>
-                  {currentStageData && currentStageData.caseNumber ? `Stage : ${currentStageData.caseNumber}/10` : ''}
-                </span>
+                {/* No stage number or review message for screens 1 and 2 */}
+                {([1,2].includes(currentStageData.caseNumber)) ? null : (
+                  <span className={"text-white text-xs font-bold bg-violet-600 px-3 py-1 rounded-lg"}>
+                    {currentStageData && currentStageData.caseNumber ? `Stage : ${currentStageData.caseNumber}/10` : ''}
+                  </span>
+                )}
               </div>
             </div>
             {/* Right: Progress, Timer (red pill), and Brief */}
@@ -80,14 +111,60 @@ const Header: React.FC<HeaderProps> = ({
               </div>
               <Level2Timer 
                 initialTime={10800} // 3 hours initial time
-                savedTime={savedTimer || undefined} // Use saved timer value
+                savedTime={dbTimer !== null ? dbTimer : undefined} // Use DB timer value
                 isActive={!timerStopped}
                 isMobileHorizontal={isMobileHorizontal}
                 onTick={onTimerTick || (() => {})}
                 onTimeUp={onTimerTimeUp || (() => {})}
+                autoSave={autoSave}
+                onSaveTimer={onSaveTimer}
               />
             </div>
-            {selectedCase && onShowBrief && (
+            {/* Show Brief and Proceed buttons for screen 2 in both mobile and desktop modes */}
+            {currentStageData.caseNumber === 2 && (
+              <>
+                {onShowBrief && (
+                  <button
+                    className={
+                      `ml-2 flex items-center justify-center gap-1 pixel-border-thick bg-gradient-to-br from-cyan-600 to-blue-700 hover:from-cyan-500 hover:to-blue-600 text-white font-bold shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2 relative group ` +
+                      (isMobileHorizontal
+                        ? 'px-1.5 py-0.5 text-[10px] min-h-0 h-6'
+                        : 'px-3 py-1.5 text-xs')
+                    }
+                    onClick={onShowBrief}
+                    title="Show case question"
+                    style={isMobileHorizontal
+                      ? { minWidth: 0, minHeight: 0, height: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }
+                      : { display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  >
+                    <span className="absolute inset-0 bg-gradient-to-br from-white/10 to-cyan-400/10 opacity-0 group-hover:opacity-100 transition-opacity rounded" />
+                    <span className="flex items-center justify-center">
+                      <FileText className={isMobileHorizontal ? 'w-3 h-3 text-cyan-200 drop-shadow-sm' : 'w-4 h-4 text-cyan-200 drop-shadow-sm'} />
+                    </span>
+                    <span className={`pixel-text tracking-wider text-cyan-100 drop-shadow flex items-center ${isMobileHorizontal ? 'text-[10px]' : 'text-sm'}`}>Brief</span>
+                  </button>
+                )}
+                {onProceed && canProceed && (
+                  <button
+                    className={
+                      `ml-2 flex items-center justify-center gap-1 pixel-border-thick bg-gradient-to-br from-green-500 to-green-600 hover:from-green-400 hover:to-green-500 text-white font-bold shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-2 relative group ` +
+                      (isMobileHorizontal
+                        ? 'px-1.5 py-0.5 text-[10px] min-h-0 h-6'
+                        : 'px-3 py-1.5 text-xs')
+                    }
+                    onClick={onProceed}
+                    title="Proceed"
+                    style={isMobileHorizontal
+                      ? { minWidth: 0, minHeight: 0, height: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }
+                      : { display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  >
+                    <span className={`pixel-text tracking-wider text-green-100 drop-shadow flex items-center ${isMobileHorizontal ? 'text-[10px]' : 'text-sm'}`}>Proceed</span>
+                  </button>
+                )}
+              </>
+            )}
+            {/* Original Brief button for other screens or desktop, but NOT for screen 2 (handled above) */}
+            {selectedCase && onShowBrief && currentStageData.caseNumber !== 2 && (
               <button
                 className={
                   `ml-2 flex items-center justify-center gap-1 pixel-border-thick bg-gradient-to-br from-cyan-600 to-blue-700 hover:from-cyan-500 hover:to-blue-600 text-white font-bold shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2 relative group ` +

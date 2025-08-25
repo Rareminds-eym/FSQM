@@ -39,7 +39,7 @@ const Toast: React.FC<ToastProps> = ({
 
   return (
     <div 
-      className={`fixed top-4 right-4 z-50 ${bgColor} border rounded-lg p-4 min-w-80 max-w-md shadow-xl backdrop-blur-sm animate-slideIn`}
+      className={`fixed top-4 right-4 z-[9999] ${bgColor} border rounded-lg p-4 min-w-80 max-w-md shadow-xl backdrop-blur-sm animate-slideIn`}
     >
       <div className="flex items-start gap-3">
         <div className="flex-shrink-0 mt-0.5">
