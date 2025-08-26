@@ -1,11 +1,10 @@
-
 import { createClient } from '@supabase/supabase-js';
 import { hackathonData, Question } from '../HackathonData';
-
+ 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
-
+ 
 export interface AttemptDetail {
   id: number;
   email: string;
@@ -18,14 +17,14 @@ export interface AttemptDetail {
   updated_at: string;
   time_remaining: number;
 }
-
+ 
 // Returns an array of 20 AttemptDetail-like objects, 5 per member, filling with random hackathonData if <4 members
 export async function fetchLevel1CasesForTeam(teamMembers: { email: string }[]): Promise<{ member: { email: string }, attempt: AttemptDetail }[]> {
   console.log('[fetchLevel1CasesForTeam] Fetching cases for teamMembers:', teamMembers);
   const allCases: { member: { email: string }, attempt: AttemptDetail }[] = [];
   const usedCaseIds = new Set<number>();
-
-  // 1. Fetch first 5 cases for each real member
+ 
+  // 1. Fetch first 5 cases for each real member (with duplicate prevention)
   for (const member of teamMembers) {
     const { data, error } = await supabase
       .from('attempt_details')
@@ -33,14 +32,18 @@ export async function fetchLevel1CasesForTeam(teamMembers: { email: string }[]):
       .eq('email', member.email)
       .eq('module_number', 5)
       .order('question_index', { ascending: true })
-      .limit(5);
+      .limit(10); // Fetch more to account for potential duplicates
     if (error) {
       console.error('Error fetching attempt_details for', member.email, error);
       continue;
     }
     if (data && Array.isArray(data)) {
+      let memberCaseCount = 0;
       for (const attempt of data) {
-        // Track used case IDs (from hackathonData)
+        // Stop if we already have 5 unique cases for this member
+        if (memberCaseCount >= 5) break;
+       
+        // Extract question ID (from hackathonData)
         let qid = undefined;
         if (typeof attempt.question === 'object' && attempt.question.id) qid = attempt.question.id;
         else if (typeof attempt.question === 'string') {
@@ -49,12 +52,17 @@ export async function fetchLevel1CasesForTeam(teamMembers: { email: string }[]):
             if (parsed && parsed.id) qid = parsed.id;
           } catch {}
         }
-        if (qid) usedCaseIds.add(qid);
-        allCases.push({ member, attempt });
+       
+        // Only add if not already used (prevent duplicates)
+        if (qid && !usedCaseIds.has(qid)) {
+          usedCaseIds.add(qid);
+          allCases.push({ member, attempt });
+          memberCaseCount++;
+        }
       }
     }
   }
-
+ 
   // 2. If <4 members, fill with random, non-duplicate hackathonData cases
   const numMembers = teamMembers.length;
   const totalCasesNeeded = 20;
@@ -82,7 +90,7 @@ export async function fetchLevel1CasesForTeam(teamMembers: { email: string }[]):
     let member: { email: string };
     if (numMembers < 4) {
       // Use a label like 'Random Member 1', etc.
-      member = { email: `random_member_${(allCases.length / 5 | 0) + 1}@example.com` };
+      member = { email: `random_member_${Math.floor(allCases.length / 5) + 1}@example.com` };
     } else {
       member = { email: `random${memberIdx}@example.com` };
     }
@@ -90,7 +98,7 @@ export async function fetchLevel1CasesForTeam(teamMembers: { email: string }[]):
     allCases.push({ member, attempt });
     memberIdx++;
   }
-
+ 
   // 3. Sort so that the first 5 are for member 1, next 5 for member 2, etc.
   const grouped: { member: { email: string }, attempt: AttemptDetail }[][] = [];
   for (let i = 0; i < 4; i++) {
